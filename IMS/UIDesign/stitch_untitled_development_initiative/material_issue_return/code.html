@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Material Issue &amp; Return | InventoryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#191c1e",
+                        "outline-variant": "#c5c6cf",
+                        "on-surface-variant": "#44474e",
+                        "on-primary-container": "#8293b8",
+                        "on-secondary-container": "#fefcff",
+                        "on-primary-fixed": "#081b3a",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "inverse-primary": "#b6c6ef",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#303033",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-surface": "#1b1b1e",
+                        "on-error": "#ffffff",
+                        "primary-container": "#1a2b4b",
+                        "surface-tint": "#4e5e81",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "secondary-fixed": "#d8e2ff",
+                        "secondary": "#0058be",
+                        "status-success": "#10B981",
+                        "background": "#fbf8fc",
+                        "sidebar-bg": "#0F172A",
+                        "on-tertiary-container": "#909395",
+                        "on-background": "#1b1b1e",
+                        "surface-container-highest": "#e4e2e5",
+                        "surface-border": "#E2E8F0",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#2170e4",
+                        "on-secondary-fixed-variant": "#004395",
+                        "status-warning": "#F59E0B",
+                        "surface-container-low": "#f5f3f6",
+                        "tertiary-container": "#292c2e",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-container": "#efedf0",
+                        "on-primary-fixed-variant": "#364768",
+                        "on-tertiary": "#ffffff",
+                        "data-fill": "#DBEAFE",
+                        "surface-container-high": "#e9e7eb",
+                        "on-secondary-fixed": "#001a42",
+                        "surface": "#fbf8fc",
+                        "status-info": "#6366F1",
+                        "status-error": "#EF4444",
+                        "surface-bright": "#fbf8fc",
+                        "on-primary": "#ffffff",
+                        "primary": "#031635",
+                        "surface-variant": "#e4e2e5",
+                        "tertiary-fixed": "#e0e3e5",
+                        "inverse-on-surface": "#f2f0f3",
+                        "surface-dim": "#dbd9dc",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#141819",
+                        "outline": "#75777f",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "0.5rem",
+                        "gutter": "1.5rem",
+                        "container-padding": "2rem",
+                        "table-cell-padding": "0.75rem 1rem",
+                        "stack-md": "1rem",
+                        "sidebar-width": "260px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "table-header": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "table-header": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { background-color: #fbf8fc; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+    </style>
+</head>
+<body class="font-body-md text-on-background selection:bg-secondary-fixed selection:text-on-secondary-fixed">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-[260px] bg-sidebar-bg border-r border-outline-variant flex flex-col py-4 z-50 overflow-y-auto custom-scrollbar">
+<div class="px-6 mb-8">
+<h1 class="text-headline-lg font-headline-lg font-black text-on-primary">InventoryPro</h1>
+<p class="font-body-sm text-body-sm text-on-primary-container opacity-80 uppercase tracking-widest mt-1">Enterprise Logistics</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-4 py-2 mx-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-body-sm text-body-sm">Dashboard</span>
+</a>
+<a class="flex items-center px-4 py-2 mx-2 bg-secondary-container text-on-secondary-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">inventory_2</span>
+<span class="font-body-sm text-body-sm">Items</span>
+</a>
+<a class="flex items-center px-4 py-2 mx-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">shopping_cart</span>
+<span class="font-body-sm text-body-sm">Purchase</span>
+</a>
+<a class="flex items-center px-4 py-2 mx-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">warehouse</span>
+<span class="font-body-sm text-body-sm">Inventory</span>
+</a>
+<a class="flex items-center px-4 py-2 mx-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">receipt_long</span>
+<span class="font-body-sm text-body-sm">Sales</span>
+</a>
+<a class="flex items-center px-4 py-2 mx-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">assessment</span>
+<span class="font-body-sm text-body-sm">Reports</span>
+</a>
+<a class="flex items-center px-4 py-2 mx-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">notifications</span>
+<span class="font-body-sm text-body-sm">Alerts</span>
+</a>
+<a class="flex items-center px-4 py-2 mx-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-2 pt-4 border-t border-outline-variant/20">
+<button class="w-full mb-4 py-2.5 px-4 bg-secondary text-on-secondary rounded-lg font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined">add_circle</span>
+                New Transaction
+            </button>
+<a class="flex items-center px-4 py-2 text-on-primary-container hover:bg-primary-container rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">location_on</span>
+<span class="font-body-sm text-body-sm">Warehouse Selector</span>
+</a>
+<a class="flex items-center px-4 py-2 text-on-primary-container hover:bg-primary-container rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined mr-3">help_outline</span>
+<span class="font-body-sm text-body-sm">Support</span>
+</a>
+</div>
+</aside>
+<!-- TopAppBar (Shared Component Overlay) -->
+<header class="fixed top-0 right-0 w-[calc(100%-260px)] h-16 bg-surface-bright border-b border-surface-border flex justify-between items-center px-gutter z-40">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer active:opacity-70">menu</span>
+<h2 class="font-headline-lg text-headline-lg text-primary">Warehouse Visualization</h2>
+<div class="ml-8 hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant font-medium hover:text-secondary transition-colors" href="#">Inventory</a>
+<a class="text-primary font-bold border-b-2 border-secondary h-16 flex items-center" href="#">Material Fulfillment</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<input class="pl-10 pr-4 py-1.5 rounded-full border border-surface-border bg-surface-container-low focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none text-body-md w-64" placeholder="Search Materials..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container rounded-full transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant p-2 hover:bg-surface-container rounded-full transition-colors">help</button>
+<div class="h-8 w-8 rounded-full bg-secondary-fixed overflow-hidden border border-surface-border cursor-pointer">
+<img alt="Admin User" data-alt="A professional headshot of a warehouse operations manager in a clean, modern corporate setting. The person is wearing professional work attire with a subtle lanyard, set against a blurred background of a high-tech logistics control center. High-key lighting, modern aesthetic, professional color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAj0CZbqI1UWtj41F_mQSYO-wssKLE0pM-K2Y67z7_TZfGQC8EFt_GAYeJS6u0xLXmloPdMxf08FjBO_kxYANzmHFkS-pTzIQGq3jCd94G3C7-rcmfM8NIxBCU0si3ZGGI51pY0230y186ER3wEh0APJ8TlAWPUI_BqdRXP2YLf_r6gfchuw6PZS61NrHlPeNUFcpuYrS57h7e1uVfuZ46Rug59a65m9-wgNZtWjz8RIOI54-qRH8P_WBI6GeczOGfFI0ukrX8L9Afc"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[260px] pt-16 min-h-screen p-gutter bg-[#F8FAFC]">
+<!-- Dashboard Header & Location Info -->
+<div class="mb-gutter flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<nav class="flex items-center gap-2 text-body-sm text-outline-variant mb-2">
+<span>Manufacturing</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface-variant font-medium">Issue &amp; Return</span>
+</nav>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Plan #MP-2024-0812</h3>
+<div class="flex items-center gap-3 mt-1">
+<span class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-secondary-fixed/30 text-on-secondary-fixed text-[12px] font-bold">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                        Kathmandu Central DC
+                    </span>
+<span class="text-body-sm text-outline">Production Line: ASSEMBLY-04</span>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 border border-outline-variant text-on-surface hover:bg-surface-container rounded-lg transition-all font-medium">
+<span class="material-symbols-outlined">print</span>
+                    Print Picklist
+                </button>
+<button class="flex items-center gap-2 px-6 py-2 bg-secondary text-on-secondary rounded-lg transition-all font-bold shadow-sm hover:opacity-90 active:scale-95">
+<span class="material-symbols-outlined" data-weight="fill">barcode_scanner</span>
+                    Scan to Issue
+                </button>
+</div>
+</div>
+<!-- Progress Overview -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-gutter">
+<div class="bg-surface-container-lowest border border-surface-border p-container-padding rounded-xl flex flex-col justify-center">
+<p class="text-body-sm text-outline mb-1 uppercase tracking-wider font-bold">Total Fulfillment</p>
+<div class="flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg text-on-surface">64%</span>
+<span class="text-body-sm text-status-success font-bold">+12% vs last hour</span>
+</div>
+<div class="w-full bg-surface-container mt-4 h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full" style="width: 64%"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-surface-border p-container-padding rounded-xl flex flex-col justify-center">
+<p class="text-body-sm text-outline mb-1 uppercase tracking-wider font-bold">Items Pending</p>
+<div class="flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg text-on-surface">14</span>
+<span class="text-body-sm text-outline">SKUs</span>
+</div>
+<p class="text-body-sm text-status-warning mt-4 font-medium">3 Critical Shortages</p>
+</div>
+<div class="bg-surface-container-lowest border border-surface-border p-container-padding rounded-xl flex flex-col justify-center">
+<p class="text-body-sm text-outline mb-1 uppercase tracking-wider font-bold">Avg. Pick Time</p>
+<div class="flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg text-on-surface">2.4m</span>
+<span class="text-body-sm text-outline">per SKU</span>
+</div>
+<p class="text-body-sm text-status-success mt-4 font-medium">Within Target</p>
+</div>
+<div class="bg-surface-container-lowest border border-surface-border p-container-padding rounded-xl flex flex-col justify-center border-l-4 border-l-secondary">
+<p class="text-body-sm text-outline mb-1 uppercase tracking-wider font-bold">Next Warehouse Slot</p>
+<div class="flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg text-on-surface">ZONE-B</span>
+<span class="text-body-sm text-outline">Level 3</span>
+</div>
+<p class="text-body-sm text-secondary mt-4 font-medium">Auto-Routed Path</p>
+</div>
+</div>
+<!-- Main Content Area: Requested Materials & Map Preview -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Materials List Table -->
+<div class="lg:col-span-8 bg-surface-container-lowest border border-surface-border rounded-xl overflow-hidden shadow-sm">
+<div class="px-6 py-4 border-b border-surface-border flex justify-between items-center bg-surface-bright">
+<h4 class="font-headline-md text-headline-md text-on-surface">Material Picklist</h4>
+<div class="flex gap-2">
+<button class="p-1.5 hover:bg-surface-container rounded transition-colors text-outline">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded transition-colors text-outline">
+<span class="material-symbols-outlined">sort</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-table-header uppercase">
+<th class="p-table-cell-padding">Item Details</th>
+<th class="p-table-cell-padding">Bin Location</th>
+<th class="p-table-cell-padding text-right">Requested</th>
+<th class="p-table-cell-padding text-right">Issued</th>
+<th class="p-table-cell-padding text-center">Status</th>
+<th class="p-table-cell-padding">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-border">
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container flex items-center justify-center text-outline group-hover:text-secondary transition-colors">
+<span class="material-symbols-outlined">settings_input_component</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">CX-500 Motherboard</p>
+<p class="text-body-sm text-outline">SKU: MB-CX500-REV2</p>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding">
+<span class="font-label-mono text-label-mono px-2 py-1 rounded bg-secondary-fixed/20 text-on-secondary-fixed">RACK-04-B12</span>
+</td>
+<td class="p-table-cell-padding text-right font-bold">120</td>
+<td class="p-table-cell-padding text-right text-status-success font-bold">120</td>
+<td class="p-table-cell-padding text-center">
+<span class="inline-flex px-2 py-1 rounded-full bg-status-success/10 text-status-success text-[10px] font-black uppercase">Fulfilled</span>
+</td>
+<td class="p-table-cell-padding">
+<button class="p-2 text-outline hover:text-status-error transition-colors" title="Record Return">
+<span class="material-symbols-outlined">assignment_return</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors group bg-secondary/5">
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-secondary-fixed/50 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">memory</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">DDR4 RAM 16GB</p>
+<p class="text-body-sm text-outline">SKU: RM-16G-D4-LP</p>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding">
+<span class="font-label-mono text-label-mono px-2 py-1 rounded bg-secondary text-on-secondary shadow-sm">RACK-02-A05</span>
+</td>
+<td class="p-table-cell-padding text-right font-bold">240</td>
+<td class="p-table-cell-padding text-right font-bold">84</td>
+<td class="p-table-cell-padding text-center">
+<span class="inline-flex px-2 py-1 rounded-full bg-secondary-container/20 text-secondary font-black text-[10px] uppercase">Picking</span>
+</td>
+<td class="p-table-cell-padding">
+<button class="px-3 py-1 bg-secondary text-on-secondary rounded text-[12px] font-bold hover:bg-secondary/90 shadow-sm transition-all active:scale-95">Issue</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container flex items-center justify-center text-outline">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">500W Power Supply</p>
+<p class="text-body-sm text-outline">SKU: PS-500-BR</p>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding">
+<span class="font-label-mono text-label-mono px-2 py-1 rounded bg-surface-container-highest text-on-surface-variant">RACK-09-E22</span>
+</td>
+<td class="p-table-cell-padding text-right font-bold">60</td>
+<td class="p-table-cell-padding text-right font-bold">0</td>
+<td class="p-table-cell-padding text-center">
+<span class="inline-flex px-2 py-1 rounded-full bg-surface-container text-outline font-black text-[10px] uppercase">Pending</span>
+</td>
+<td class="p-table-cell-padding">
+<button class="px-3 py-1 border border-secondary text-secondary rounded text-[12px] font-bold hover:bg-secondary/10 transition-all">Issue</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-bright transition-colors group">
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-container flex items-center justify-center text-status-error">
+<span class="material-symbols-outlined">other_admission</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Copper Heat Sink</p>
+<p class="text-body-sm text-outline">SKU: HS-CP-120</p>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding">
+<span class="font-label-mono text-label-mono px-2 py-1 rounded bg-surface-container-highest text-on-surface-variant">RACK-04-C03</span>
+</td>
+<td class="p-table-cell-padding text-right font-bold">120</td>
+<td class="p-table-cell-padding text-right font-bold">0</td>
+<td class="p-table-cell-padding text-center">
+<span class="inline-flex px-2 py-1 rounded-full bg-status-error/10 text-status-error font-black text-[10px] uppercase">Shortage</span>
+</td>
+<td class="p-table-cell-padding">
+<button class="px-3 py-1 text-on-surface-variant/50 rounded text-[12px] font-bold cursor-not-allowed" disabled="">Issue</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-surface-container-low border-t border-surface-border text-center">
+<button class="text-secondary font-bold text-body-sm hover:underline">View 12 more materials</button>
+</div>
+</div>
+<!-- Bin Visualization & Route Side Panel -->
+<div class="lg:col-span-4 space-y-gutter">
+<!-- Warehouse Visual Node -->
+<div class="bg-surface-container-lowest border border-surface-border rounded-xl p-container-padding shadow-sm">
+<h5 class="font-headline-md text-headline-md mb-4 text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">explore</span>
+                        Optimal Route
+                    </h5>
+<div class="aspect-square bg-surface-container rounded-lg border border-surface-border relative overflow-hidden group">
+<img class="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-700" data-alt="A high-tech digital overhead warehouse map showing a grid of storage racks. Glowing blue lines indicate a path from the starting point to the current pick location at RACK-02-A05. The visual style is utilitarian, professional, and sophisticated with data-driven overlays." data-location="Kathmandu" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3LOFIfheCvUITMncSh0hYfaNZUnBJeXko6LglH0MEGtboidC_lVU7u42NpOW924E9y32RFwWkR2S4OZIWACNvGzAcfv4JWlpzf3l0-2ZlFVfdQGiuLTMQnfzJ7hlY0oIrT9qoPjpN6jWeJULeJLiz_wCPAr3voJXXTYEAy0u22y5MN71TCOYLot5jUX9cPfOVAG-K5X5h6cNvUr6YrsaaPaCdpWo8BkCgBsbtoI1vGjdLC7vcAumcWslRYgT-8lTVAKPyzRJ-vuwq"/>
+<!-- Simulated Bin Visualizer Nodes -->
+<div class="absolute inset-0 p-6 grid grid-cols-5 grid-rows-5 gap-2 pointer-events-none">
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-status-success/60 rounded-sm border border-status-success animate-pulse"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-secondary/80 rounded-sm border-2 border-secondary shadow-[0_0_10px_rgba(33,112,228,0.5)]"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-outline-variant/40 rounded-sm"></div>
+<div class="bg-status-error/40 rounded-sm"></div>
+</div>
+<div class="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded border border-surface-border shadow-md">
+<p class="text-body-sm font-bold text-on-surface">Target Bin: RACK-02-A05</p>
+<p class="text-[10px] text-outline">Section: Micro-Electronics | Level: Eye-Level</p>
+</div>
+</div>
+</div>
+<!-- Record Return Widget -->
+<div class="bg-surface-container-lowest border border-surface-border rounded-xl p-container-padding shadow-sm">
+<h5 class="font-headline-md text-headline-md mb-4 text-on-surface">Record Material Return</h5>
+<div class="space-y-4">
+<div>
+<label class="block text-[11px] font-black uppercase text-outline mb-1">Select Item to Return</label>
+<select class="w-full bg-surface-container-low border-surface-border rounded-lg text-body-md focus:ring-secondary focus:border-secondary transition-all">
+<option>Choose from issued items...</option>
+<option>MB-CX500-REV2 - Motherboard</option>
+</select>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-[11px] font-black uppercase text-outline mb-1">Quantity</label>
+<input class="w-full bg-surface-container-low border-surface-border rounded-lg text-body-md focus:ring-secondary focus:border-secondary transition-all" placeholder="0" type="number"/>
+</div>
+<div>
+<label class="block text-[11px] font-black uppercase text-outline mb-1">Condition</label>
+<select class="w-full bg-surface-container-low border-surface-border rounded-lg text-body-md focus:ring-secondary focus:border-secondary transition-all">
+<option>Intact</option>
+<option>Damaged</option>
+<option>Scrap</option>
+</select>
+</div>
+</div>
+<button class="w-full py-3 border-2 border-dashed border-outline-variant text-outline font-bold rounded-lg hover:bg-surface-container hover:text-secondary hover:border-secondary transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">assignment_return</span>
+                            Process Return
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action for Mobile (Scanner) -->
+<button class="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-secondary text-on-secondary rounded-full shadow-lg flex items-center justify-center z-50 active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[32px]">barcode_scanner</span>
+</button>
+<script>
+        // Simple micro-interaction for scan button
+        const scanBtn = document.querySelector('button .material-symbols-outlined[data-weight="fill"]');
+        if(scanBtn) {
+            scanBtn.parentElement.addEventListener('mousedown', () => {
+                scanBtn.style.transform = 'scale(1.2)';
+            });
+            scanBtn.parentElement.addEventListener('mouseup', () => {
+                scanBtn.style.transform = 'scale(1)';
+            });
+        }
+    </script>
+</body></html>

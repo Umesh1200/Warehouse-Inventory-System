@@ -1,0 +1,487 @@
+@page
+@model IMS.Pages.Purchasing.SuppliersModel
+@{
+    ViewData["Title"] = "Suppliers";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/suppliers.css" asp-append-version="true" />
+}
+
+<div class="suppliers-page">
+    <header class="page-header">
+        <div>
+            <div class="eyebrow">
+                <span class="material-symbols-outlined">local_shipping</span>
+                Purchasing
+            </div>
+            <h1>Suppliers</h1>
+            <p>Maintain supplier records, lead times, payment terms, and purchasing readiness.</p>
+        </div>
+        <div class="header-actions">
+            <a class="btn btn-light" asp-page="/Purchasing/PurchaseOrders">
+                <span class="material-symbols-outlined">receipt_long</span>
+                Purchase orders
+            </a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+                <span class="material-symbols-outlined">add_business</span>
+                Add Supplier
+            </button>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <section class="summary-grid" aria-label="Supplier summary">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <article class="summary-card">
+                <div class="summary-top">
+                    <span class="summary-icon summary-@card.ColorClass material-symbols-outlined">@card.Icon</span>
+                    <div>
+                        <p>@card.Title</p>
+                        <strong>@card.Value</strong>
+                    </div>
+                </div>
+                <div class="sparkline-wrap">
+                    <svg class="sparkline" viewBox="0 0 96 42" preserveAspectRatio="none" aria-hidden="true">
+                        <polyline points="@card.TrendPoints"></polyline>
+                    </svg>
+                    <span>@card.TrendLabel</span>
+                </div>
+            </article>
+        }
+    </section>
+
+    <section class="suppliers-panel">
+        <div class="panel-header">
+            <div>
+                <h2>Supplier Directory</h2>
+                <p>@Model.Suppliers.Count supplier(s) in the current list</p>
+            </div>
+        </div>
+
+        <div class="table-tools">
+            <label class="search-wrap" for="supplierSearch">
+                <span class="material-symbols-outlined">search</span>
+                <input id="supplierSearch" type="search" placeholder="Search name, phone, email, location" autocomplete="off" />
+            </label>
+            <select id="supplierTypeFilter" class="form-select" aria-label="Filter supplier type">
+                @foreach (var type in Model.SupplierTypes)
+                {
+                    <option value="@(type == "All Types" ? "" : type)">@type</option>
+                }
+            </select>
+            <select id="supplierStatusFilter" class="form-select" aria-label="Filter supplier status">
+                <option value="">All statuses</option>
+                <option value="Active">Active</option>
+                <option value="Pending Review">Pending Review</option>
+                <option value="Blocked">Blocked</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+        </div>
+
+        <div class="table-wrap">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Supplier</th>
+                        <th>Contact</th>
+                        <th>Address</th>
+                        <th>Type</th>
+                        <th class="text-end">Lead Time</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Suppliers.Any())
+                    {
+                        @foreach (var supplier in Model.Suppliers)
+                        {
+                            <tr class="supplier-row @(supplier.Status == "Blocked" ? "row-danger" : supplier.Status == "Pending Review" ? "row-warning" : supplier.Status == "Inactive" ? "row-muted" : "")"
+                                data-type="@supplier.Type"
+                                data-status="@supplier.Status"
+                                data-search="@($"{supplier.Code} {supplier.Name} {supplier.ContactPerson} {supplier.Phone} {supplier.Email} {supplier.Location} {supplier.PaymentTerms}")">
+                                <td class="code-cell">@supplier.Code</td>
+                                <td>
+                                    <strong>@supplier.Name</strong>
+                                    <span>@(string.IsNullOrWhiteSpace(supplier.ContactPerson) ? "-" : supplier.ContactPerson)</span>
+                                </td>
+                                <td>
+                                    <strong>@(string.IsNullOrWhiteSpace(supplier.Phone) ? "-" : supplier.Phone)</strong>
+                                    <span>@(string.IsNullOrWhiteSpace(supplier.Email) ? "-" : supplier.Email)</span>
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(supplier.Location) ? "-" : supplier.Location)</td>
+                                <td><span class="type-badge">@supplier.Type</span></td>
+                                <td class="text-end mono">@supplier.LeadTimeDays day(s)</td>
+                                <td>@(string.IsNullOrWhiteSpace(supplier.PaymentTerms) ? "-" : supplier.PaymentTerms)</td>
+                                <td><span class="status-badge status-@supplier.Status.ToLower().Replace(" ", "")">@supplier.Status</span></td>
+                                <td class="text-center">
+                                    <div class="action-group">
+                                        <a class="icon-btn" asp-page="/Purchasing/PurchaseOrders" title="View purchase orders">
+                                            <span class="material-symbols-outlined">receipt_long</span>
+                                        </a>
+                                        <button type="button"
+                                                class="icon-btn avl-btn"
+                                                title="Approved products"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#supplierProductsModal"
+                                                data-supplier-id="@supplier.SupplierID"
+                                                data-supplier-name="@supplier.Name">
+                                            <span class="material-symbols-outlined">verified</span>
+                                        </button>
+                                        <button type="button"
+                                                class="icon-btn edit-btn"
+                                                title="Edit supplier"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editSupplierModal"
+                                                data-id="@supplier.SupplierID"
+                                                data-code="@supplier.Code"
+                                                data-name="@supplier.Name"
+                                                data-contact="@supplier.ContactPerson"
+                                                data-phone="@supplier.Phone"
+                                                data-email="@supplier.Email"
+                                                data-address="@supplier.Location"
+                                                data-type="@supplier.Type"
+                                                data-lead="@supplier.LeadTimeDays"
+                                                data-payment="@supplier.PaymentTerms"
+                                                data-status="@supplier.Status"
+                                                data-returnpolicy="@supplier.ReturnPolicy"
+                                                data-returnemail="@supplier.ReturnEmail"
+                                                data-preferredcarrier="@supplier.PreferredCarrier">
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </button>
+                                        @if (supplier.Status != "Inactive")
+                                        {
+                                            <form method="post" asp-page-handler="Deactivate" data-confirm-message="Deactivate this supplier? Historical purchase orders will be preserved.">
+                                                <input type="hidden" name="DeactivateSupplierID" value="@supplier.SupplierID" />
+                                                <button type="submit" class="icon-btn danger" title="Deactivate supplier">
+                                                    <span class="material-symbols-outlined">block</span>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9">
+                                <div class="empty-state table-empty">
+                                    <span class="material-symbols-outlined">local_shipping</span>
+                                    <strong>No suppliers</strong>
+                                    <p>Create a supplier record to begin purchase order management.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="supplierProductsModal" tabindex="-1" aria-labelledby="supplierProductsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <div>
+                    <h5 class="modal-title" id="supplierProductsModalLabel">Approved Products</h5>
+                    <p id="supplierProductsSubtitle">Supplier approved vendor list</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-page-handler="SaveSupplierProduct" class="avl-form">
+                    <input type="hidden" id="avl-supplier-id" asp-for="SupplierProduct.SupplierID" />
+                    <input type="hidden" asp-for="SupplierProduct.Status" value="Approved" />
+                    <label>
+                        <span>Product</span>
+                        <select asp-for="SupplierProduct.ProductID" required>
+                            <option value="">Select product</option>
+                            @foreach (var group in Model.ProductsList.GroupBy(p => string.IsNullOrWhiteSpace(p.GroupName) ? "Uncategorized" : p.GroupName))
+                            {
+                                <optgroup label="@group.Key">
+                                    @foreach (var product in group)
+                                    {
+                                        <option value="@product.ID">[@product.SKU] @product.Name</option>
+                                    }
+                                </optgroup>
+                            }
+                        </select>
+                    </label>
+                    <label>
+                        <span>Supplier SKU</span>
+                        <input asp-for="SupplierProduct.SupplierSKU" />
+                    </label>
+                    <label>
+                        <span>Quote</span>
+                        <input type="number" step="0.01" min="0" asp-for="SupplierProduct.LastQuotedPrice" />
+                    </label>
+                    <label>
+                        <span>Lead Days</span>
+                        <input type="number" min="0" asp-for="SupplierProduct.LeadTimeDays" />
+                    </label>
+                    <label>
+                        <span>MOQ</span>
+                        <input type="number" step="0.01" min="1" asp-for="SupplierProduct.MinOrderQty" value="1" />
+                    </label>
+                    <label>
+                        <span>Pack</span>
+                        <input type="number" step="0.01" min="1" asp-for="SupplierProduct.PackSize" value="1" />
+                    </label>
+                    <label class="check-field">
+                        <input type="checkbox" asp-for="SupplierProduct.IsPreferred" />
+                        <span>Preferred</span>
+                    </label>
+                    <button type="submit" class="btn btn-primary">Save Mapping</button>
+                </form>
+
+                <div class="avl-table-wrap">
+                    <table class="ims-table avl-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Supplier SKU</th>
+                                <th class="text-end">Quote</th>
+                                <th class="text-end">Lead</th>
+                                <th class="text-end">MOQ</th>
+                                <th class="text-end">Pack</th>
+                                <th>Preferred</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var mapping in Model.SupplierProducts)
+                            {
+                                <tr class="avl-row" data-supplier-id="@mapping.SupplierID">
+                                    <td>
+                                        <strong>@mapping.ProductName</strong>
+                                        <span>@mapping.SKU | @mapping.ProductType</span>
+                                    </td>
+                                    <td>@(string.IsNullOrWhiteSpace(mapping.SupplierSKU) ? "-" : mapping.SupplierSKU)</td>
+                                    <td class="text-end mono">@(mapping.LastQuotedPrice.HasValue ? $"NPR {mapping.LastQuotedPrice:N2}" : "-")</td>
+                                    <td class="text-end mono">@mapping.LeadTimeDays day(s)</td>
+                                    <td class="text-end mono">@mapping.MinOrderQty.ToString("N2")</td>
+                                    <td class="text-end mono">@mapping.PackSize.ToString("N2")</td>
+                                    <td>@(mapping.IsPreferred ? "Yes" : "No")</td>
+                                    <td class="text-center">
+                                        <form method="post" asp-page-handler="BlockSupplierProduct" data-confirm-message="Block this supplier-product approval?">
+                                            <input type="hidden" name="BlockSupplierProductID" value="@mapping.SupplierProductID" />
+                                            <button type="submit" class="icon-btn danger" title="Block mapping">
+                                                <span class="material-symbols-outlined">block</span>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                            <tr class="avl-empty-row">
+                                <td colspan="8">
+                                    <div class="empty-state table-empty">
+                                        <span class="material-symbols-outlined">verified</span>
+                                        <strong>No approved products for this supplier</strong>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer ims-modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <h5 class="modal-title" id="addSupplierModalLabel">Create Supplier</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Supplier Code</label>
+                            <input type="text" asp-for="NewSupplier.SupplierCode" class="form-control" placeholder="SUP-001" required />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Supplier Name</label>
+                            <input type="text" asp-for="NewSupplier.SupplierName" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" asp-for="NewSupplier.ContactPerson" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <input type="text" asp-for="NewSupplier.Phone" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" asp-for="NewSupplier.Email" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Supplier Type</label>
+                            <select asp-for="NewSupplier.SupplierType" class="form-select">
+                                <option value="">Select type</option>
+                                @foreach (var type in Model.SupplierTypes.Skip(1))
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Address</label>
+                            <input type="text" asp-for="NewSupplier.Address" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Lead Time Days</label>
+                            <input type="number" asp-for="NewSupplier.LeadTimeDays" class="form-control" value="0" min="0" />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Payment Terms</label>
+                            <input type="text" asp-for="NewSupplier.PaymentTerms" class="form-control" placeholder="Net 30" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <select asp-for="NewSupplier.Status" class="form-select">
+                                <option value="Active">Active</option>
+                                <option value="Pending Review">Pending Review</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Returns Contact Email</label>
+                            <input type="email" asp-for="NewSupplier.ReturnEmail" class="form-control" placeholder="returns@supplier.com" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Preferred Returns Carrier</label>
+                            <input type="text" asp-for="NewSupplier.PreferredCarrier" class="form-control" placeholder="FedEx / DHL" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Return Policy</label>
+                            <textarea asp-for="NewSupplier.ReturnPolicy" class="form-control" rows="2" placeholder="e.g. Return within 30 days of QC rejection."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Supplier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editSupplierModal" tabindex="-1" aria-labelledby="editSupplierModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <h5 class="modal-title" id="editSupplierModalLabel">Edit Supplier</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Update">
+                <input type="hidden" id="edit-id" asp-for="EditSupplier.SupplierID" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Supplier Code</label>
+                            <input type="text" id="edit-code" asp-for="EditSupplier.SupplierCode" class="form-control" required />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Supplier Name</label>
+                            <input type="text" id="edit-name" asp-for="EditSupplier.SupplierName" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" id="edit-contact" asp-for="EditSupplier.ContactPerson" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <input type="text" id="edit-phone" asp-for="EditSupplier.Phone" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="edit-email" asp-for="EditSupplier.Email" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Supplier Type</label>
+                            <select id="edit-type" asp-for="EditSupplier.SupplierType" class="form-select">
+                                <option value="">Select type</option>
+                                @foreach (var type in Model.SupplierTypes.Skip(1))
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Address</label>
+                            <input type="text" id="edit-address" asp-for="EditSupplier.Address" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Lead Time Days</label>
+                            <input type="number" id="edit-lead" asp-for="EditSupplier.LeadTimeDays" class="form-control" min="0" />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Payment Terms</label>
+                            <input type="text" id="edit-payment" asp-for="EditSupplier.PaymentTerms" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <select id="edit-status" asp-for="EditSupplier.Status" class="form-select">
+                                <option value="Active">Active</option>
+                                <option value="Pending Review">Pending Review</option>
+                                <option value="Blocked">Blocked</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Returns Contact Email</label>
+                            <input type="email" id="edit-returnemail" asp-for="EditSupplier.ReturnEmail" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Preferred Returns Carrier</label>
+                            <input type="text" id="edit-carrier" asp-for="EditSupplier.PreferredCarrier" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Return Policy</label>
+                            <textarea id="edit-returnpolicy" asp-for="EditSupplier.ReturnPolicy" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/suppliers.js" asp-append-version="true"></script>
+}

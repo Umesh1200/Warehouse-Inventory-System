@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Warehouse Visualization - InventoryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-dim": "#dbd9dc",
+                    "on-primary": "#ffffff",
+                    "inverse-on-surface": "#f2f0f3",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "tertiary": "#141819",
+                    "primary-container": "#1a2b4b",
+                    "on-secondary-fixed": "#001a42",
+                    "on-surface": "#1b1b1e",
+                    "surface-bright": "#fbf8fc",
+                    "surface-variant": "#e4e2e5",
+                    "error-container": "#ffdad6",
+                    "status-error": "#EF4444",
+                    "outline": "#75777f",
+                    "status-warning": "#F59E0B",
+                    "surface-container-highest": "#e4e2e5",
+                    "tertiary-fixed": "#e0e3e5",
+                    "on-background": "#1b1b1e",
+                    "on-tertiary-container": "#909395",
+                    "primary-fixed": "#d8e2ff",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "data-fill": "#DBEAFE",
+                    "on-tertiary-fixed": "#191c1e",
+                    "background": "#fbf8fc",
+                    "surface-tint": "#4e5e81",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "on-primary-container": "#8293b8",
+                    "secondary-fixed": "#d8e2ff",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "secondary-container": "#2170e4",
+                    "error": "#ba1a1a",
+                    "inverse-primary": "#b6c6ef",
+                    "inverse-surface": "#303033",
+                    "surface-border": "#E2E8F0",
+                    "on-secondary": "#ffffff",
+                    "secondary": "#0058be",
+                    "on-surface-variant": "#44474e",
+                    "tertiary-container": "#292c2e",
+                    "on-secondary-fixed-variant": "#004395",
+                    "outline-variant": "#c5c6cf",
+                    "status-success": "#10B981",
+                    "primary-fixed-dim": "#b6c6ef",
+                    "primary": "#031635",
+                    "on-primary-fixed": "#081b3a",
+                    "on-tertiary": "#ffffff",
+                    "status-info": "#6366F1",
+                    "surface": "#fbf8fc",
+                    "surface-container-low": "#f5f3f6",
+                    "surface-container-high": "#e9e7eb",
+                    "on-secondary-container": "#fefcff",
+                    "sidebar-bg": "#0F172A",
+                    "surface-container": "#efedf0",
+                    "on-primary-fixed-variant": "#364768",
+                    "on-error-container": "#93000a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "gutter": "1.5rem",
+                    "table-cell-padding": "0.75rem 1rem",
+                    "stack-md": "1rem",
+                    "container-padding": "2rem",
+                    "sidebar-width": "260px",
+                    "stack-sm": "0.5rem"
+            },
+            "fontFamily": {
+                    "headline-md": [
+                            "Inter"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "table-header": [
+                            "Inter"
+                    ],
+                    "headline-lg": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "label-mono": [
+                            "JetBrains Mono"
+                    ]
+            },
+            "fontSize": {
+                    "headline-md": [
+                            "18px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "table-header": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "label-mono": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "500"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        /* Base styles from guidance */
+        body {
+            background-color: #F8FAFC; /* Level 0 Background */
+            color: #1b1b1e; /* on-background */
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .card {
+            background-color: #ffffff;
+            border: 1px solid #E2E8F0;
+            border-radius: 0.5rem;
+        }
+
+        .table-header {
+            background-color: #F1F5F9;
+            text-transform: uppercase;
+        }
+
+        .row-hover:hover {
+            background-color: #F8FAFC;
+        }
+
+        .bin-node {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .bin-node:hover {
+            opacity: 0.8;
+            transform: scale(1.02);
+        }
+
+        .bin-node.active {
+            border: 2px solid #0058be;
+        }
+
+        /* Status Colors */
+        .status-empty { background-color: #cbd5e1; }
+        .status-low { background-color: #ef4444; }
+        .status-medium { background-color: #f59e0b; }
+        .status-high { background-color: #10b981; }
+        .status-full { background-color: #3b82f6; }
+        
+        .status-pill-use {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #065f46;
+        }
+
+        /* Material Symbols utility */
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24
+        }
+        .icon-fill {
+           font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-[#F8FAFC]">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[260px] bg-sidebar-bg border-r border-outline-variant flex flex-col py-4 z-50">
+<div class="px-6 mb-8 flex items-center gap-3 text-headline-lg font-headline-lg font-black text-on-primary">
+<img alt="InventoryPro Logo" class="h-8 w-8 object-contain hidden" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFlDUpjMKA0l5v6R7JkCOKqexqmxbksxmNwwQ0E6KHnT1rmp6d_e0zvu0I93G4zyVeGIWE7n4abQfZ-1aIbrgt-wBaZFhdAujIaOZyZr2O9NJQ6gKlKWhx9DP9fr3FAWRBEzZHslQ4IUXIFtC9-9RCBj1cpXL-16cdGkrdcvmzSVVF6FFo16CugSixDSgw8G3T0vjmz7xrVhi15IVMfMdffKGdff8kXbOEAlS8A8VJvGaLSW9kvoVVOI54kDNQeyMUZ15gUK5UbvL5"/>
+<span class="material-symbols-outlined icon-fill text-blue-500 text-3xl" data-icon="inventory_2" data-weight="fill">inventory_2</span>
+<span>InventoryPro</span>
+</div>
+<ul class="flex flex-col gap-1 flex-1 px-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150 scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                    Dashboard
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150 scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+                    Items
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150 scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+                    Purchase
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2.5 bg-secondary-container text-on-secondary-container rounded-lg transition-colors duration-150 scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined" data-icon="warehouse">warehouse</span>
+                    Inventory
+                </a>
+<ul class="ml-9 mt-2 flex flex-col gap-1">
+<li><a class="block py-1.5 text-on-primary-container hover:text-white font-body-sm text-body-sm opacity-80 hover:opacity-100 transition-opacity" href="#">Stock Overview</a></li>
+<li><a class="block py-1.5 text-white font-body-sm text-body-sm font-medium" href="#">Warehouse</a></li>
+<li><a class="block py-1.5 text-on-primary-container hover:text-white font-body-sm text-body-sm opacity-80 hover:opacity-100 transition-opacity" href="#">Bin Locations</a></li>
+<li><a class="block py-1.5 text-on-primary-container hover:text-white font-body-sm text-body-sm opacity-80 hover:opacity-100 transition-opacity" href="#">Transfers</a></li>
+<li><a class="block py-1.5 text-on-primary-container hover:text-white font-body-sm text-body-sm opacity-80 hover:opacity-100 transition-opacity" href="#">Stock Adjustments</a></li>
+</ul>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150 scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+                    Sales
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150 scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+                    Reports
+                </a>
+</li>
+<li>
+<a class="flex items-center justify-between px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150 scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+                        Alerts
+                    </div>
+<span class="bg-status-warning text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">6</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors duration-150 scale-95 active:scale-90 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                    Settings
+                </a>
+</li>
+</ul>
+<div class="mt-auto px-4">
+<div class="bg-primary-container rounded-lg p-3">
+<p class="text-on-primary-container text-[10px] uppercase mb-1">Current Warehouse</p>
+<div class="flex items-center justify-between text-white text-sm cursor-pointer hover:opacity-80 transition-opacity"><span>काठमाडौं केन्द्रीय गोदाम (Kathmandu Central DC)</span><span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span></div>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="ml-[260px] flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="h-16 bg-surface-bright border-b border-surface-border flex justify-between items-center px-gutter w-full sticky top-0 z-40">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-on-surface-variant font-medium text-sm">
+<span>Inventory</span>
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary font-bold">Warehouse Visualization</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 text-on-surface-variant">
+<button class="relative hover:text-secondary transition-colors cursor-pointer active:opacity-70">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-status-error rounded-full border border-white"></span>
+</button>
+<button class="hover:text-secondary transition-colors cursor-pointer active:opacity-70">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity pl-4 border-l border-surface-border">
+<div class="w-8 h-8 bg-primary-fixed rounded-full flex items-center justify-center text-primary-container font-bold text-sm">
+                            A
+                        </div>
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-primary leading-tight">Admin User</span>
+<span class="text-xs text-on-surface-variant leading-tight">Administrator</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 p-gutter overflow-y-auto pb-20">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-6">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary mb-1">Warehouse Visualization</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">काठमाडौं केन्द्रीय गोदाम (Kathmandu Central DC)</p>
+</div>
+<div class="flex gap-3">
+<button class="card px-4 py-2 flex items-center gap-2 font-body-md text-body-md text-primary hover:bg-surface-container-low transition-colors">काठमाडौं केन्द्रीय गोदाम <span class="material-symbols-outlined text-sm" data-icon="expand_more">expand_more</span></button>
+<button class="card px-4 py-2 flex items-center gap-2 font-body-md text-body-md text-primary hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+                        Filter
+                    </button>
+</div>
+</div>
+<!-- Stats Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+<!-- Capacity Card (Spans 2 for emphasis) -->
+<div class="card p-5 lg:col-span-2 flex flex-col justify-between">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+</div>
+<div class="flex-1">
+<p class="text-sm text-on-surface-variant mb-1">Warehouse Capacity</p>
+<h2 class="text-3xl font-bold text-primary">72%</h2>
+</div>
+</div>
+<div class="mt-4">
+<div class="w-full bg-surface-border h-2 rounded-full overflow-hidden">
+<div class="bg-blue-600 h-full rounded-full" style="width: 72%"></div>
+</div>
+<p class="text-xs text-on-surface-variant mt-2">Used: 72% (1,440 / 2,000 Bin Slots)</p>
+</div>
+</div>
+<!-- Areas -->
+<div class="card p-5 flex flex-col justify-center">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-8 h-8 text-on-surface-variant">
+<span class="material-symbols-outlined text-2xl" data-icon="grid_view">grid_view</span>
+</div>
+<div>
+<p class="text-sm text-on-surface-variant">Areas</p>
+<h3 class="text-2xl font-bold text-primary">4</h3>
+</div>
+</div>
+<p class="text-xs text-on-surface-variant mt-1 text-center">Total Areas</p>
+</div>
+<!-- Racks -->
+<div class="card p-5 flex flex-col justify-center">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-8 h-8 text-on-surface-variant">
+<span class="material-symbols-outlined text-2xl" data-icon="shelves">shelves</span>
+</div>
+<div>
+<p class="text-sm text-on-surface-variant">Racks</p>
+<h3 class="text-2xl font-bold text-primary">48</h3>
+</div>
+</div>
+<p class="text-xs text-on-surface-variant mt-1 text-center">Total Racks</p>
+</div>
+<!-- Bins -->
+<div class="card p-5 flex flex-col justify-center">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-8 h-8 text-on-surface-variant">
+<span class="material-symbols-outlined text-2xl" data-icon="view_in_ar">view_in_ar</span>
+</div>
+<div>
+<p class="text-sm text-on-surface-variant">Bins</p>
+<h3 class="text-2xl font-bold text-primary">192</h3>
+</div>
+</div>
+<p class="text-xs text-on-surface-variant mt-1 text-center">Total Bins</p>
+</div>
+</div>
+<!-- Main Visualization Area -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+<!-- Layout Map (4 cols) -->
+<div class="card lg:col-span-4 p-5 flex flex-col h-full">
+<h3 class="font-table-header text-table-header text-on-surface-variant mb-4 tracking-wider">Warehouse Layout</h3>
+<div class="flex-1 border-2 border-dashed border-surface-border rounded-lg p-4 bg-surface-container-low flex flex-col items-center justify-center relative">
+<div class="grid grid-cols-2 gap-4 w-full h-full mb-4">
+<!-- Area A -->
+<div class="bg-blue-50 border border-blue-200 rounded-md p-3 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition-shadow active">
+<span class="text-sm font-semibold text-blue-800 mb-1">क्षेत्र क (Area A)</span>
+<span class="text-xl font-bold text-blue-600">75%</span>
+<span class="text-[10px] text-blue-500 mt-1">(36 / 48 Bins)</span>
+</div>
+<!-- Area B -->
+<div class="bg-green-50 border border-green-200 rounded-md p-3 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition-shadow">
+<span class="text-sm font-semibold text-green-800 mb-1">क्षेत्र ख (Area B)</span>
+<span class="text-xl font-bold text-green-600">58%</span>
+<span class="text-[10px] text-green-500 mt-1">(28 / 48 Bins)</span>
+</div>
+<!-- Area C -->
+<div class="bg-orange-50 border border-orange-200 rounded-md p-3 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition-shadow">
+<span class="text-sm font-semibold text-orange-800 mb-1">क्षेत्र ग (Area C)</span>
+<span class="text-xl font-bold text-orange-600">88%</span>
+<span class="text-[10px] text-orange-500 mt-1">(42 / 48 Bins)</span>
+</div>
+<!-- Area D -->
+<div class="bg-purple-50 border border-purple-200 rounded-md p-3 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition-shadow">
+<span class="text-sm font-semibold text-purple-800 mb-1">क्षेत्र घ (Area D)</span>
+<span class="text-xl font-bold text-purple-600">56%</span>
+<span class="text-[10px] text-purple-500 mt-1">(27 / 48 Bins)</span>
+</div>
+</div>
+<div class="w-full bg-surface-variant text-center py-1 text-[10px] text-on-surface-variant font-medium uppercase tracking-widest rounded-sm border border-surface-border">प्राप्ति / ढुवानी (Receiving / Shipping)</div>
+</div>
+</div>
+<!-- Rack View (5 cols) -->
+<div class="card lg:col-span-5 p-5 flex flex-col h-full relative overflow-hidden">
+<h3 class="font-table-header text-table-header text-primary mb-6 flex items-center gap-2"><span class="text-blue-600">क्षेत्र क (Area A)</span><span class="material-symbols-outlined text-xs" data-icon="chevron_right">chevron_right</span> र्याक A-12</h3>
+<div class="flex-1 flex flex-col items-center justify-center px-4 relative">
+<!-- Abstract Rack Representation -->
+<div class="w-full max-w-[400px] aspect-[4/3] bg-surface-container-low rounded border border-surface-border flex flex-col justify-between p-4 relative">
+<!-- Rack Posts -->
+<div class="absolute left-2 top-0 bottom-0 w-2 bg-slate-300 border-x border-slate-400"></div>
+<div class="absolute right-2 top-0 bottom-0 w-2 bg-slate-300 border-x border-slate-400"></div>
+<!-- Levels -->
+<!-- L4 -->
+<div class="relative w-full flex items-end justify-around pb-2 border-b-4 border-slate-400 z-10 h-1/4">
+<div class="absolute -left-8 top-1/2 -translate-y-1/2 text-[10px] text-on-surface-variant">Level 4</div>
+<div class="w-1/4 h-12 status-full rounded border border-blue-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-1</div>
+<div class="w-1/4 h-12 status-full rounded border border-blue-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-2</div>
+<div class="w-1/4 h-12 status-full rounded border border-blue-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-3</div>
+</div>
+<!-- L3 -->
+<div class="relative w-full flex items-end justify-around pb-2 border-b-4 border-slate-400 z-10 h-1/4">
+<div class="absolute -left-8 top-1/2 -translate-y-1/2 text-[10px] text-on-surface-variant">Level 3</div>
+<div class="w-1/4 h-12 status-full rounded border border-blue-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-4</div>
+<div class="w-1/4 h-12 status-full rounded border border-blue-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-5</div>
+<div class="w-1/4 h-12 status-high rounded border border-green-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-6</div>
+</div>
+<!-- L2 -->
+<div class="relative w-full flex items-end justify-around pb-2 border-b-4 border-slate-400 z-10 h-1/4">
+<div class="absolute -left-8 top-1/2 -translate-y-1/2 text-[10px] text-on-surface-variant">Level 2</div>
+<div class="w-1/4 h-12 status-medium rounded border border-orange-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-7</div>
+<div class="w-1/4 h-12 status-medium rounded border border-orange-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-8</div>
+<div class="w-1/4 h-12 status-medium rounded border border-orange-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-9</div>
+</div>
+<!-- L1 -->
+<div class="relative w-full flex items-end justify-around pb-2 border-b-4 border-slate-400 z-10 h-1/4">
+<div class="absolute -left-8 top-1/2 -translate-y-1/2 text-[10px] text-on-surface-variant">Level 1</div>
+<div class="w-1/4 h-12 status-full rounded border border-blue-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-10</div>
+<div class="w-1/4 h-12 status-full rounded border border-blue-600 bin-node flex items-center justify-center text-[10px] text-white font-mono">A-12-11</div>
+<div class="w-1/4 h-12 status-high rounded border border-green-600 bin-node active flex items-center justify-center text-[10px] text-white font-mono shadow-[0_0_0_2px_#ffffff,0_0_0_4px_#0058be]">A-12-12</div>
+</div>
+</div>
+</div>
+<!-- Legend -->
+<div class="mt-4 flex items-center justify-center gap-4 text-[10px] text-on-surface-variant">
+<div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-slate-300"></span> Empty</div>
+<div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-red-500"></span> Low (0-30%)</div>
+<div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-orange-500"></span> Medium</div>
+<div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-emerald-500"></span> High</div>
+<div class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-blue-500"></span> Full</div>
+</div>
+</div>
+<!-- Bin Details Sidebar (3 cols) -->
+<div class="card lg:col-span-3 p-5 flex flex-col h-full bg-surface-container-lowest">
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-table-header text-table-header text-on-surface-variant">Bin Details</h3>
+<span class="status-pill-use text-xs font-medium px-2 py-1 rounded-full">In Use</span>
+</div>
+<div class="mb-6">
+<h2 class="text-2xl font-bold text-primary font-mono tracking-tight mb-1">A-12-3</h2>
+<p class="text-sm font-medium text-on-surface">Water Bottle [1L each]</p>
+<p class="text-xs text-on-surface-variant">SKU-1</p>
+</div>
+<div class="flex flex-col gap-3 flex-1">
+<div class="flex justify-between items-center text-sm border-b border-surface-border pb-2">
+<span class="text-on-surface-variant">Current Stock</span>
+<span class="font-semibold text-primary">100 PACK</span>
+</div>
+<div class="flex justify-between items-center text-sm border-b border-surface-border pb-2">
+<span class="text-on-surface-variant">Bin Capacity</span>
+<span class="font-semibold text-primary">150 PACK</span>
+</div>
+<div class="flex flex-col gap-1 border-b border-surface-border pb-2 mt-1">
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">Utilization</span>
+<span class="font-semibold text-green-600">67%</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-green-500 h-full rounded-full" style="width: 67%"></div>
+</div>
+</div>
+<div class="flex justify-between items-center text-sm pt-2">
+<span class="text-on-surface-variant">Area</span>
+<span class="font-medium text-primary">क्षेत्र क (Area A)</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">Rack</span>
+<span class="font-medium text-primary">A-12</span>
+</div>
+</div>
+<button class="w-full mt-4 bg-white border border-secondary text-secondary py-2 rounded-md font-medium text-sm flex justify-center items-center gap-2 hover:bg-blue-50 transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="list_alt">list_alt</span>
+                        View Bin Transactions
+                    </button>
+</div>
+</div>
+<!-- Lower Data Tables Row -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Utilization by Area -->
+<div class="card p-5">
+<h3 class="font-table-header text-table-header text-on-surface-variant mb-4">Utilization by Area</h3>
+<div class="flex items-center justify-center h-48 relative">
+<!-- Pseudo Donut Chart -->
+<div class="w-32 h-32 rounded-full border-[12px] border-surface-container-high relative flex items-center justify-center">
+<!-- Conic gradient approx -->
+<div class="absolute inset-0 rounded-full" style="background: conic-gradient(#3b82f6 0% 30%, #10b981 30% 55%, #f59e0b 55% 85%, #8b5cf6 85% 100%); mask: radial-gradient(transparent 55%, black 56%); -webkit-mask: radial-gradient(transparent 55%, black 56%);"></div>
+<div class="text-center z-10 bg-white rounded-full w-20 h-20 flex flex-col items-center justify-center">
+<span class="text-xl font-bold text-primary leading-tight">72%</span>
+<span class="text-[10px] text-on-surface-variant">Overall</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Rack Utilization Table -->
+<div class="card p-5">
+<h3 class="font-table-header text-table-header text-on-surface-variant mb-4">र्याक उपयोग - क्षेत्र क (Rack Utilization - Area A)</h3>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm text-on-surface">
+<thead class="table-header text-on-surface-variant border-b border-surface-border">
+<tr>
+<th class="p-2 font-semibold">Rack</th>
+<th class="p-2 font-semibold text-right">Total Bins</th>
+<th class="p-2 font-semibold text-right">Used</th>
+<th class="p-2 font-semibold text-right">Avail</th>
+<th class="p-2 font-semibold text-center">Utilization</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-surface-border row-hover">
+<td class="p-2 font-mono text-xs">A-11</td>
+<td class="p-2 text-right">12</td>
+<td class="p-2 text-right">9</td>
+<td class="p-2 text-right">3</td>
+<td class="p-2 flex items-center gap-2">
+<div class="w-16 bg-surface-container-highest h-2 rounded-full overflow-hidden ml-auto">
+<div class="bg-green-500 h-full" style="width: 75%"></div>
+</div>
+<span class="text-xs w-8 text-right">75%</span>
+</td>
+</tr>
+<tr class="border-b border-surface-border row-hover">
+<td class="p-2 font-mono text-xs text-blue-600 font-bold">A-12</td>
+<td class="p-2 text-right">12</td>
+<td class="p-2 text-right">10</td>
+<td class="p-2 text-right">2</td>
+<td class="p-2 flex items-center gap-2">
+<div class="w-16 bg-surface-container-highest h-2 rounded-full overflow-hidden ml-auto">
+<div class="bg-green-500 h-full" style="width: 83%"></div>
+</div>
+<span class="text-xs w-8 text-right">83%</span>
+</td>
+</tr>
+<tr class="border-b border-surface-border row-hover">
+<td class="p-2 font-mono text-xs">A-13</td>
+<td class="p-2 text-right">12</td>
+<td class="p-2 text-right">6</td>
+<td class="p-2 text-right">6</td>
+<td class="p-2 flex items-center gap-2">
+<div class="w-16 bg-surface-container-highest h-2 rounded-full overflow-hidden ml-auto">
+<div class="bg-orange-500 h-full" style="width: 50%"></div>
+</div>
+<span class="text-xs w-8 text-right">50%</span>
+</td>
+</tr>
+<tr class="row-hover">
+<td class="p-2 font-mono text-xs">A-14</td>
+<td class="p-2 text-right">12</td>
+<td class="p-2 text-right">12</td>
+<td class="p-2 text-right text-on-surface-variant">0</td>
+<td class="p-2 flex items-center gap-2">
+<div class="w-16 bg-surface-container-highest h-2 rounded-full overflow-hidden ml-auto">
+<div class="bg-blue-600 h-full" style="width: 100%"></div>
+</div>
+<span class="text-xs w-8 text-right">100%</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Low Stock Alert List -->
+<div class="card p-5 flex flex-col">
+<h3 class="font-table-header text-table-header text-on-surface-variant mb-4">Low Stock Bins <span class="text-[10px] font-normal normal-case">(Below Reorder Point)</span></h3>
+<div class="flex-1 overflow-y-auto pr-2" style="max-height: 180px;">
+<ul class="flex flex-col gap-3">
+<li class="flex justify-between items-center py-2 border-b border-surface-container-high last:border-0">
+<div class="flex gap-3 items-center">
+<span class="font-mono text-xs text-primary font-medium w-12">A-12-5</span>
+<span class="text-sm text-on-surface truncate max-w-[120px]" title="Water Bottle [1L each]">Water Bottle [1L...</span>
+</div>
+<span class="text-xs font-semibold text-status-error">15 PACK</span>
+</li>
+<li class="flex justify-between items-center py-2 border-b border-surface-container-high last:border-0">
+<div class="flex gap-3 items-center">
+<span class="font-mono text-xs text-primary font-medium w-12">B-08-2</span>
+<span class="text-sm text-on-surface truncate max-w-[120px]" title="Tissue Box">Tissue Box</span>
+</div>
+<span class="text-xs font-semibold text-status-error">8 PACK</span>
+</li>
+<li class="flex justify-between items-center py-2 border-b border-surface-container-high last:border-0">
+<div class="flex gap-3 items-center">
+<span class="font-mono text-xs text-primary font-medium w-12">C-03-7</span>
+<span class="text-sm text-on-surface truncate max-w-[120px]" title="Coffee 250g">Coffee 250g</span>
+</div>
+<span class="text-xs font-semibold text-status-error">12 PACK</span>
+</li>
+<li class="flex justify-between items-center py-2 border-b border-surface-container-high last:border-0">
+<div class="flex gap-3 items-center">
+<span class="font-mono text-xs text-primary font-medium w-12">C-05-1</span>
+<span class="text-sm text-on-surface truncate max-w-[120px]" title="Sugar 1kg">Sugar 1kg</span>
+</div>
+<span class="text-xs font-semibold text-status-error">7 PACK</span>
+</li>
+</ul>
+</div>
+<button class="mt-4 w-full text-center text-xs text-secondary font-medium hover:underline py-1">View all low stock bins</button>
+</div>
+</div>
+<div class="mt-8 flex justify-end text-xs text-on-surface-variant items-center gap-1">
+<span>Last updated: May 17, 2025 10:30 AM</span>
+<span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-primary transition-colors" data-icon="refresh">refresh</span>
+</div>
+</main>
+</div>
+</body></html>

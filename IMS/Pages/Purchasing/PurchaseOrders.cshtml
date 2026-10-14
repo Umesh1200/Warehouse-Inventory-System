@@ -1,0 +1,705 @@
+@page
+@model IMS.Pages.Purchasing.PurchaseOrdersModel
+@{
+    ViewData["Title"] = "Purchase Orders";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/purchase-orders.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+}
+
+<div class="purchase-page">
+    <header class="page-header">
+        <div>
+            <span class="eyebrow">Purchasing</span>
+            <h1>Purchase Orders & Requests</h1>
+            <p>Plan procurement, submit purchase requests, review approvals, and track order fulfillment.</p>
+        </div>
+        <div class="header-actions">
+            <a class="ghost-button" href="/Purchasing/Suppliers">
+                <span class="material-symbols-outlined">factory</span>
+                Suppliers
+            </a>
+            <button class="primary-button" type="button" data-bs-toggle="modal" data-bs-target="#createPoModal">
+                <span class="material-symbols-outlined">add</span>
+                New PO / Request
+            </button>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="ims-alert success" role="alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="ims-alert danger" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <section class="summary-grid" aria-label="Purchase order summary">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <article class="summary-card @card.ColorClass">
+                <div class="summary-top">
+                    <span class="summary-icon material-symbols-outlined">@card.Icon</span>
+                    <span class="summary-label">@card.Title</span>
+                </div>
+                <div class="summary-value">@card.Value</div>
+                <div class="sparkline" data-points="@card.TrendPoints" aria-hidden="true"></div>
+                <div class="summary-trend">@card.TrendLabel</div>
+            </article>
+        }
+    </section>
+
+    <section class="filter-panel" aria-label="Purchase order filters">
+        <div class="filter-field search-field">
+            <label for="poSearch">Search</label>
+            <span class="material-symbols-outlined">search</span>
+            <input id="poSearch" type="search" placeholder="PO number, supplier, remarks" autocomplete="off" />
+        </div>
+        <div class="filter-field">
+            <label for="supplierFilter">Supplier</label>
+            <select id="supplierFilter">
+                @foreach (var supplier in Model.Suppliers)
+                {
+                    <option value="@supplier">@supplier</option>
+                }
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter">
+                @foreach (var status in Model.Statuses)
+                {
+                    <option value="@status">@status</option>
+                }
+            </select>
+        </div>
+    </section>
+
+    <main class="purchase-layout">
+        <section class="orders-panel" aria-label="Purchase orders">
+            <div class="panel-heading">
+                <div>
+                    <h2>Orders & Requests</h2>
+                    <p id="poCountLabel" data-total-count="@Model.TotalOrdersCount" data-loaded-count="@Model.PurchaseOrders.Count">
+                        @if (Model.TotalOrdersCount > 0)
+                        {
+                            <span>Showing 1-@Model.PurchaseOrders.Count of @Model.TotalOrdersCount</span>
+                        }
+                        else
+                        {
+                            <span>Showing 0 of 0</span>
+                        }
+                    </p>
+                </div>
+            </div>
+
+            <div class="order-list" id="poList">
+                <div id="poListItems">
+                    @if (Model.PurchaseOrders.Any())
+                    {
+                        @foreach (var po in Model.PurchaseOrders)
+                        {
+                            <a class="order-row @(po.IsSelected ? "selected" : "")"
+                               href="/Purchasing/PurchaseOrders?poid=@po.POID"
+                               data-search="@($"{po.PONumber} {po.Supplier} {po.Remarks}")"
+                               data-supplier="@po.Supplier"
+                               data-status="@po.Status">
+                                <div class="row-main">
+                                    <div>
+                                        <div class="row-title">@po.PONumber</div>
+                                        <div class="row-subtitle">@po.Supplier</div>
+                                    </div>
+                                    <span class="status-pill status-@po.Status.ToLower().Replace(" ", "")">@po.Status</span>
+                                </div>
+                                <div class="row-meta">
+                                    <span>@po.OrderDate</span>
+                                    <span>@po.TotalAmount</span>
+                                </div>
+                                <div class="progress-line" aria-label="Received @po.ProgressPercent percent">
+                                    <span style="width:@po.ProgressPercent%"></span>
+                                </div>
+                                <div class="row-foot">
+                                    <span>@po.ItemCount items</span>
+                                    <span>@po.TotalReceivedQty.ToString("N2") / @po.TotalOrderedQty.ToString("N2") received</span>
+                                </div>
+                            </a>
+                        }
+                    }
+                </div>
+                <div class="empty-state" id="poEmptyState" style="@(Model.PurchaseOrders.Any() ? "display: none;" : "")">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    <p>No purchase orders found.</p>
+                </div>
+                <div id="poListLoader" class="po-list-loader" style="display: none; text-align: center; padding: 12px; color: var(--purchase-muted); font-size: 13px;">
+                    <div class="spinner-border spinner-border-sm" role="status" style="width: 1rem; height: 1rem; border-width: 0.15em; margin-right: 6px; display: inline-block; vertical-align: middle;"></div>
+                    <span>Loading more orders...</span>
+                </div>
+            </div>
+        </section>
+
+        <aside class="detail-panel" aria-label="Purchase order details">
+            @if (Model.SelectedPurchaseOrder is var selected && selected != null)
+            {
+                <div class="detail-header">
+                    <div>
+                        <div class="detail-eyebrow">Selected PO</div>
+                        <h2>@selected.PONumber</h2>
+                        <p>@selected.Supplier</p>
+                    </div>
+                    <span class="status-pill status-@selected.Status.ToLower().Replace(" ", "")">@selected.Status</span>
+                </div>
+
+                @if (selected.Status == "Rejected" && !string.IsNullOrWhiteSpace(selected.RejectionReason))
+                {
+                    <div class="ims-alert danger m-3" role="alert">
+                        <span class="material-symbols-outlined">cancel</span>
+                        <div>
+                            <strong>Approval Rejected:</strong> @selected.RejectionReason
+                            <div class="small mt-1">Please edit the line items or remarks and re-submit for approval.</div>
+                        </div>
+                    </div>
+                }
+
+                <div class="detail-metrics">
+                    <div>
+                        <span>Order Date</span>
+                        <strong>@selected.OrderDate</strong>
+                    </div>
+                    <div>
+                        <span>Expected</span>
+                        <strong>@selected.ExpectedDate</strong>
+                    </div>
+                    <div>
+                        <span>Total Amount</span>
+                        <strong>@selected.TotalAmount</strong>
+                    </div>
+                    <div>
+                        <span>Received</span>
+                        <strong>@selected.ProgressPercent%</strong>
+                    </div>
+                </div>
+
+                <div class="detail-actions">
+                    @* 1. Edit Action for Draft / Rejected *@
+                    @if (selected.Status == "Draft" || selected.Status == "Rejected")
+                    {
+                        <button class="ghost-button compact edit-btn" type="button" data-bs-toggle="modal" data-bs-target="#editPoModal" 
+                                data-id="@selected.POID" 
+                                data-po="@selected.PONumber" 
+                                data-supplier="@selected.SupplierID" 
+                                data-orderdate="@selected.RawOrderDate" 
+                                data-expecteddate="@selected.RawExpectedDate" 
+                                data-remarks="@selected.Remarks"
+                                data-items="@Model.SelectedItemsJson">
+                            <span class="material-symbols-outlined">edit_square</span>
+                            Edit
+                        </button>
+
+                        <form method="post" asp-page-handler="SubmitForApproval" class="inline-form confirm-form" data-message="Submit this purchase order for Manager approval?">
+                            <input type="hidden" name="SubmitApprovalPOID" value="@selected.POID" />
+                            <button class="primary-button compact" type="submit" style="background-color: #f59e0b; border-color: #d97706; color: white;">
+                                <span class="material-symbols-outlined">send</span>
+                                Submit for Approval
+                            </button>
+                        </form>
+                    }
+
+                    @* 2. Manager / Admin Approval Action *@
+                    @if ((User.IsInRole("Admin") || User.IsInRole("Manager")) && (selected.Status == "Pending Approval" || selected.Status == "Draft"))
+                    {
+                        <button class="primary-button compact" type="button" data-bs-toggle="modal" data-bs-target="#reviewPoModal" style="background-color: #2563eb; color: white;">
+                            <span class="material-symbols-outlined">fact_check</span>
+                            Review & Approve
+                        </button>
+                    }
+
+                    @* 3. Print / PDF *@
+                    <a class="ghost-button compact" asp-page="/Purchasing/PurchaseOrderPrint" asp-route-id="@selected.POID" target="_blank">
+                        <span class="material-symbols-outlined">picture_as_pdf</span>
+                        Print / PDF
+                    </a>
+
+                    @* 4. Supplier Coordination *@
+                    <a class="ghost-button compact" asp-page="/Purchasing/ProcurementWorkflow" asp-route-poid="@selected.POID">
+                        <span class="material-symbols-outlined">contact_phone</span>
+                        Supplier Coordination
+                    </a>
+
+                    @* 5. Receiving Shortcut *@
+                    @if (selected.Status == "Confirmed" || selected.Status == "InTransit")
+                    {
+                        <a class="ghost-button compact" href="/WarehouseOperations/Receiving">
+                            <span class="material-symbols-outlined">move_to_inbox</span>
+                            Receiving
+                        </a>
+                    }
+
+                    @* 6. Cancel Action *@
+                    @if ((User.IsInRole("Admin") || User.IsInRole("Manager")) && (selected.Status == "Draft" || selected.Status == "Pending Approval" || selected.Status == "Confirmed"))
+                    {
+                        <form method="post" asp-page-handler="Cancel" class="inline-form confirm-form" data-message="Cancel this purchase order? Historical data will be preserved.">
+                            <input type="hidden" name="CancelPOID" value="@selected.POID" />
+                            <button class="danger-button compact" type="submit">
+                                <span class="material-symbols-outlined">cancel</span>
+                                Cancel
+                            </button>
+                        </form>
+                    }
+                </div>
+
+                <section class="line-items">
+                    <div class="section-heading">
+                        <h3>Line Items</h3>
+                        <span>@Model.SelectedItems.Count item rows</span>
+                    </div>
+                    @if (Model.SelectedItems.Any())
+                    {
+                        @foreach (var item in Model.SelectedItems)
+                        {
+                            <article class="line-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <strong>@item.ProductName</strong>
+                                        <span>SKU: @item.SKU</span>
+                                    </div>
+                                    @if (item.IsLowStock)
+                                    {
+                                        <span class="stock-status-badge low" title="Available stock (@item.AvailableStock.ToString("N0")) is at or below reorder level (@item.ReorderLevel.ToString("N0"))">
+                                            <span class="material-symbols-outlined" style="font-size: 13px;">warning</span> Low Stock
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="stock-status-badge ok">
+                                            <span class="material-symbols-outlined" style="font-size: 13px;">check_circle</span> In Stock
+                                        </span>
+                                    }
+                                </div>
+                                <div class="line-qty">
+                                    <span>Qty: @item.ReceivedQty.ToString("N2") / @item.OrderedQty.ToString("N2") (Avail: @item.AvailableStock.ToString("N0"))</span>
+                                    <strong>@item.TotalPrice</strong>
+                                </div>
+                                <div class="progress-line">
+                                    <span style="width:@item.ReceivedPercent%"></span>
+                                </div>
+                            </article>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state small">
+                            <span class="material-symbols-outlined">inventory_2</span>
+                            <p>No line items are attached to this PO.</p>
+                        </div>
+                    }
+                </section>
+
+                @if (!string.IsNullOrWhiteSpace(selected.Remarks))
+                {
+                    <section class="notes-box">
+                        <span>Remarks & Justification</span>
+                        <p>@selected.Remarks</p>
+                    </section>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <span class="material-symbols-outlined">receipt_long</span>
+                    <p>Select or create a purchase order to see details.</p>
+                </div>
+            }
+        </aside>
+    </main>
+</div>
+
+@* CREATE PURCHASE ORDER MODAL *@
+<div class="modal fade" id="createPoModal" tabindex="-1" aria-labelledby="createPoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content ims-modal">
+            <div class="modal-header">
+                <div>
+                    <span class="eyebrow">Procurement</span>
+                    <h5 class="modal-title" id="createPoModalLabel">Create Purchase Order / Request</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <label class="wide">
+                            <span>Supplier *</span>
+                            <select id="create-po-supplier" asp-for="NewPurchaseOrder.SupplierID" class="po-supplier-select" required>
+                                <option value="">Select supplier</option>
+                                @foreach (var s in Model.ActiveSuppliersList)
+                                {
+                                    <option value="@s.ID">[@s.Code] @s.Name</option>
+                                }
+                            </select>
+                        </label>
+                        <label>
+                            <span>Order Date *</span>
+                            <input type="date" asp-for="NewPurchaseOrder.OrderDate" required />
+                        </label>
+                        <label>
+                            <span>Expected Date</span>
+                            <input type="date" asp-for="NewPurchaseOrder.ExpectedDate" />
+                        </label>
+                        <label class="wide">
+                            <span>Remarks / Justification</span>
+                            <input type="text" asp-for="NewPurchaseOrder.Remarks" placeholder="e.g. Replenishment for production line A" />
+                        </label>
+                    </div>
+
+                    <div class="modal-section-title">Order Line Items</div>
+                    <div class="po-items-table-container">
+                        <table class="po-items-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%;">Product *</th>
+                                    <th style="width: 15%;">Ordered Qty *</th>
+                                    <th style="width: 15%;">Unit Price (NPR) *</th>
+                                    <th style="width: 15%;">Line Total</th>
+                                    <th style="width: 5%; text-align: center;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="create-po-items-tbody">
+                                <!-- Dynamic rows added by JS -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="po-total-row">
+                                    <td><strong>Total</strong></td>
+                                    <td><strong class="po-total-qty">0.00</strong></td>
+                                    <td></td>
+                                    <td><strong class="po-total-amount">Rs. 0.00</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div class="po-table-actions">
+                            <button type="button" class="ghost-button compact" id="add-create-row-btn">
+                                <span class="material-symbols-outlined">add</span> Add Item
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="ghost-button" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="primary-button">Save Draft</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* EDIT PURCHASE ORDER MODAL *@
+<div class="modal fade" id="editPoModal" tabindex="-1" aria-labelledby="editPoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content ims-modal">
+            <div class="modal-header">
+                <div>
+                    <span class="eyebrow">Draft PO</span>
+                    <h5 class="modal-title" id="editPoModalLabel">Edit Purchase Order</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Update">
+                <input type="hidden" id="edit-id" asp-for="EditPurchaseOrder.POID" />
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <label>
+                            <span>PO Number *</span>
+                            <input type="text" id="edit-po" asp-for="EditPurchaseOrder.PONumber" required />
+                        </label>
+                        <label class="wide">
+                            <span>Supplier *</span>
+                            <select id="edit-supplier" asp-for="EditPurchaseOrder.SupplierID" class="po-supplier-select" data-product-target="EditItemProductID" required>
+                                <option value="">Select supplier</option>
+                                @foreach (var s in Model.ActiveSuppliersList)
+                                {
+                                    <option value="@s.ID">[@s.Code] @s.Name</option>
+                                }
+                            </select>
+                        </label>
+                        <label>
+                            <span>Order Date *</span>
+                            <input type="date" id="edit-orderdate" asp-for="EditPurchaseOrder.OrderDate" required />
+                        </label>
+                        <label>
+                            <span>Expected Date</span>
+                            <input type="date" id="edit-expecteddate" asp-for="EditPurchaseOrder.ExpectedDate" />
+                        </label>
+                        <label class="wide">
+                            <span>Remarks</span>
+                            <input type="text" id="edit-remarks" asp-for="EditPurchaseOrder.Remarks" />
+                        </label>
+                    </div>
+
+                    <div class="modal-section-title">Order Line Items</div>
+                    <div class="po-items-table-container">
+                        <table class="po-items-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%;">Product *</th>
+                                    <th style="width: 15%;">Ordered Qty *</th>
+                                    <th style="width: 15%;">Unit Price (NPR) *</th>
+                                    <th style="width: 15%;">Line Total</th>
+                                    <th style="width: 5%; text-align: center;"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="edit-po-items-tbody">
+                                <!-- Dynamic rows added by JS -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="po-total-row">
+                                    <td><strong>Total</strong></td>
+                                    <td><strong class="po-total-qty">0.00</strong></td>
+                                    <td></td>
+                                    <td><strong class="po-total-amount">Rs. 0.00</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                        <div class="po-table-actions">
+                            <button type="button" class="ghost-button compact" id="add-edit-row-btn">
+                                <span class="material-symbols-outlined">add</span> Add Item
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="ghost-button" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="primary-button">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* REVIEW & APPROVE PURCHASE ORDER MODAL (DECISION SUPPORT) *@
+@if (Model.SelectedPurchaseOrder is var poToReview && poToReview != null)
+{
+<div class="modal fade" id="reviewPoModal" tabindex="-1" aria-labelledby="reviewPoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content ims-modal">
+            <div class="modal-header">
+                <div>
+                    <span class="eyebrow">Approval Review</span>
+                    <h5 class="modal-title" id="reviewPoModalLabel">Review Purchase Order @poToReview.PONumber</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @* 3 Decision Support Cards *@
+                <div class="approval-decision-grid">
+                    @* Card 1: Budget & Cost Center *@
+                    <div class="decision-card">
+                        <div class="decision-card-title">
+                            <span class="material-symbols-outlined text-primary" style="font-size: 16px;">account_balance</span>
+                            Budget & Cost Center
+                        </div>
+                        <div class="decision-card-value">@poToReview.TotalAmount</div>
+                        <div class="decision-card-meta">
+                            <div><strong>Cost Center:</strong> Inventory / Procurement</div>
+                            <div><strong>Line Items:</strong> @Model.SelectedItems.Count items requested</div>
+                        </div>
+                    </div>
+
+                    @* Card 2: Supplier & Terms *@
+                    <div class="decision-card">
+                        <div class="decision-card-title">
+                            <span class="material-symbols-outlined text-success" style="font-size: 16px;">verified</span>
+                            Supplier & Commercial Terms
+                        </div>
+                        <div class="decision-card-value d-flex align-items-center gap-2">
+                            <span>@poToReview.Supplier</span>
+                            <span class="avl-status-badge">Approved Vendor</span>
+                        </div>
+                        <div class="decision-card-meta">
+                            <div><strong>Payment Terms:</strong> @poToReview.SupplierPaymentTerms</div>
+                            <div><strong>Expected Lead Time:</strong> @poToReview.SupplierLeadTimeDays day(s)</div>
+                        </div>
+                    </div>
+
+                    @* Card 3: Inventory & Stock Health *@
+                    <div class="decision-card">
+                        <div class="decision-card-title">
+                            <span class="material-symbols-outlined text-warning" style="font-size: 16px;">inventory</span>
+                            Stock & Reorder Status
+                        </div>
+                        @{
+                            int lowStockCount = Model.SelectedItems.Count(i => i.IsLowStock);
+                        }
+                        <div class="decision-card-value">
+                            @if (lowStockCount > 0)
+                            {
+                                <span class="text-danger">@lowStockCount Low Stock Item(s)</span>
+                            }
+                            else
+                            {
+                                <span class="text-success">Stock Adequate</span>
+                            }
+                        </div>
+                        <div class="decision-card-meta">
+                            <div><strong>Reorder Trigger:</strong> @(lowStockCount > 0 ? "Requires replenishment" : "Normal inventory level")</div>
+                            <div><strong>Requested By:</strong> @(string.IsNullOrWhiteSpace(poToReview.CreatedByName) ? "Staff Requester" : poToReview.CreatedByName)</div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(poToReview.Remarks))
+                {
+                    <div class="mb-3 p-3 bg-light rounded border">
+                        <span class="small fw-bold text-muted text-uppercase d-block mb-1">Requester Justification:</span>
+                        <div>@poToReview.Remarks</div>
+                    </div>
+                }
+
+                @* Line Items Table with Stock Check *@
+                <div class="modal-section-title">Requested Line Items & Inventory Health</div>
+                <div class="po-items-table-container">
+                    <table class="po-items-table">
+                        <thead>
+                            <tr>
+                                <th>Product / SKU</th>
+                                <th class="text-end">Ordered Qty</th>
+                                <th class="text-end">Available Stock</th>
+                                <th class="text-end">Reorder Point</th>
+                                <th class="text-center">Stock Health</th>
+                                <th class="text-end">Unit Price</th>
+                                <th class="text-end">Total Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.SelectedItems)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@item.ProductName</strong>
+                                        <div class="small text-muted font-mono">SKU: @item.SKU</div>
+                                    </td>
+                                    <td class="text-end font-mono fw-bold">@item.OrderedQty.ToString("N2")</td>
+                                    <td class="text-end font-mono">@item.AvailableStock.ToString("N0")</td>
+                                    <td class="text-end font-mono">@item.ReorderLevel.ToString("N0")</td>
+                                    <td class="text-center">
+                                        @if (item.IsLowStock)
+                                        {
+                                            <span class="stock-status-badge low">
+                                                <span class="material-symbols-outlined" style="font-size: 13px;">warning</span> Low Stock
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="stock-status-badge ok">
+                                                <span class="material-symbols-outlined" style="font-size: 13px;">check_circle</span> In Stock
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-end font-mono">@item.UnitPrice</td>
+                                    <td class="text-end font-mono fw-bold">@item.TotalPrice</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="po-total-row">
+                                <td colspan="6"><strong>Grand Total:</strong></td>
+                                <td class="text-end"><strong class="text-primary font-mono" style="font-size: 15px;">@poToReview.TotalAmount</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                @* Rejection Reason Input (toggleable) *@
+                <div class="collapse mt-3" id="rejectionCollapse">
+                    <form method="post" asp-page-handler="RejectApproval">
+                        <input type="hidden" name="RejectPOID" value="@poToReview.POID" />
+                        <div class="p-3 bg-light rounded border border-danger">
+                            <label class="form-label text-danger fw-bold">Reason for Rejection *</label>
+                            <textarea class="form-control" name="RejectReason" rows="2" placeholder="Explain why this purchase order cannot be approved (e.g. budget limit exceeded, unnecessary quantity, wrong supplier)" required></textarea>
+                            <div class="d-flex justify-content-end gap-2 mt-2">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-toggle="collapse" data-bs-target="#rejectionCollapse">Cancel</button>
+                                <button type="submit" class="btn btn-sm btn-danger">Confirm Rejection</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#rejectionCollapse">
+                    <span class="material-symbols-outlined" style="font-size: 16px;">close</span> Reject Request
+                </button>
+                <div class="d-flex gap-2">
+                    <button type="button" class="ghost-button" data-bs-dismiss="modal">Close</button>
+                    <form method="post" asp-page-handler="Confirm" class="inline-form confirm-form" data-message="Approve and confirm this purchase order?">
+                        <input type="hidden" name="ConfirmPOID" value="@poToReview.POID" />
+                        <button type="submit" class="primary-button" style="background-color: #16a34a; border-color: #15803d; color: white;">
+                            <span class="material-symbols-outlined">verified</span>
+                            Approve PO
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+<template id="po-row-template">
+    <tr class="po-item-row">
+        <td>
+            <select class="po-product-select-template" required>
+                <option value="">Select product</option>
+                @foreach (var group in Model.ActiveProductsList.GroupBy(p => string.IsNullOrWhiteSpace(p.GroupName) ? "Uncategorized" : p.GroupName))
+                {
+                    <optgroup label="@group.Key">
+                        @foreach (var p in group)
+                        {
+                            <option value="@p.ID"
+                                    data-search="@($"{p.SKU} {p.Name} {p.ProductType} {p.Category}")"
+                                    data-type="@p.ProductType"
+                                    data-category="@p.Category"
+                                    data-supplier-scope="all">
+                                [@p.SKU] @p.Name
+                            </option>
+                        }
+                    </optgroup>
+                }
+            </select>
+            <small class="product-select-note">Select a supplier to show approved products.</small>
+        </td>
+        <td>
+            <input type="number" class="row-qty" step="0.01" min="0.01" required value="1" />
+        </td>
+        <td>
+            <input type="number" class="row-price" step="0.01" min="0.00" required value="0.00" />
+        </td>
+        <td>
+            <span class="row-total">Rs. 0.00</span>
+        </td>
+        <td style="text-align: center;">
+            <button type="button" class="action-icon-link danger-action remove-row-btn" title="Remove Item" style="border: none; background: transparent; padding: 4px; cursor: pointer; color: var(--danger);">
+                <span class="material-symbols-outlined">delete</span>
+            </button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <script>
+        window.purchaseOrderSupplierProducts = @Html.Raw(Model.SupplierProductsJson);
+    </script>
+    <script src="~/js/purchase-orders.js" asp-append-version="true"></script>
+}

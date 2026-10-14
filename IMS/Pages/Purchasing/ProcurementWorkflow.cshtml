@@ -1,0 +1,397 @@
+@page
+@model IMS.Pages.Purchasing.ProcurementWorkflowModel
+@{
+    ViewData["Title"] = "Supplier Coordination & Procurement Control";
+    var selected = Model.SelectedOrder;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/procurement-workflow.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+}
+
+<div class="workflow-page">
+    <header class="workflow-header">
+        <div>
+            <p class="eyebrow">PROCUREMENT CONTROL</p>
+            <h2>Supplier Coordination & Tracking</h2>
+            <p>Track purchase orders, coordinate communication via phone/email/messaging, and log supplier confirmations.</p>
+        </div>
+        <a class="ghost-button" asp-page="/Purchasing/PurchaseOrders">
+            <span class="material-symbols-outlined">shopping_cart</span>
+            Purchase Orders
+        </a>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success d-flex align-items-center gap-2" role="alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+        </div>
+    }
+
+    @* Filter Panel *@
+    <section class="workflow-filter-panel" aria-label="Procurement filters">
+        <div class="filter-group">
+            <label for="workflowSearch">Search</label>
+            <div class="filter-search-box">
+                <span class="material-symbols-outlined">search</span>
+                <input id="workflowSearch" type="search" placeholder="Search PO #, supplier, contact, remarks..." autocomplete="off" />
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label for="workflowStatusFilter">PO Status</label>
+            <select id="workflowStatusFilter">
+                @foreach (var status in Model.POStatuses)
+                {
+                    <option value="@status">@status</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="workflowResponseFilter">Supplier Response</label>
+            <select id="workflowResponseFilter">
+                @foreach (var resp in Model.ConfirmationStatuses)
+                {
+                    <option value="@resp">@resp</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="workflowSupplierFilter">Supplier</label>
+            <select id="workflowSupplierFilter">
+                @foreach (var sup in Model.Suppliers)
+                {
+                    <option value="@sup">@sup</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>&nbsp;</label>
+            <button type="button" class="ghost-button" id="workflowResetBtn" title="Clear all filters">
+                <span class="material-symbols-outlined" style="font-size: 16px;">filter_alt_off</span>
+                Reset
+            </button>
+        </div>
+    </section>
+
+    <div class="workflow-layout">
+        @* Sidebar: Orders list *@
+        <aside class="order-list panel">
+            <div class="panel-heading">
+                <strong>Purchase Orders</strong>
+                <span id="orderCountLabel">Showing @Model.Orders.Count of @Model.Orders.Count</span>
+            </div>
+
+            <div class="order-items-scroll">
+                @foreach (var order in Model.Orders)
+                {
+                    <a class="order-option @(selected?.POID == order.POID ? "active" : "")" 
+                       asp-route-poid="@order.POID"
+                       data-search="@($"{order.PONumber} {order.SupplierName} {order.ContactPerson} {order.Remarks}")"
+                       data-status="@order.POStatus"
+                       data-supplier="@order.SupplierName"
+                       data-response="@order.SupplierConfirmationStatus">
+                        <div class="order-option-header">
+                            <span class="order-option-title">@order.PONumber</span>
+                            <span class="status-chip chip-@order.SupplierConfirmationStatus.ToLower().Replace(" ", "")">
+                                @order.SupplierConfirmationStatus
+                            </span>
+                        </div>
+                        <div class="order-option-supplier">@order.SupplierName</div>
+                        <div class="order-option-footer">
+                            <span class="status-pill status-@order.POStatus.ToLower().Replace(" ", "")">@order.POStatus</span>
+                            <span class="order-option-amount">Rs. @order.TotalAmount.ToString("N2")</span>
+                        </div>
+                    </a>
+                }
+                <div id="sidebarEmptyNotice" class="empty-state" style="display: none; padding: 30px 10px;">
+                    <span class="material-symbols-outlined" style="font-size: 32px;">search_off</span>
+                    <p style="font-size: 13px;">No orders match your filter criteria.</p>
+                </div>
+            </div>
+        </aside>
+
+        @* Main Content Area *@
+        <main>
+        @if (selected == null)
+        {
+            <div class="panel empty-state">
+                <span class="material-symbols-outlined">receipt_long</span>
+                <p>Select a purchase order from the left list to manage supplier coordination.</p>
+            </div>
+        }
+        else
+        {
+            @* Order Hero Card *@
+            <section class="panel order-hero">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="status-pill status-@selected.POStatus.ToLower().Replace(" ", "")">@selected.POStatus</span>
+                        <span class="status-chip chip-@selected.SupplierConfirmationStatus.ToLower().Replace(" ", "")">Supplier: @selected.SupplierConfirmationStatus</span>
+                    </div>
+                    <h3>@selected.PONumber</h3>
+                    <p class="order-hero-subtitle"><strong>@selected.SupplierName</strong> · Contact: @(string.IsNullOrWhiteSpace(selected.ContactPerson) ? "General Procurement" : selected.ContactPerson)</p>
+                </div>
+                <div class="hero-actions">
+                    <a class="primary-button" asp-page="/Purchasing/PurchaseOrderPrint" asp-route-id="@selected.POID" target="_blank">
+                        <span class="material-symbols-outlined">picture_as_pdf</span>
+                        Print / Save PDF
+                    </a>
+                    <a class="ghost-button" href="/WarehouseOperations/Receiving">
+                        <span class="material-symbols-outlined">inventory</span>
+                        Warehouse Receiving
+                    </a>
+                </div>
+                <div class="contact-strip">
+                    <div class="contact-item">
+                        <span class="material-symbols-outlined">mail</span>
+                        <span>@(string.IsNullOrWhiteSpace(selected.SupplierEmail) ? "No email on file" : selected.SupplierEmail)</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="material-symbols-outlined">call</span>
+                        <span>@(string.IsNullOrWhiteSpace(selected.SupplierPhone) ? "No phone on file" : selected.SupplierPhone)</span>
+                    </div>
+                    <div class="contact-item">
+                        <span class="material-symbols-outlined">event</span>
+                        <span>Expected Delivery: <strong>@(selected.ExpectedDate?.ToString("dd MMM yyyy") ?? "TBD")</strong></span>
+                    </div>
+                    @if (selected.PromisedDeliveryDate.HasValue)
+                    {
+                        <div class="contact-item">
+                            <span class="material-symbols-outlined text-success">verified</span>
+                            <span>Supplier Promised: <strong>@selected.PromisedDeliveryDate.Value.ToString("dd MMM yyyy")</strong></span>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            @* 4-Metric Grid *@
+            <section class="metric-grid">
+                <div class="metric">
+                    <span>PO Total Value</span>
+                    <strong style="color: #2563eb;">Rs. @selected.TotalAmount.ToString("N2")</strong>
+                </div>
+                <div class="metric">
+                    <span>Received Value</span>
+                    <strong style="color: #0284c7;">Rs. @selected.ReceivedValue.ToString("N2")</strong>
+                </div>
+                <div class="metric">
+                    <span>QC Accepted Value</span>
+                    <strong style="color: #16a34a;">Rs. @selected.AcceptedValue.ToString("N2")</strong>
+                </div>
+                <div class="metric">
+                    <span>Supplier Status</span>
+                    <div>
+                        <span class="status-chip chip-@selected.SupplierConfirmationStatus.ToLower().Replace(" ", "")" style="font-size: 13px; padding: 4px 10px;">
+                            @selected.SupplierConfirmationStatus
+                        </span>
+                    </div>
+                </div>
+            </section>
+
+            @* Communication & Response Forms *@
+            <div class="form-grid">
+                <section class="panel form-card">
+                    <h4>
+                        <span class="material-symbols-outlined text-primary" style="font-size: 20px;">send</span>
+                        Record Communication
+                    </h4>
+                    <form method="post" asp-page-handler="Communication">
+                        <input type="hidden" asp-for="Communication.POID" value="@selected.POID" />
+                        <div class="field-row">
+                            <label>
+                                Channel
+                                <select asp-for="Communication.Channel">
+                                    <option>Email</option>
+                                    <option>Phone</option>
+                                    <option>Messaging</option>
+                                    <option>Print / Letter</option>
+                                    <option>Other</option>
+                                </select>
+                            </label>
+                            <label>
+                                Direction
+                                <select asp-for="Communication.Direction">
+                                    <option>Outbound</option>
+                                    <option>Inbound</option>
+                                </select>
+                            </label>
+                        </div>
+                        <label>
+                            Contact Detail (Email / Phone / Person)
+                            <input asp-for="Communication.ContactDetail" value="@(selected.SupplierEmail.Length > 0 ? selected.SupplierEmail : selected.SupplierPhone)" />
+                        </label>
+                        <label>
+                            Date and Time
+                            <input asp-for="Communication.CommunicatedAt" type="datetime-local" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                        </label>
+                        <label>
+                            Notes & Summary
+                            <textarea asp-for="Communication.Notes" placeholder="PO emailed, confirmed delivery window over phone, followup WhatsApp sent..."></textarea>
+                        </label>
+                        <button class="primary-button" type="submit">
+                            <span class="material-symbols-outlined">save</span>
+                            Save Communication
+                        </button>
+                    </form>
+                </section>
+
+                <section class="panel form-card">
+                    <h4>
+                        <span class="material-symbols-outlined text-success" style="font-size: 20px;">task_alt</span>
+                        Record Supplier Response
+                    </h4>
+                    <form method="post" asp-page-handler="Confirmation">
+                        <input type="hidden" asp-for="Confirmation.POID" value="@selected.POID" />
+                        <div class="field-row">
+                            <label>
+                                Response Status
+                                <select asp-for="Confirmation.ConfirmationStatus">
+                                    <option>Confirmed</option>
+                                    <option>Changes Requested</option>
+                                    <option>Declined</option>
+                                    <option>Pending</option>
+                                </select>
+                            </label>
+                            <label>
+                                Supplier Contact Person
+                                <input asp-for="Confirmation.SupplierContactName" value="@selected.ContactPerson" />
+                            </label>
+                        </div>
+                        <div class="field-row">
+                            <label>
+                                Response Time
+                                <input asp-for="Confirmation.ConfirmedAt" type="datetime-local" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                            </label>
+                            <label>
+                                Promised Delivery Date
+                                <input asp-for="Confirmation.PromisedDeliveryDate" type="date" />
+                            </label>
+                        </div>
+                        <label>
+                            Commitment Notes / Comments
+                            <textarea asp-for="Confirmation.Notes" placeholder="Agreed to ship on promised date, tracking number shared, requested price revision..."></textarea>
+                        </label>
+                        <button class="primary-button" type="submit" style="background-color: #16a34a; border-color: #15803d;">
+                            <span class="material-symbols-outlined">verified</span>
+                            Save Supplier Response
+                        </button>
+                    </form>
+                </section>
+            </div>
+
+            @* Documents Section *@
+            <section class="panel document-card">
+                <div>
+                    <h4>
+                        <span class="material-symbols-outlined text-info" style="font-size: 20px;">folder</span>
+                        Supplier & Delivery Documents
+                    </h4>
+                    <p>Attach proforma invoice, supplier confirmation email, delivery challan, or packing list.</p>
+                </div>
+                <form method="post" enctype="multipart/form-data" asp-page-handler="Document">
+                    <input type="hidden" asp-for="DocumentPOID" value="@selected.POID" />
+                    <select asp-for="DocumentType">
+                        <option>Supplier Confirmation</option>
+                        <option>Delivery Challan</option>
+                        <option>Packing List</option>
+                        <option>Invoice</option>
+                        <option>Other</option>
+                    </select>
+                    <input asp-for="UploadedDocument" type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx" required />
+                    <input asp-for="DocumentNotes" placeholder="Optional note or reference #" />
+                    <button class="ghost-button" type="submit">
+                        <span class="material-symbols-outlined">upload_file</span>
+                        Upload
+                    </button>
+                </form>
+
+                @if (selected.Documents.Any())
+                {
+                    <div class="document-list">
+                        @foreach (var doc in selected.Documents)
+                        {
+                            <a class="document-item" asp-page-handler="Download" asp-route-id="@doc.DocumentID" title="Download @doc.OriginalFileName">
+                                <span class="material-symbols-outlined">description</span>
+                                <div>
+                                    <strong>@doc.OriginalFileName</strong>
+                                    <small>@doc.DocumentType · @doc.UploadedAt.ToString("dd MMM yyyy HH:mm") · @(string.IsNullOrWhiteSpace(doc.UploadedByName) ? "Staff" : doc.UploadedByName)</small>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted small p-2">No documents attached yet.</div>
+                }
+            </section>
+
+            @* Activity History Timeline *@
+            <section class="panel timeline-card">
+                <h4>
+                    <span class="material-symbols-outlined text-warning" style="font-size: 20px;">history</span>
+                    Coordination & Activity Timeline
+                </h4>
+                @{
+                    var timelineItems = selected.Communications
+                        .Select(c => new { 
+                            Date = c.CommunicatedAt, 
+                            Title = $"{c.Direction} {c.Channel}", 
+                            Body = c.Notes, 
+                            By = c.RecordedByName, 
+                            IsResponse = false 
+                        })
+                        .Concat(selected.Confirmations.Select(c => new { 
+                            Date = c.ConfirmedAt, 
+                            Title = $"Supplier Response: {c.ConfirmationStatus}", 
+                            Body = c.Notes, 
+                            By = c.RecordedByName, 
+                            IsResponse = true 
+                        }))
+                        .OrderByDescending(x => x.Date)
+                        .ToList();
+                }
+
+                @if (timelineItems.Any())
+                {
+                    <div class="timeline">
+                        @foreach (var item in timelineItems)
+                        {
+                            <div class="timeline-item @(item.IsResponse ? "supplier-response" : "")">
+                                <div>
+                                    <strong>@item.Title</strong>
+                                    <p>@(string.IsNullOrWhiteSpace(item.Body) ? "No notes recorded." : item.Body)</p>
+                                    <small>@item.Date.ToString("dd MMM yyyy HH:mm") · Recorded by @(string.IsNullOrWhiteSpace(item.By) ? "Staff" : item.By)</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted small p-2">No communication or response history recorded yet.</div>
+                }
+            </section>
+        }
+        </main>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/procurement-workflow.js" asp-append-version="true"></script>
+}

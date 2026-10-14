@@ -1,0 +1,112 @@
+@page
+@model IMS.Pages.Admin.SettingsModel
+@{
+    ViewData["Title"] = "System Settings";
+}
+
+<div class="settings-container">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            <span class="material-symbols-outlined">check_circle</span> @Model.SuccessMessage
+        </div>
+    }
+
+    <!-- Header -->
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+        <div>
+            <h2 class="page-title" style="margin: 0; font-size: 24px; font-weight: 700; color: var(--primary);">System Configuration</h2>
+            <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 14px;">Manage global application parameters and business defaults.</p>
+        </div>
+    </div>
+
+    <form method="post">
+        <div asp-validation-summary="All" class="text-danger mb-4 card p-3 border-danger bg-light" style="border-radius: 0.5rem; display: none;"></div>
+        <script>
+            // Only show validation summary card if there are validation errors
+            document.addEventListener("DOMContentLoaded", function() {
+                var summary = document.querySelector('[asp-validation-summary]');
+                if (summary && summary.innerText.trim().length > 0) {
+                    summary.style.display = 'block';
+                }
+            });
+        </script>
+        @{
+            var groups = Model.Settings.GroupBy(s => s.SettingGroup).OrderBy(g => g.Key);
+        }
+
+        <div class="row g-4">
+            @foreach (var group in groups)
+            {
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white py-3 border-bottom-0">
+                            <h5 class="mb-0" style="font-weight: 700; color: var(--primary); text-transform: capitalize;">
+                                @group.Key Settings
+                            </h5>
+                        </div>
+                        <div class="card-body px-4">
+                            @for (int i = 0; i < Model.UpdatedSettings.Count; i++)
+                            {
+                                var setting = Model.Settings.FirstOrDefault(s => s.SettingKey == Model.UpdatedSettings[i].SettingKey);
+                                if (setting != null && setting.SettingGroup == group.Key)
+                                {
+                                    <div class="mb-4">
+                                        <label class="form-label d-flex justify-content-between" style="font-size: 12px; font-weight: 600; color: var(--text-muted);">
+                                            <span>@setting.SettingKey.Replace(group.Key + ".", "")</span>
+                                            @if (setting.UpdatedAt != DateTime.MinValue)
+                                            {
+                                                <span style="font-weight: 400; opacity: 0.7;">Updated: @setting.UpdatedAt.ToString("MMM dd, HH:mm")</span>
+                                            }
+                                        </label>
+                                        <input type="hidden" asp-for="UpdatedSettings[i].SettingKey" />
+                                        
+                                        @if (setting.SettingKey.Contains("Enable") || setting.SettingKey.Contains("Required"))
+                                        {
+                                            <select asp-for="UpdatedSettings[i].SettingValue" class="form-select form-select-sm">
+                                                <option value="true">Enabled / Yes</option>
+                                                <option value="false">Disabled / No</option>
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            <input type="text" asp-for="UpdatedSettings[i].SettingValue" class="form-control form-control-sm" />
+                                        }
+                                        
+                                        @if (!string.IsNullOrEmpty(setting.Description))
+                                        {
+                                            <div class="form-text" style="font-size: 11px;">@setting.Description</div>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="mt-5 d-flex gap-3 justify-content-center">
+            <button type="submit" class="btn btn-primary px-5 py-2" style="font-weight: 700; border-radius: 0.75rem;">
+                Save All Changes
+            </button>
+            <a asp-page="/Dashboard/Admin" class="btn btn-outline-secondary px-5 py-2" style="border-radius: 0.75rem;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .settings-container { padding: 1.5rem; }
+    .card { border-radius: 1rem; }
+    .form-label { margin-bottom: 0.5rem; }
+    .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+</style>

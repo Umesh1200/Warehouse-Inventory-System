@@ -1,0 +1,389 @@
+@page
+@model IMS.Pages.Inventory.TransfersModel
+@{
+    ViewData["Title"] = "Stock Transfers";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/stock-transfers.css" asp-append-version="true" />
+}
+
+<div class="transfers-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">Stock Transfers</h2>
+            <p class="text-muted" style="margin: 0.25rem 0 0 0; font-size: 13px;">Manage and execute internal inventory movements across shelves and warehouses.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <button class="btn-ims btn-primary" data-bs-toggle="modal" data-bs-target="#addTransferModal">
+                <span class="material-symbols-outlined">swap_horiz</span>
+                Create Transfer
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">check_circle</span> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="transfers-stats-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <div class="stat-card">
+                <div class="stat-icon @card.ColorClass">
+                    <span class="material-symbols-outlined">@card.Icon</span>
+                </div>
+                <div>
+                    <div class="stat-label">@card.Title</div>
+                    <div class="stat-value">@card.Value</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-panel">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label>Search Transfers</label>
+                <div style="position: relative;">
+                    <span class="material-symbols-outlined" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-muted);">search</span>
+                    <input type="text" id="transferSearchInput" class="filter-input" placeholder="TRF#, SKU, Shelf Code, Warehouse..." style="padding-left: 2.5rem;" />
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Warehouse</label>
+                <select class="filter-input" id="warehouseFilter">
+                    @foreach (var wh in Model.Warehouses)
+                    {
+                        <option>@wh</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Transfer Type</label>
+                <select class="filter-input" id="typeFilter">
+                    <option>All Types</option>
+                    <option>Inter-Shelf</option>
+                    <option>Inter-Rack</option>
+                    <option>Inter-Room</option>
+                    <option>Inter-Floor</option>
+                    <option>Inter-Warehouse</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select class="filter-input" id="statusFilter">
+                    <option>All Statuses</option>
+                    <option>Pending</option>
+                    <option>Awaiting Approval</option>
+                    <option>Approved</option>
+                    <option>In Transit</option>
+                    <option>Completed</option>
+                    <option>Cancelled</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfers Table -->
+    <div class="transfers-table-panel">
+        <div style="overflow-x: auto;">
+            <table class="ims-table" id="transfersTable">
+                <thead>
+                    <tr>
+                        <th style="width: 130px;">Transfer No</th>
+                        <th>Product / SKU</th>
+                        <th class="text-right">Qty</th>
+                        <th>Source & Destination (Warehouse & Shelf)</th>
+                        <th>Type</th>
+                        <th>By / Approval</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Transfers.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center" style="padding: 2.5rem; color: var(--on-surface-variant);">
+                                <span class="material-symbols-outlined" style="font-size: 36px; display: block; margin-bottom: 0.5rem; color: var(--outline-variant);">inbox</span>
+                                No stock transfers found. Click <strong>Create Transfer</strong> to initiate a new transfer.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var trf in Model.Transfers)
+                    {
+                        <tr class="transfer-row"
+                            data-search="@($"{trf.TransferNo} {trf.Product} {trf.SKU} {trf.FromLocation} {trf.FromShelfCode} {trf.ToLocation} {trf.ToShelfCode} {trf.Type} {trf.RequestedBy} {trf.ApprovedBy} {trf.Status}".ToLower())"
+                            data-warehouse="@trf.FromLocation"
+                            data-type="@trf.Type"
+                            data-status="@trf.Status">
+                            <td class="id-cell">@trf.TransferNo</td>
+                            <td>
+                                <div class="product-cell">@trf.Product</div>
+                                <div class="font-mono" style="font-size: 11px; color: var(--text-muted);">@trf.SKU</div>
+                            </td>
+                            <td class="text-right font-mono" style="font-weight: 700;">@trf.Qty</td>
+                            <td>
+                                <div class="transfer-path">
+                                    <div class="location-box">
+                                        <div class="location-wh">@trf.FromLocation</div>
+                                        @if (!string.IsNullOrEmpty(trf.FromShelfCode))
+                                        {
+                                            <span class="shelf-badge font-mono" title="Source Shelf Code">@trf.FromShelfCode</span>
+                                        }
+                                    </div>
+                                    <span class="material-symbols-outlined path-arrow">east</span>
+                                    <div class="location-box">
+                                        <div class="location-wh" style="color: var(--secondary);">@trf.ToLocation</div>
+                                        @if (!string.IsNullOrEmpty(trf.ToShelfCode))
+                                        {
+                                            <span class="shelf-badge shelf-badge-dest font-mono" title="Destination Shelf Code">@trf.ToShelfCode</span>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size: 12px; color: var(--text-muted);">@trf.Type</div>
+                            </td>
+                            <td>
+                                <div style="font-size: 13px;">Req: @(string.IsNullOrEmpty(trf.RequestedBy) ? "System" : trf.RequestedBy)</div>
+                                @if (!string.IsNullOrEmpty(trf.AssignedToName))
+                                {
+                                    <div style="font-size: 11px; color: var(--primary); font-weight: 600;"><span class="material-symbols-outlined" style="font-size: 12px; vertical-align: middle;">person</span> @trf.AssignedToName</div>
+                                }
+                                else
+                                {
+                                    <div style="font-size: 11px; color: var(--text-muted);">Unassigned (Open)</div>
+                                }
+                                <div style="font-size: 10px; color: var(--secondary);">App: @(string.IsNullOrEmpty(trf.ApprovedBy) ? "—" : trf.ApprovedBy)</div>
+                            </td>
+                            <td>
+                                <span class="status-badge status-@trf.StatusColor">@trf.Status</span>
+                            </td>
+                            <td class="text-center">
+                                <div style="display: flex; justify-content: center; gap: 0.25rem; align-items: center;">
+                                    <button type="button" class="btn-icon-action btn-view-details" data-id="@trf.TransferID" data-no="@trf.TransferNo" title="View Detail">
+                                        <span class="material-symbols-outlined action-icon">visibility</span>
+                                    </button>
+                                    @if(trf.Status == "Pending" || trf.Status == "Awaiting Approval") {
+                                        <form method="post" asp-page-handler="Approve" style="display:inline;">
+                                            <input type="hidden" name="ApproveTransferID" value="@trf.TransferID" />
+                                            <button type="submit" class="btn-icon-action" title="Approve Transfer" onclick="return confirm('Approve transfer @trf.TransferNo?');">
+                                                <span class="material-symbols-outlined action-icon" style="color: var(--status-success);">how_to_reg</span>
+                                            </button>
+                                        </form>
+                                    }
+                                    @if(trf.Status == "Approved" || trf.Status == "In Transit") {
+                                        <form method="post" asp-page-handler="PostTransfer" onsubmit="return confirm('Complete transfer @trf.TransferNo? This will move stock and generate movement records.');" style="display:inline;">
+                                            <input type="hidden" name="PostTransferID" value="@trf.TransferID" />
+                                            <button type="submit" class="btn-icon-action" title="Confirm & Post Transfer">
+                                                <span class="material-symbols-outlined action-icon" style="color: var(--secondary);">move_down</span>
+                                            </button>
+                                        </form>
+                                    }
+                                    @if(trf.Status != "Completed" && trf.Status != "Cancelled") {
+                                        <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Cancel transfer @trf.TransferNo?');" style="display:inline;">
+                                            <input type="hidden" name="CancelTransferID" value="@trf.TransferID" />
+                                            <button type="submit" class="btn-icon-action" title="Cancel Transfer">
+                                                <span class="material-symbols-outlined action-icon" style="color: var(--status-error);">cancel</span>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Transfer Modal -->
+<div class="modal fade" id="addTransferModal" tabindex="-1" aria-labelledby="addTransferModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <h5 class="modal-title" id="addTransferModalLabel">Create Transfer Request</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- Source Panel -->
+                        <div class="col-md-6 border-end">
+                            <h6 class="fw-bold mb-3" style="color: var(--secondary);"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">outbox</span> Source Location & Stock</h6>
+                            
+                            <label class="form-label">Warehouse *</label>
+                            <select id="srcWarehouse" class="form-select mb-2" data-type="warehouse" required><option value="">Select Warehouse</option></select>
+                            
+                            <label class="form-label">Floor *</label>
+                            <select id="srcFloor" class="form-select mb-2" data-type="floor" disabled required><option value="">Select Floor</option></select>
+                            
+                            <label class="form-label">Room *</label>
+                            <select id="srcRoom" class="form-select mb-2" data-type="room" disabled required><option value="">Select Room</option></select>
+                            
+                            <label class="form-label">Rack *</label>
+                            <select id="srcRack" class="form-select mb-2" data-type="rack" disabled required><option value="">Select Rack</option></select>
+                            
+                            <label class="form-label">Shelf (Source) *</label>
+                            <select id="srcShelf" asp-for="NewItemFromShelfID" class="form-select mb-2" data-type="shelf" disabled required><option value="">Select Shelf</option></select>
+
+                            <!-- Product Selection from Selected Shelf -->
+                            <div class="mt-3">
+                                <label class="form-label">Available Product on Source Shelf *</label>
+                                <input type="text" id="productSearch" class="form-control mb-2" placeholder="Search product on shelf..." style="font-size: 13px;" />
+                                <select id="srcProduct" asp-for="NewItemProductID" class="form-select" disabled required>
+                                    <option value="">Select Shelf first to view products</option>
+                                </select>
+                                <div id="productStorageRuleInfo" class="mt-2 p-2 bg-light rounded border" style="display: none; font-size: 12px;">
+                                    <span class="badge bg-primary me-1" id="prodTypeBadge"></span>
+                                    <span>Storage Requirement: <strong id="prodRuleText" class="text-primary font-mono"></strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Destination Panel -->
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3" style="color: var(--secondary);"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">move_to_inbox</span> Destination Location</h6>
+                            
+                            <label class="form-label">Warehouse *</label>
+                            <select id="destWarehouse" class="form-select mb-2" data-type="warehouse" required><option value="">Select Warehouse</option></select>
+                            
+                            <label class="form-label">Floor *</label>
+                            <select id="destFloor" class="form-select mb-2" data-type="floor" disabled required><option value="">Select Floor</option></select>
+                            
+                            <label class="form-label">Room *</label>
+                            <select id="destRoom" class="form-select mb-2" data-type="room" disabled required><option value="">Select Room</option></select>
+                            
+                            <label class="form-label">Rack *</label>
+                            <select id="destRack" class="form-select mb-2" data-type="rack" disabled required><option value="">Select Rack</option></select>
+                            
+                            <label class="form-label">Shelf (Destination) *</label>
+                            <select id="destShelf" asp-for="NewItemToShelfID" class="form-select mb-2" data-type="shelf" disabled required><option value="">Select Shelf</option></select>
+
+                            <!-- Destination Shelf Capacity Display Card -->
+                            <div id="destShelfCapacityCard" class="card mt-2 p-2 bg-light border" style="display: none; font-size: 12px;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <div>
+                                        <strong id="capShelfCode" class="text-primary font-mono"></strong>
+                                        <span id="capShelfName" class="text-muted ms-1" style="font-size: 11px;"></span>
+                                    </div>
+                                    <span id="capShelfType" class="badge bg-secondary"></span>
+                                </div>
+                                <div class="row g-1 text-muted mt-1">
+                                    <div class="col-6">Capacity: <strong id="capMaxQty" class="text-dark">0</strong> qty</div>
+                                    <div class="col-6">Available: <strong id="capAvailQty" class="text-success">0</strong> qty</div>
+                                    <div class="col-6">Max Weight: <strong id="capMaxWeight" class="text-dark">0 kg</strong></div>
+                                    <div class="col-6">Avail Weight: <strong id="capAvailWeight" class="text-success">0 kg</strong></div>
+                                </div>
+                                <div class="progress mt-2" style="height: 6px;">
+                                    <div id="capUtilBar" class="progress-bar bg-primary" role="progressbar" style="width: 0%;"></div>
+                                </div>
+                                <div class="d-flex justify-content-between mt-1 font-mono" style="font-size: 10px; color: var(--text-muted);">
+                                    <span id="capLocationPath"></span>
+                                    <span id="capUtilText">Utilization: 0%</span>
+                                </div>
+                                <div id="capCompatibilityAlert" class="mt-2 p-1 rounded text-center" style="display: none; font-size: 11px; font-weight: 600;"></div>
+                            </div>
+
+                            <div class="mt-3">
+                                <label class="form-label">Quantity to Transfer *</label>
+                                <input id="transferQty" type="number" step="0.01" min="0.01" asp-for="NewItemQuantity" class="form-control" placeholder="Enter transfer quantity" required />
+                            </div>
+                        </div>
+
+                        <!-- Assignment Field -->
+                        <div class="col-12 mt-2">
+                            <label class="form-label"><span class="material-symbols-outlined" style="vertical-align: middle; font-size: 16px;">person_add</span> Assign To Warehouse Staff (Optional)</label>
+                            <select asp-for="AssignedToStaffID" class="form-select">
+                                <option value="">-- Unassigned (Open to All On-Duty Warehouse Staff) --</option>
+                                @foreach (var user in Model.StaffUsers)
+                                {
+                                    <option value="@user.UserID">@user.FullName (@user.RoleName)</option>
+                                }
+                            </select>
+                            <small class="text-muted">If assigned, this task will appear directly in this worker's personal task queue.</small>
+                        </div>
+
+                        <div class="col-12 mt-2">
+                            <div id="sameShelfAlert" class="alert alert-danger py-2 mb-2" style="display: none; font-size: 13px;">
+                                <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">warning</span>
+                                <strong>Invalid Selection:</strong> Source and Destination cannot be the same shelf. Please select a different destination shelf.
+                            </div>
+                            <div id="incompatibleShelfAlert" class="alert alert-danger py-2 mb-2" style="display: none; font-size: 13px;">
+                                <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">block</span>
+                                <strong>Incompatible Destination Shelf:</strong> <span id="incompatibleShelfReason"></span>
+                            </div>
+                            <div class="capacity-advice" id="destinationAdvice">
+                                <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 16px; margin-right: 4px;">info</span>
+                                Select a source product and enter quantity to view system shelf capacity recommendations and storage rule compatibility.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Transfer Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Transfer Details Modal -->
+<div class="modal fade" id="transferDetailModal" tabindex="-1" aria-labelledby="transferDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <h5 class="modal-title" id="transferDetailModalLabel">Transfer Details — <span id="modalTransferNo" class="font-mono text-primary"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="transferDetailLoading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted mt-2">Loading transfer line items...</p>
+                </div>
+                <div id="transferDetailContent" style="display: none;">
+                    <table class="ims-table">
+                        <thead>
+                            <tr>
+                                <th>Product / SKU</th>
+                                <th class="text-right">Qty</th>
+                                <th>Source Shelf</th>
+                                <th>Destination Shelf</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transferItemsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer ims-modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/stock-transfers.js" asp-append-version="true"></script>
+}

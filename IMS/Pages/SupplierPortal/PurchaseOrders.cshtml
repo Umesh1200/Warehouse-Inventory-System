@@ -1,0 +1,318 @@
+@page
+@model IMS.Pages.SupplierPortal.PurchaseOrdersModel
+@{
+    ViewData["Title"] = "Purchase Orders";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/supplierportal/purchase-orders.css" asp-append-version="true" />
+}
+
+<div class="po-page">
+    <header class="page-header">
+        <div>
+            <div class="eyebrow">
+                <span class="material-symbols-outlined">shopping_cart</span>
+                Supplier Portal
+            </div>
+            <h1>Purchase Orders</h1>
+            <p>Track purchase orders issued by the factory and update shipment statuses.</p>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Summary Grid -->
+    <section class="summary-grid mb-4" aria-label="Purchase Order metrics">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <article class="summary-card">
+                <div class="summary-top">
+                    <span class="summary-icon summary-@card.ColorClass material-symbols-outlined">@card.Icon</span>
+                    <div>
+                        <p>@card.Title</p>
+                        <strong>@card.Value</strong>
+                    </div>
+                </div>
+            </article>
+        }
+    </section>
+
+    <!-- Content Split Layout -->
+    <div class="split-layout">
+        <!-- Left Panel: Purchase Orders List -->
+        <section class="list-panel">
+            <div class="panel-header">
+                <h2>Issued Purchase Orders</h2>
+                <span class="count-badge">@Model.PurchaseOrders.Count Order(s)</span>
+            </div>
+
+            <div class="list-container custom-scrollbar">
+                @if (Model.PurchaseOrders.Any())
+                {
+                    @foreach (var po in Model.PurchaseOrders)
+                    {
+                        <a asp-page="/SupplierPortal/PurchaseOrders" asp-route-poid="@po.POID" 
+                           class="list-item @(po.IsSelected ? "active" : "")">
+                            <div class="item-header">
+                                <strong>@po.PONumber</strong>
+                                <span class="badge badge-@po.Status.ToLower()">@po.Status</span>
+                            </div>
+                            <div class="item-meta">
+                                <span>Ordered: @po.OrderDate</span>
+                                <span class="amount">Rs. @po.TotalAmount.ToString("N2")</span>
+                            </div>
+                            <div class="item-footer">
+                                <span>Items: @po.ItemCount</span>
+                                <span>Expected: @po.ExpectedDate</span>
+                            </div>
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">description</span>
+                        <p>No purchase orders found.</p>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <!-- Right Panel: Purchase Order Details -->
+        <section class="details-panel">
+            @if (Model.SelectedPurchaseOrder != null)
+            {
+                <div class="panel-header-details">
+                    <div>
+                        <div class="po-title">
+                            <h2>@Model.SelectedPurchaseOrder.PONumber</h2>
+                            <span class="badge badge-@Model.SelectedPurchaseOrder.Status.ToLower()">@Model.SelectedPurchaseOrder.Status</span>
+                        </div>
+                        <p class="meta">Ordered Date: @Model.SelectedPurchaseOrder.OrderDate | Expected: @Model.SelectedPurchaseOrder.ExpectedDate</p>
+                    </div>
+                    <div class="actions">
+                        @if (Model.SelectedPurchaseOrder.Status == "Confirmed")
+                        {
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#shipPOModal">
+                                <span class="material-symbols-outlined">local_shipping</span>
+                                Ship Purchase Order
+                            </button>
+                            <button type="button" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#rejectPOModal">
+                                <span class="material-symbols-outlined">cancel</span>
+                                Reject PO
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="details-body">
+                    @if (Model.SelectedPurchaseOrder.Status == "Cancelled" && !string.IsNullOrEmpty(Model.SelectedPurchaseOrder.RejectionReason))
+                    {
+                        <div class="remarks-box mb-4" style="border-left: 4px solid var(--danger); background-color: #fef2f2;">
+                            <label style="color: var(--danger); font-weight: 700;">Purchase Order Rejected by Supplier:</label>
+                            <p style="margin-top: 0.25rem;">@Model.SelectedPurchaseOrder.RejectionReason</p>
+                        </div>
+                    }
+                    <!-- Logistics / Shipment Info -->
+                    @if (!string.IsNullOrEmpty(Model.SelectedPurchaseOrder.Carrier))
+                    {
+                        <div class="remarks-box mb-4">
+                            <label>Logistics & Shipment Details</label>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                                <div>
+                                    <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block;">Carrier</span>
+                                    <span>@Model.SelectedPurchaseOrder.Carrier</span>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block;">Tracking Number</span>
+                                    <strong>@Model.SelectedPurchaseOrder.TrackingNumber</strong>
+                                </div>
+                                <div>
+                                    <span style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); display: block;">Est. Delivery Date</span>
+                                    <span>@Model.SelectedPurchaseOrder.ExpectedDate</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Remarks Block -->
+                    @if (!string.IsNullOrEmpty(Model.SelectedPurchaseOrder.Remarks))
+                    {
+                        <div class="remarks-box mb-4">
+                            <label>Delivery / Remarks Notes:</label>
+                            <p>@Model.SelectedPurchaseOrder.Remarks</p>
+                        </div>
+                    }
+
+                    <!-- Items Table -->
+                    <div class="table-wrap">
+                        <h3>Order Line Items</h3>
+                        <table class="ims-table">
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>Product Name</th>
+                                    <th class="text-end">Qty Ordered</th>
+                                    <th class="text-end">Qty Shipped</th>
+                                    <th class="text-end">Qty Received</th>
+                                    <th class="text-end">Unit Price</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.SelectedItems)
+                                {
+                                    <tr>
+                                        <td><strong>@item.SKU</strong></td>
+                                        <td>@item.ProductName</td>
+                                        <td class="text-end">@item.OrderedQty.ToString("N0")</td>
+                                        <td class="text-end">@(item.ShippedQty.HasValue ? item.ShippedQty.Value.ToString("N0") : "-")</td>
+                                        <td class="text-end">@item.ReceivedQty.ToString("N0")</td>
+                                        <td class="text-end font-mono">Rs. @item.UnitPrice.ToString("N2")</td>
+                                        <td class="text-end font-mono"><strong>Rs. @item.TotalPrice.ToString("N2")</strong></td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong>Total Amount:</strong></td>
+                                    <td class="text-end font-mono"><strong>Rs. @Model.SelectedPurchaseOrder.TotalAmount.ToString("N2")</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-large">
+                    <span class="material-symbols-outlined">receipt</span>
+                    <h2>No Purchase Order Selected</h2>
+                    <p>Select an order from the list on the left to view its items and status.</p>
+                </div>
+            }
+        </section>
+    </div>
+</div>
+
+@if (Model.SelectedPurchaseOrder != null)
+{
+    <!-- Modal: Ship Purchase Order -->
+    <div class="modal fade" id="shipPOModal" tabindex="-1" aria-labelledby="shipPOModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-header bg-success text-white" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                    <h5 class="modal-title" id="shipPOModalLabel">Ship Purchase Order</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" asp-page-handler="MarkAsShipped">
+                    <input type="hidden" asp-for="ShipPOID" value="@Model.SelectedPurchaseOrder.POID" />
+                    
+                    <div class="modal-body p-4">
+                        <p class="text-muted mb-4">Provide logistics shipping tracking details and confirm quantities shipped for this Purchase Order.</p>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label for="shipCarrier" class="form-label">Carrier <span class="text-danger">*</span></label>
+                                <input type="text" id="shipCarrier" asp-for="ShipCarrier" class="form-control" placeholder="e.g. DHL, FedEx" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label for="shipTracking" class="form-label">Tracking Number <span class="text-danger">*</span></label>
+                                <input type="text" id="shipTracking" asp-for="ShipTrackingNumber" class="form-control" placeholder="e.g. TRK9928312" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label for="shipExpected" class="form-label">Estimated Delivery Date <span class="text-danger">*</span></label>
+                                <input type="date" id="shipExpected" name="ShipExpectedDate" class="form-control" value="@(DateTime.Today.AddDays(3).ToString("yyyy-MM-dd"))" required />
+                            </div>
+                        </div>
+
+                        <h3 class="mb-3" style="font-size: 1.05rem; font-weight: 700; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Confirm Quantities Shipped</h3>
+                        <div class="table-wrap">
+                            <table class="ims-table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Product Name</th>
+                                        <th class="text-end" style="width: 120px;">Qty Ordered</th>
+                                        <th class="text-end" style="width: 150px;">Qty Shipped</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.SelectedItems.Count; i++)
+                                    {
+                                        var item = Model.SelectedItems[i];
+                                        <tr>
+                                            <td>
+                                                <strong>@item.SKU</strong>
+                                                <input type="hidden" name="ShippedQuantities[@i].POItemID" value="@item.POItemID" />
+                                            </td>
+                                            <td>@item.ProductName</td>
+                                            <td class="text-end">@item.OrderedQty.ToString("N0")</td>
+                                            <td>
+                                                <input type="number" step="0.01" name="ShippedQuantities[@i].Quantity" value="@item.OrderedQty" class="form-control text-end" min="0" required />
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer p-3 bg-light" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">
+                            <span class="material-symbols-outlined">local_shipping</span>
+                            Confirm & Ship
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Reject Purchase Order -->
+    <div class="modal fade" id="rejectPOModal" tabindex="-1" aria-labelledby="rejectPOModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-header bg-danger text-white" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                    <h5 class="modal-title" id="rejectPOModalLabel">Reject Purchase Order</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" asp-page-handler="RejectPO">
+                    <input type="hidden" asp-for="RejectPOID" value="@Model.SelectedPurchaseOrder.POID" />
+                    <div class="modal-body p-4">
+                        <p class="text-muted">Are you sure you want to reject this Purchase Order? Please provide a clear reason for the rejection.</p>
+                        <div class="mb-3">
+                           <label for="rejectReason" class="form-label">Rejection Reason <span class="text-danger">*</span></label>
+                           <textarea id="rejectReason" asp-for="RejectReason" class="form-control" rows="4" placeholder="e.g. Price discrepancies, insufficient stock of materials, incorrect SKU details" required></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer p-3 bg-light" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger">
+                            <span class="material-symbols-outlined">cancel</span>
+                            Confirm Rejection
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}

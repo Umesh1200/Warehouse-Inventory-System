@@ -1,0 +1,132 @@
+@page
+@model IMS.Pages.SupplierPortal.ProfileModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/supplierportal/profile.css" asp-append-version="true" />
+}
+
+<div class="profile-page">
+    <header class="page-header">
+        <div>
+            <div class="eyebrow">
+                <span class="material-symbols-outlined">factory</span>
+                Supplier Portal
+            </div>
+            <h1>My Profile</h1>
+            <p>View and maintain your organization's contact details, return policies, and shipping settings.</p>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="profile-layout-grid">
+        <!-- Sidebar Info -->
+        <aside class="profile-sidebar-card">
+            <div class="supplier-header-block">
+                <div class="avatar-large">
+                    @(Model.SupplierDetails.SupplierName.Substring(0, Math.Min(2, Model.SupplierDetails.SupplierName.Length)).ToUpper())
+                </div>
+                <h2>@Model.SupplierDetails.SupplierName</h2>
+                <span class="badge badge-@Model.SupplierDetails.Status.ToLower().Replace(" ", "-")">@Model.SupplierDetails.Status</span>
+            </div>
+
+            <hr />
+
+            <div class="details-list">
+                <div class="detail-item">
+                    <label>Supplier Code</label>
+                    <strong>@Model.SupplierDetails.SupplierCode</strong>
+                </div>
+                <div class="detail-item">
+                    <label>Supplier Type</label>
+                    <span>@Model.SupplierDetails.SupplierType</span>
+                </div>
+                <div class="detail-item">
+                    <label>Standard Lead Time</label>
+                    <span>@Model.SupplierDetails.LeadTimeDays Days</span>
+                </div>
+                <div class="detail-item">
+                    <label>Payment Terms</label>
+                    <span>@Model.SupplierDetails.PaymentTerms</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Form -->
+        <section class="profile-main-card">
+            <form method="post" class="profile-form">
+                <h2>Contact & Logistics Details</h2>
+                <p class="section-desc">These details are editable by you. Keep them updated to ensure smooth communication and dispatch operations.</p>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="contactPerson">Contact Person</label>
+                        <input type="text" id="contactPerson" asp-for="EditProfile.ContactPerson" class="form-control" placeholder="Jane Doe" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" asp-for="EditProfile.Phone" class="form-control" placeholder="+1-555-0199" required />
+                    </div>
+
+                    <div class="form-group col-span-2">
+                        <label for="email">General Email Address</label>
+                        <input type="email" id="email" asp-for="EditProfile.Email" class="form-control" placeholder="info@company.com" required />
+                    </div>
+
+                    <div class="form-group col-span-2">
+                        <label for="address">Registered Address</label>
+                        <textarea id="address" asp-for="EditProfile.Address" class="form-control" rows="3" placeholder="123 Corporate Way, Suite 400" required></textarea>
+                    </div>
+                </div>
+
+                <h2 class="mt-4">Returns & Carrier Information</h2>
+                <p class="section-desc">Settings used during Return to Vendor (RTV) shipments.</p>
+
+                <div class="form-grid">
+                    <div class="form-group col-span-2">
+                        <label for="returnEmail">RMA Contact Email</label>
+                        <input type="email" id="returnEmail" asp-for="EditProfile.ReturnEmail" class="form-control" placeholder="returns@company.com" />
+                        <small class="text-muted">Where RMA inquiries and automatic RTV notifications are sent.</small>
+                    </div>
+
+                    <div class="form-group col-span-2">
+                        <label for="preferredCarrier">Preferred Carrier</label>
+                        <input type="text" id="preferredCarrier" asp-for="EditProfile.PreferredCarrier" class="form-control" placeholder="FedEx, DHL, UPS" />
+                    </div>
+
+                    <div class="form-group col-span-2">
+                        <label for="returnPolicy">Return Policy Description</label>
+                        <textarea id="returnPolicy" asp-for="EditProfile.ReturnPolicy" class="form-control" rows="3" placeholder="Specify terms, authorization window, and return shipping address details..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <span class="material-symbols-outlined">save</span>
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </section>
+    </div>
+</div>

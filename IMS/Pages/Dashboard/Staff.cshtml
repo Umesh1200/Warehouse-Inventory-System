@@ -1,0 +1,282 @@
+@page
+@model IMS.Pages.Dashboard.StaffModel
+@{
+    ViewData["Title"] = "My Dashboard";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/staff-dashboard.css" asp-append-version="true" />
+}
+
+<div class="dashboard-page">
+    <header class="page-header">
+        <div>
+            <h1>My Dashboard</h1>
+            <p>Welcome back, @Model.StaffName! Here is your operational shift summary.</p>
+        </div>
+    </header>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined" style="vertical-align: middle;">check_circle</span> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined" style="vertical-align: middle;">error</span> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="split-layout">
+        <div class="left-column">
+            <section class="kpi-grid">
+                @foreach (var card in Model.KPICards)
+                {
+                    <article class="kpi-card">
+                        <div class="kpi-icon-wrapper @card.ColorClass">
+                            <span class="material-symbols-outlined">@card.Icon</span>
+                        </div>
+                        <div class="kpi-details">
+                            <p class="kpi-title">@card.Title</p>
+                            <div class="kpi-value-row">
+                                <strong>@card.Value</strong>
+                                <span class="kpi-subtext">@card.Subtext</span>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </section>
+
+            <section class="dashboard-panel">
+                <div class="panel-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">MY CURRENT TASKS</h2>
+                    <span class="badge bg-light text-dark font-mono">@Model.CurrentTasks.Count Tasks</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="ims-table">
+                        <thead>
+                            <tr>
+                                <th>Task Type</th>
+                                <th>Item / Order</th>
+                                <th>Reference / Location</th>
+                                <th>Status</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.CurrentTasks.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <span class="material-symbols-outlined" style="font-size: 32px; display: block; margin-bottom: 0.25rem;">task_alt</span>
+                                        No pending tasks assigned. You're all caught up!
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var task in Model.CurrentTasks)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong style="color: var(--primary);">@task.Name</strong>
+                                    </td>
+                                    <td>
+                                        <div>@task.Product</div>
+                                        <div class="mono text-muted" style="font-size: 11px;">@task.BatchNo</div>
+                                    </td>
+                                    <td>
+                                        <div class="mono" style="font-size: 12px; font-weight: 600; color: var(--secondary);">@task.LocationDetail</div>
+                                    </td>
+                                    <td>
+                                        <span class="ims-badge @task.StatusClass">@task.Status</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (task.TaskType == "Transfer")
+                                        {
+                                            <div class="d-inline-flex gap-1 align-items-center">
+                                                <form method="post" asp-page-handler="CompleteTransfer" onsubmit="return confirm('Confirm and complete stock transfer @task.BatchNo?');" style="display:inline;">
+                                                    <input type="hidden" name="transferId" value="@task.TaskId" />
+                                                    <button type="submit" class="btn btn-sm btn-primary py-1 px-2" style="font-size: 11px; font-weight: 600;">
+                                                        <span class="material-symbols-outlined" style="font-size: 13px; vertical-align: middle;">move_down</span> Confirm Move
+                                                    </button>
+                                                </form>
+                                                <a href="@task.ActionUrl" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" title="View in Transfers">
+                                                    <span class="material-symbols-outlined" style="font-size: 13px; vertical-align: middle;">open_in_new</span>
+                                                </a>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <a href="@task.ActionUrl" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 11px; font-weight: 600;">
+                                                Open Task <span class="material-symbols-outlined" style="font-size: 13px; vertical-align: middle;">arrow_forward</span>
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+            </section>
+        </div>
+
+        <div class="right-column">
+            <section class="dashboard-panel team-activity-panel">
+                <div class="panel-header d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0">TEAM ACTIVITY</h2>
+                    <div class="header-actions">
+                        <span title="Activity Color Legend">
+                            <button type="button" class="icon-button" data-bs-toggle="popover" data-bs-placement="bottom" 
+                                    data-bs-trigger="focus" 
+                                    data-bs-html="true" data-bs-content="<div class='activity-legend'><div class='activity-in'>Stock In</div><div class='activity-out'>Stock Out</div><div class='activity-transfer'>Transfer</div><div class='activity-neutral'>Other</div></div>">
+                                <span class="material-symbols-outlined">info</span>
+                            </button>
+                        </span>
+                        
+                        <div class="dropdown d-inline-block" title="Filter Activities">
+                            <button class="icon-button" type="button" id="activityFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                <span class="material-symbols-outlined">filter_alt</span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="activityFilterDropdown" style="width: 250px;">
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">Time</label>
+                                    <select class="form-select form-select-sm" id="filter-time">
+                                        <option value="All">All Time</option>
+                                        <option value="Today" selected>Today</option>
+                                        <option value="Yesterday">Yesterday</option>
+                                        <option value="Last7Days">Last 7 Days</option>
+                                    </select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label small fw-bold">User</label>
+                                    <select class="form-select form-select-sm" id="filter-user">
+                                        <option value="All">All Users</option>
+                                        @foreach(var u in Model.FilterUsers) {
+                                            <option value="@u">@u</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Action Type</label>
+                                    <select class="form-select form-select-sm" id="filter-action">
+                                        <option value="All">All Actions</option>
+                                        @foreach(var a in Model.FilterActionTypes) {
+                                            <option value="@a">@a</option>
+                                        }
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-primary btn-sm w-100" id="apply-filters-btn">Apply</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="activity-feed" id="activity-feed-container">
+                    @foreach (var activity in Model.TeamActivities)
+                    {
+                        <div class="activity-item @activity.ActionColorClass">
+                            <div class="activity-avatar" style="background-color: @activity.AvatarColor;">
+                                @activity.Avatar
+                            </div>
+                            <div class="activity-content">
+                                <p class="activity-text">@activity.Text</p>
+                                <span class="activity-time">@activity.Time</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="p-3 text-center">
+                    <button type="button" id="load-more-btn" class="btn btn-outline-primary btn-sm w-100">Load More</button>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize Bootstrap Popovers
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl)
+            })
+
+            let skip = 10;
+            const take = 10;
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            const applyFiltersBtn = document.getElementById('apply-filters-btn');
+            const feedContainer = document.getElementById('activity-feed-container');
+            const filterDropdown = new bootstrap.Dropdown(document.getElementById('activityFilterDropdown'));
+
+            function loadActivities(reset = false) {
+                if (reset) {
+                    skip = 0;
+                    feedContainer.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm text-primary" role="status"></div></div>';
+                    loadMoreBtn.disabled = true;
+                } else {
+                    loadMoreBtn.disabled = true;
+                    loadMoreBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+                }
+
+                const time = document.getElementById('filter-time').value;
+                const user = document.getElementById('filter-user').value;
+                const action = document.getElementById('filter-action').value;
+
+                fetch(`?handler=Activities&skip=${skip}&take=${take}&timeFilter=${time}&userFilter=${user}&actionFilter=${action}`, {
+                    headers: { 'Accept': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (reset) feedContainer.innerHTML = '';
+
+                    if (data.activities.length === 0 && reset) {
+                        feedContainer.innerHTML = '<div class="text-center p-4 text-muted">No activities found matching filters.</div>';
+                        loadMoreBtn.style.display = 'none';
+                        return;
+                    }
+
+                    data.activities.forEach(activity => {
+                        const item = document.createElement('div');
+                        item.className = `activity-item ${activity.actionColorClass}`;
+                        item.innerHTML = `
+                            <div class="activity-avatar" style="background-color: ${activity.avatarColor};">${activity.avatar}</div>
+                            <div class="activity-content">
+                                <p class="activity-text">${activity.text}</p>
+                                <span class="activity-time">${activity.time}</span>
+                            </div>
+                        `;
+                        feedContainer.appendChild(item);
+                    });
+
+                    skip += data.activities.length;
+                    
+                    if (data.hasMore) {
+                        loadMoreBtn.style.display = 'inline-block';
+                        loadMoreBtn.disabled = false;
+                        loadMoreBtn.innerText = 'Load More';
+                    } else {
+                        loadMoreBtn.style.display = 'none';
+                    }
+                })
+                .catch(err => {
+                    console.error("Error fetching activities", err);
+                    if (reset) feedContainer.innerHTML = '<div class="text-danger p-3">Failed to load activities.</div>';
+                    loadMoreBtn.innerText = 'Error - Try Again';
+                    loadMoreBtn.disabled = false;
+                });
+            }
+
+            loadMoreBtn.addEventListener('click', () => loadActivities(false));
+
+            applyFiltersBtn.addEventListener('click', () => {
+                filterDropdown.hide();
+                loadActivities(true);
+            });
+        });
+    </script>
+}

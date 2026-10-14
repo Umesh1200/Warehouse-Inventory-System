@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sales Order Management - InventoryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#364768",
+                    "on-error-container": "#93000a",
+                    "sidebar-bg": "#0F172A",
+                    "on-secondary-container": "#fefcff",
+                    "surface-container": "#efedf0",
+                    "surface": "#fbf8fc",
+                    "surface-container-low": "#f5f3f6",
+                    "surface-container-high": "#e9e7eb",
+                    "on-tertiary": "#ffffff",
+                    "status-info": "#6366F1",
+                    "primary": "#031635",
+                    "on-primary-fixed": "#081b3a",
+                    "status-success": "#10B981",
+                    "primary-fixed-dim": "#b6c6ef",
+                    "tertiary-container": "#292c2e",
+                    "on-surface-variant": "#44474e",
+                    "on-secondary-fixed-variant": "#004395",
+                    "outline-variant": "#c5c6cf",
+                    "secondary": "#0058be",
+                    "surface-border": "#E2E8F0",
+                    "on-secondary": "#ffffff",
+                    "inverse-surface": "#303033",
+                    "inverse-primary": "#b6c6ef",
+                    "secondary-container": "#2170e4",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "secondary-fixed": "#d8e2ff",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "on-primary-container": "#8293b8",
+                    "surface-tint": "#4e5e81",
+                    "background": "#fbf8fc",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed": "#d8e2ff",
+                    "on-error": "#ffffff",
+                    "data-fill": "#DBEAFE",
+                    "on-tertiary-fixed": "#191c1e",
+                    "on-background": "#1b1b1e",
+                    "on-tertiary-container": "#909395",
+                    "surface-container-highest": "#e4e2e5",
+                    "tertiary-fixed": "#e0e3e5",
+                    "status-error": "#EF4444",
+                    "status-warning": "#F59E0B",
+                    "outline": "#75777f",
+                    "surface-variant": "#e4e2e5",
+                    "error-container": "#ffdad6",
+                    "surface-bright": "#fbf8fc",
+                    "on-surface": "#1b1b1e",
+                    "primary-container": "#1a2b4b",
+                    "on-secondary-fixed": "#001a42",
+                    "surface-dim": "#dbd9dc",
+                    "on-primary": "#ffffff",
+                    "inverse-on-surface": "#f2f0f3",
+                    "tertiary": "#141819",
+                    "secondary-fixed-dim": "#adc6ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "table-cell-padding": "0.75rem 1rem",
+                    "gutter": "1.5rem",
+                    "stack-sm": "0.5rem",
+                    "sidebar-width": "260px",
+                    "container-padding": "2rem",
+                    "stack-md": "1rem"
+            },
+            "fontFamily": {
+                    "label-mono": [
+                            "JetBrains Mono"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "body-sm": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Inter"
+                    ],
+                    "table-header": [
+                            "Inter"
+                    ],
+                    "headline-lg": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "label-mono": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.02em",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-md": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "body-sm": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-md": [
+                            "18px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "table-header": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "headline-lg": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "600"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        /* Custom scrollbar for data density */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        
+        .table-row-hover:hover {
+            background-color: #F8FAFC;
+        }
+    </style>
+</head>
+<body class="bg-surface-container-low text-on-surface font-body-md min-h-screen antialiased flex">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[260px] bg-sidebar-bg dark:bg-sidebar-bg border-r border-outline-variant flex flex-col py-4 z-20 transition-transform duration-300 md:translate-x-0 -translate-x-full" id="mobile-sidebar">
+<div class="px-gutter mb-8 flex items-center justify-between">
+<div>
+<h1 class="text-headline-lg font-headline-lg font-black text-on-primary dark:text-on-primary">InventoryPro</h1>
+<p class="text-body-sm font-body-sm text-secondary-fixed dark:text-secondary-fixed-dim opacity-80 mt-1">Enterprise Logistics</p>
+</div>
+<button class="md:hidden text-on-primary" onclick="toggleSidebar()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full bg-status-info text-on-primary font-headline-md text-headline-md py-3 px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-opacity-90 transition-colors scale-95 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">add</span>
+                New Transaction
+            </button>
+</div>
+<nav class="flex-1 overflow-y-auto px-2 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+                Items
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+                Purchase
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined">warehouse</span>
+                Inventory
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container text-on-secondary-container rounded-lg mx-2 transition-colors duration-150 font-body-sm text-body-sm font-semibold" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+                Sales
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined">assessment</span>
+                Reports
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined">notifications</span>
+                Alerts
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="mt-auto px-2 pt-4 border-t border-outline-variant/20 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined">location_on</span>
+                Warehouse Selector
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 font-body-sm text-body-sm" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+                Support
+            </a>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 md:ml-[260px] flex flex-col min-h-screen w-full relative">
+<!-- TopAppBar -->
+<header class="sticky top-0 right-0 w-full h-16 border-b border-surface-border bg-surface-bright dark:bg-surface-dim flex justify-between items-center px-gutter z-10">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-primary dark:text-primary-fixed cursor-pointer active:opacity-70 p-2 rounded-full hover:bg-surface-container transition-colors" onclick="toggleSidebar()">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="hidden md:flex items-center gap-6">
+<h2 class="font-headline-lg text-headline-lg text-primary dark:text-primary-fixed font-bold tracking-tight">Sales Orders</h2>
+<nav class="flex items-center gap-6 mt-1">
+<a class="text-on-surface-variant font-medium font-body-md text-body-md hover:text-secondary transition-colors cursor-pointer active:opacity-70" href="#">Sales</a>
+<span class="text-surface-border">/</span>
+<a class="text-primary font-bold border-b-2 border-secondary font-body-md text-body-md pb-1 cursor-pointer active:opacity-70" href="#">Sales Order Management</a>
+</nav>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-surface-border rounded-lg text-body-sm font-body-sm focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" placeholder="Search orders..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-primary dark:text-primary-fixed hover:text-secondary transition-colors cursor-pointer active:opacity-70 rounded-full hover:bg-surface-container relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-status-error rounded-full"></span>
+</button>
+<button class="p-2 text-primary dark:text-primary-fixed hover:text-secondary transition-colors cursor-pointer active:opacity-70 rounded-full hover:bg-surface-container hidden sm:block">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-primary-fixed-dim overflow-hidden ml-2 border border-surface-border cursor-pointer">
+<img alt="Admin User" class="w-full h-full object-cover" data-alt="A professional headshot of a logistics administrator in a modern, well-lit corporate office environment. The lighting is soft and neutral, enhancing a clean, utilitarian aesthetic. The background is slightly blurred, showing faint hints of supply chain data charts on a distant monitor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyv6hSSAwXVCjRuRGlIDAywSazZeFek82xmhRdZ5jtyplDO_Un4Wsk9EHMGWAWn4UpTJW9OnTyspLLAwJhgEGwXShcYb7zFL3gy01MJMWVtw-xm0Nho9YsKcurm1yhiE3BKipApm5-AiMgFvuzG9wm1r_G3pIq36vQUTWMRv9v5tr1aKt1hgZKZYPhj3H_1a5iW1hixdwcZoH0WHoLkrSsTidNcDEJLvYyNgvlNJrD5X7U9_o6cM29BGxwpCvB7kh7ZA3WYHsEDl_W"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Canvas -->
+<main class="flex-1 p-gutter overflow-x-hidden flex flex-col gap-gutter">
+<!-- Bento Layout Container -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter flex-1">
+<!-- Left Column: Order List (Spans 7 cols on Desktop) -->
+<div class="xl:col-span-7 flex flex-col gap-4">
+<!-- List Header & Actions -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface-container-lowest p-4 rounded-xl border border-surface-border shadow-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">list_alt</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">Active Sales Orders</h3>
+<span class="bg-surface-container-high text-on-surface-variant font-label-mono text-label-mono px-2 py-0.5 rounded-full ml-2">124</span>
+</div>
+<div class="flex items-center gap-3 w-full sm:w-auto">
+<div class="relative flex-1 sm:w-48">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">filter_list</span>
+<select class="w-full pl-8 pr-8 py-1.5 bg-surface-container-low border border-surface-border rounded-lg text-body-sm font-body-sm focus:outline-none focus:border-secondary appearance-none">
+<option>All Statuses</option>
+<option>Pending</option>
+<option>Reserved</option>
+<option>Dispatched</option>
+</select>
+</div>
+<button class="bg-[#3B82F6] hover:bg-secondary-container text-white font-body-md text-body-md font-medium py-1.5 px-4 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap shadow-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+                                Create SO
+                            </button>
+</div>
+</div>
+<!-- Order List Table Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-surface-border overflow-hidden flex-1 flex flex-col shadow-sm relative">
+<div class="overflow-x-auto flex-1">
+<table class="w-full text-left border-collapse">
+<thead class="bg-[#F1F5F9] sticky top-0 z-10 border-b border-surface-border">
+<tr>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase tracking-wider">SO Number</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase tracking-wider">Customer</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase tracking-wider">Date</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase tracking-wider text-right">Total</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase tracking-wider">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-border font-body-sm text-body-sm">
+<!-- Selected Row -->
+<tr class="table-row-hover cursor-pointer bg-primary-fixed bg-opacity-30 border-l-2 border-l-secondary transition-colors">
+<td class="p-table-cell-padding font-label-mono text-label-mono text-secondary font-semibold">SO-2023-4091</td>
+<td class="p-table-cell-padding text-on-surface font-medium">Himalayan Logistics Pvt. Ltd.</td>
+<td class="p-table-cell-padding text-on-surface-variant">Oct 24, 2023</td>
+<td class="p-table-cell-padding text-right font-label-mono text-label-mono">Rs. 12,450.00</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-status-warning bg-opacity-10 text-status-warning border border-status-warning border-opacity-20">
+                                                Pending
+                                            </span>
+</td>
+</tr>
+<!-- Normal Rows -->
+<tr class="table-row-hover cursor-pointer transition-colors">
+<td class="p-table-cell-padding font-label-mono text-label-mono text-on-surface">SO-2023-4090</td>
+<td class="p-table-cell-padding text-on-surface">Global Supply Inc.</td>
+<td class="p-table-cell-padding text-on-surface-variant">Oct 23, 2023</td>
+<td class="p-table-cell-padding text-right font-label-mono text-label-mono">Rs. 3,200.50</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-status-info bg-opacity-10 text-status-info border border-status-info border-opacity-20">
+                                                Reserved
+                                            </span>
+</td>
+</tr>
+<tr class="table-row-hover cursor-pointer transition-colors">
+<td class="p-table-cell-padding font-label-mono text-label-mono text-on-surface">SO-2023-4089</td>
+<td class="p-table-cell-padding text-on-surface">TechFlow Systems</td>
+<td class="p-table-cell-padding text-on-surface-variant">Oct 23, 2023</td>
+<td class="p-table-cell-padding text-right font-label-mono text-label-mono">Rs. 8,900.00</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-status-success bg-opacity-10 text-status-success border border-status-success border-opacity-20">
+                                                Dispatched
+                                            </span>
+</td>
+</tr>
+<tr class="table-row-hover cursor-pointer transition-colors">
+<td class="p-table-cell-padding font-label-mono text-label-mono text-on-surface">SO-2023-4088</td>
+<td class="p-table-cell-padding text-on-surface">Northwest Retailers</td>
+<td class="p-table-cell-padding text-on-surface-variant">Oct 22, 2023</td>
+<td class="p-table-cell-padding text-right font-label-mono text-label-mono">Rs. 1,150.00</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-status-info bg-opacity-10 text-status-info border border-status-info border-opacity-20">
+                                                Reserved
+                                            </span>
+</td>
+</tr>
+<tr class="table-row-hover cursor-pointer transition-colors">
+<td class="p-table-cell-padding font-label-mono text-label-mono text-on-surface">SO-2023-4087</td>
+<td class="p-table-cell-padding text-on-surface">Delta Manufacturing</td>
+<td class="p-table-cell-padding text-on-surface-variant">Oct 21, 2023</td>
+<td class="p-table-cell-padding text-right font-label-mono text-label-mono">Rs. 45,200.00</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-status-success bg-opacity-10 text-status-success border border-status-success border-opacity-20">
+                                                Dispatched
+                                            </span>
+</td>
+</tr>
+<tr class="table-row-hover cursor-pointer transition-colors">
+<td class="p-table-cell-padding font-label-mono text-label-mono text-on-surface">SO-2023-4086</td>
+<td class="p-table-cell-padding text-on-surface">Himalayan Logistics Pvt. Ltd.</td>
+<td class="p-table-cell-padding text-on-surface-variant">Oct 20, 2023</td>
+<td class="p-table-cell-padding text-right font-label-mono text-label-mono">Rs. 5,400.00</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-status-warning bg-opacity-10 text-status-warning border border-status-warning border-opacity-20">
+                                                Pending
+                                            </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="border-t border-surface-border bg-surface-container-lowest p-3 flex items-center justify-between">
+<span class="text-body-sm font-body-sm text-on-surface-variant">Showing 1 to 6 of 124 entries</span>
+<div class="flex items-center gap-1">
+<button class="p-1 border border-surface-border rounded text-on-surface-variant hover:bg-surface-container disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="px-2.5 py-1 bg-[#3B82F6] text-white rounded text-sm font-medium">1</button>
+<button class="px-2.5 py-1 hover:bg-surface-container rounded text-sm font-medium text-on-surface-variant">2</button>
+<button class="px-2.5 py-1 hover:bg-surface-container rounded text-sm font-medium text-on-surface-variant">3</button>
+<span class="text-on-surface-variant px-1">...</span>
+<button class="p-1 border border-surface-border rounded text-on-surface-variant hover:bg-surface-container">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Order Details View (Spans 5 cols on Desktop) -->
+<div class="xl:col-span-5 flex flex-col gap-4 h-full">
+<!-- Details Header Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-surface-border p-6 shadow-lg shadow-surface-border/20 relative overflow-hidden">
+<!-- Abstract decorative background element -->
+<div class="absolute -top-10 -right-10 w-40 h-40 bg-data-fill rounded-full blur-3xl opacity-30 pointer-events-none"></div>
+<div class="flex justify-between items-start mb-6 relative z-10">
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-bold">SO-2023-4091</h2>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-status-warning bg-opacity-10 text-status-warning border border-status-warning border-opacity-20">Pending</span>
+</div>
+<p class="text-on-surface-variant font-body-sm text-body-sm flex items-center gap-1"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+</div>
+<div class="flex gap-2">
+<button class="p-1.5 text-[#64748B] hover:text-secondary border border-surface-border rounded-lg hover:bg-surface-container transition-colors" title="Print">
+<span class="material-symbols-outlined">print</span>
+</button>
+<button class="p-1.5 text-[#64748B] hover:text-secondary border border-surface-border rounded-lg hover:bg-surface-container transition-colors" title="Edit">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-y-4 gap-x-6 text-sm relative z-10">
+<div>
+<p class="text-on-surface-variant font-body-sm text-body-sm mb-1"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+<p class="font-medium text-on-surface">Oct 24, 2023 14:30</p>
+</div>
+<div>
+<p class="text-on-surface-variant font-body-sm text-body-sm mb-1"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+<p class="font-medium text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-status-error text-sm">event_busy</span>
+                                    Oct 30, 2023
+                                </p>
+</div>
+<div class="col-span-2">
+<p class="text-on-surface-variant font-body-sm text-body-sm mb-1"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+<p class="font-medium text-on-surface">Ward No. 3, Maharajgunj, Kathmandu 44600, Nepal</p>
+</div>
+</div>
+</div>
+<!-- Line Items & Stock Availability Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-surface-border shadow-sm flex-1 flex flex-col overflow-hidden">
+<div class="p-4 border-b border-surface-border bg-[#F8FAFC] flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md text-on-surface text-sm font-semibold">Line Items &amp; Allocation</h3>
+<span class="text-body-sm font-body-sm text-on-surface-variant">3 Items</span>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4">
+<!-- Line Item 1: Sufficient Stock -->
+<div class="border border-[#E2E8F0] rounded-lg p-4 bg-white relative overflow-hidden group hover:border-outline-variant transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-status-success"></div>
+<div class="flex justify-between items-start mb-3">
+<div>
+<p class="font-label-mono text-label-mono text-secondary mb-0.5">SKU-PRD-001</p>
+<p class="font-medium text-on-surface text-sm">Industrial Servo Motor</p>
+</div>
+<p class="font-label-mono text-label-mono text-on-surface font-semibold">Rs. 4,500.00</p>
+</div>
+<div class="flex items-center justify-between text-sm bg-[#F1F5F9] p-2.5 rounded border border-surface-border border-opacity-50">
+<div class="flex items-center gap-4">
+<div class="text-center">
+<p class="text-xs text-on-surface-variant mb-0.5"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+<p class="font-label-mono text-label-mono font-bold">10</p>
+</div>
+<div class="w-px h-8 bg-surface-border"></div>
+<div class="text-center">
+<p class="text-xs text-on-surface-variant mb-0.5"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+<p class="font-label-mono text-label-mono font-bold text-status-success">45</p>
+</div>
+</div>
+<span class="inline-flex items-center gap-1 text-xs font-medium text-status-success bg-status-success bg-opacity-10 px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> In Stock
+                                    </span>
+</div>
+</div>
+<!-- Line Item 2: Low Stock Warning -->
+<div class="border border-[#E2E8F0] rounded-lg p-4 bg-white relative overflow-hidden group hover:border-outline-variant transition-colors">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-status-warning"></div>
+<div class="flex justify-between items-start mb-3">
+<div>
+<p class="font-label-mono text-label-mono text-secondary mb-0.5">SKU-PRD-045</p>
+<p class="font-medium text-on-surface text-sm">High-Torque Drive Belt</p>
+</div>
+<p class="font-label-mono text-label-mono text-on-surface font-semibold">Rs. 1,250.00</p>
+</div>
+<div class="flex items-center justify-between text-sm bg-[#F1F5F9] p-2.5 rounded border border-surface-border border-opacity-50">
+<div class="flex items-center gap-4">
+<div class="text-center">
+<p class="text-xs text-on-surface-variant mb-0.5"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+<p class="font-label-mono text-label-mono font-bold">50</p>
+</div>
+<div class="w-px h-8 bg-surface-border"></div>
+<div class="text-center">
+<p class="text-xs text-on-surface-variant mb-0.5"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+<p class="font-label-mono text-label-mono font-bold text-status-warning">52</p>
+</div>
+</div>
+<span class="inline-flex items-center gap-1 text-xs font-medium text-status-warning bg-status-warning bg-opacity-10 px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[14px]">warning</span> Low Stock
+                                    </span>
+</div>
+</div>
+<!-- Line Item 3: Insufficient Stock (Backorder) -->
+<div class="border border-[#E2E8F0] rounded-lg p-4 bg-white relative overflow-hidden group hover:border-outline-variant transition-colors opacity-90">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-status-error"></div>
+<div class="flex justify-between items-start mb-3">
+<div>
+<p class="font-label-mono text-label-mono text-secondary mb-0.5">SKU-CMP-112</p>
+<p class="font-medium text-on-surface text-sm">Control Panel Assembly X2</p>
+</div>
+<p class="font-label-mono text-label-mono text-on-surface font-semibold">Rs. 6,700.00</p>
+</div>
+<div class="flex items-center justify-between text-sm bg-[#F1F5F9] p-2.5 rounded border border-status-error border-opacity-20">
+<div class="flex items-center gap-4">
+<div class="text-center">
+<p class="text-xs text-on-surface-variant mb-0.5"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+<p class="font-label-mono text-label-mono font-bold">2</p>
+</div>
+<div class="w-px h-8 bg-surface-border"></div>
+<div class="text-center">
+<p class="text-xs text-on-surface-variant mb-0.5"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+<p class="font-label-mono text-label-mono font-bold text-status-error">0</p>
+</div>
+</div>
+<span class="inline-flex items-center gap-1 text-xs font-medium text-status-error bg-status-error bg-opacity-10 px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[14px]">inventory_2</span> Backorder
+                                    </span>
+</div>
+<!-- Restock notification snippet -->
+<div class="mt-2 text-xs text-on-surface-variant flex items-center gap-1 bg-surface-container-low p-1.5 rounded">
+<span class="material-symbols-outlined text-[12px]">local_shipping</span> PO-992 expected Oct 28
+                                </div>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="p-4 border-t border-surface-border bg-surface-container-lowest mt-auto">
+<div class="flex justify-between items-center mb-4">
+<span class="font-medium text-on-surface">Order Total</span>
+<span class="font-label-mono text-label-mono font-bold text-lg text-primary">Rs. 12,450.00</span>
+</div>
+<div class="flex gap-3">
+<button class="flex-1 border border-[#3B82F6] text-[#3B82F6] hover:bg-data-fill font-body-md text-body-md font-medium py-2 px-4 rounded-lg transition-colors">
+                                    Save Draft
+                                </button>
+<!-- Primary Action: Reserve Stock -->
+<button class="flex-[2] bg-[#3B82F6] hover:bg-secondary-container text-white font-body-md text-body-md font-medium py-2 px-4 rounded-lg transition-colors shadow-md flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">inventory</span>
+                                    Reserve Available Stock
+                                </button>
+</div>
+<p class="text-center text-xs text-on-surface-variant mt-3 opacity-80"><span class="material-symbols-outlined text-sm">business</span> Himalayan Logistics Pvt. Ltd.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mobile-sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+    </script>
+</body></html>

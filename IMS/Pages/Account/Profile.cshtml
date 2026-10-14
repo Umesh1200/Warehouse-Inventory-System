@@ -1,0 +1,173 @@
+@page
+@model IMS.Pages.Account.ProfileModel
+@{
+    ViewData["Title"] = "User Profile";
+}
+
+<div class="container-fluid">
+    <div class="page-header mb-4">
+        <h2 class="page-title text-primary fw-bold">My Profile</h2>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (Model.UserProfile != null)
+    {
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; font-size: 32px; font-weight: bold;">
+                            @(Model.UserProfile.FullName?.FirstOrDefault().ToString() ?? "U")
+                        </div>
+                        <h4 class="fw-bold mb-1">@Model.UserProfile.FullName</h4>
+                        <p class="text-muted mb-2">@Model.UserProfile.RoleName</p>
+                        <span class="badge @(Model.UserProfile.IsActive ? "bg-success" : "bg-danger")">
+                            @(Model.UserProfile.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white border-bottom-0 pt-3 pb-0">
+                        <ul class="nav nav-tabs border-bottom-0" id="profileTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active fw-bold text-dark border-0 border-bottom border-3 border-primary" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">Profile Details</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link fw-bold text-muted border-0" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab" onclick="this.classList.remove('text-muted'); this.classList.add('text-dark', 'border-bottom', 'border-3', 'border-primary'); document.getElementById('details-tab').classList.add('text-muted'); document.getElementById('details-tab').classList.remove('text-dark', 'border-bottom', 'border-3', 'border-primary'); document.getElementById('activity-tab').classList.add('text-muted'); document.getElementById('activity-tab').classList.remove('text-dark', 'border-bottom', 'border-3', 'border-primary');">Change Password</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link fw-bold text-muted border-0" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity" type="button" role="tab" onclick="this.classList.remove('text-muted'); this.classList.add('text-dark', 'border-bottom', 'border-3', 'border-primary'); document.getElementById('details-tab').classList.add('text-muted'); document.getElementById('details-tab').classList.remove('text-dark', 'border-bottom', 'border-3', 'border-primary'); document.getElementById('password-tab').classList.add('text-muted'); document.getElementById('password-tab').classList.remove('text-dark', 'border-bottom', 'border-3', 'border-primary');">Recent Activity</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="tab-content" id="profileTabsContent">
+                            
+                            <!-- Profile Details Tab -->
+                            <div class="tab-pane fade show active" id="details" role="tabpanel">
+                                <form method="post" asp-page-handler="UpdateProfile">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Username (Read-only)</label>
+                                            <input type="text" class="form-control bg-light" value="@Model.UserProfile.Username" readonly />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Full Name</label>
+                                            <input type="text" class="form-control" asp-for="UpdateProfileInput.FullName" required />
+                                        </div>
+                                    </div>
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Email</label>
+                                            <input type="email" class="form-control" asp-for="UpdateProfileInput.Email" required />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Phone Number</label>
+                                            <input type="text" class="form-control" asp-for="UpdateProfileInput.Phone" />
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary px-4 fw-bold">Save Changes</button>
+                                </form>
+                            </div>
+
+                            <!-- Change Password Tab -->
+                            <div class="tab-pane fade" id="password" role="tabpanel">
+                                <form method="post" asp-page-handler="ChangePassword">
+                                    <div class="mb-3" style="max-width: 400px;">
+                                        <label class="form-label fw-bold">Current Password</label>
+                                        <input type="password" class="form-control" asp-for="ChangePasswordInput.CurrentPassword" required />
+                                    </div>
+                                    <div class="mb-3" style="max-width: 400px;">
+                                        <label class="form-label fw-bold">New Password</label>
+                                        <input type="password" class="form-control" asp-for="ChangePasswordInput.NewPassword" required minlength="6" />
+                                    </div>
+                                    <div class="mb-4" style="max-width: 400px;">
+                                        <label class="form-label fw-bold">Confirm New Password</label>
+                                        <input type="password" class="form-control" asp-for="ChangePasswordInput.ConfirmPassword" required minlength="6" />
+                                    </div>
+                                    <button type="submit" class="btn btn-primary px-4 fw-bold">Update Password</button>
+                                </form>
+                            </div>
+
+                            <!-- Recent Activity Tab -->
+                            <div class="tab-pane fade" id="activity" role="tabpanel">
+                                @if (Model.RecentActivities.Any())
+                                {
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Type</th>
+                                                    <th>SKU</th>
+                                                    <th>Quantity</th>
+                                                    <th>Reference</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var act in Model.RecentActivities)
+                                                {
+                                                    <tr>
+                                                        <td>@act.MovementDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                                        <td>
+                                                            <span class="badge bg-secondary">@act.MovementType</span>
+                                                        </td>
+                                                        <td>@act.SKU</td>
+                                                        <td>@act.Quantity</td>
+                                                        <td class="text-muted small">@act.ReferenceNo</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-center text-muted py-5">
+                                        <span class="material-symbols-outlined fs-1 mb-2">history</span>
+                                        <p>No recent activity found.</p>
+                                    </div>
+                                }
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Simple script to handle tab styling
+        document.querySelectorAll('#profileTabs .nav-link').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('#profileTabs .nav-link').forEach(t => {
+                    t.classList.remove('text-dark', 'border-bottom', 'border-3', 'border-primary');
+                    t.classList.add('text-muted');
+                });
+                this.classList.remove('text-muted');
+                this.classList.add('text-dark', 'border-bottom', 'border-3', 'border-primary');
+            });
+        });
+    </script>
+}

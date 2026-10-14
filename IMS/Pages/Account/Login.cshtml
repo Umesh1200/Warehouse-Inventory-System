@@ -1,0 +1,162 @@
+@page
+@model IMS.Pages.Account.LoginModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Login";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - @Model.BrandName</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f5f7fb;
+            --surface: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+
+        .login-card {
+            background: var(--surface);
+            padding: 2.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .login-logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .login-tagline {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+
+        .login-subtitle {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 1rem;
+        }
+
+        .btn-login:hover {
+            opacity: 0.9;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 13px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-logo">@Model.BrandName</div>
+            <div class="login-tagline">@Model.BrandTagline</div>
+            <div class="login-subtitle">Sign in to your account</div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert-error">
+                <span class="material-symbols-outlined" style="font-size: 18px;">error</span>
+                @Model.ErrorMessage
+            </div>
+        }
+
+        <form method="post">
+            <div class="form-group">
+                <label class="form-label">Username or Email</label>
+                <input type="text" asp-for="Input.UsernameOrEmail" class="form-input" placeholder="Username or email" required autofocus />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" asp-for="Input.Password" class="form-input" placeholder="••••••••" required />
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" asp-for="Input.RememberMe" id="remember" />
+                <label for="remember" style="font-size: 13px; color: var(--muted); margin: 0;">Remember me</label>
+            </div>
+            <button type="submit" class="btn-login">Sign In</button>
+        </form>
+    </div>
+</body>
+</html>

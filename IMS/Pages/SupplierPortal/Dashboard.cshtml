@@ -1,0 +1,256 @@
+@page
+@model IMS.Pages.SupplierPortal.DashboardModel
+@{
+    ViewData["Title"] = "Supplier Dashboard";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/supplierportal/dashboard.css" asp-append-version="true" />
+}
+
+<div class="supplier-dashboard">
+    <header class="page-header">
+        <div>
+            <div class="eyebrow">
+                <span class="material-symbols-outlined">dashboard</span>
+                Supplier Portal
+            </div>
+            <h1>Supplier Dashboard</h1>
+            <p>Welcome! Review your active purchase orders, pending return claims, and quality performance.</p>
+        </div>
+        <div class="header-actions">
+            <a class="btn btn-primary" asp-page="/SupplierPortal/PurchaseOrders">
+                <span class="material-symbols-outlined">shopping_cart</span>
+                View Purchase Orders
+            </a>
+            <a class="btn btn-light" asp-page="/SupplierPortal/Returns">
+                <span class="material-symbols-outlined">keyboard_return</span>
+                View Returns / RTV
+            </a>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger operation-alert" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+        </div>
+    }
+
+    <!-- KPI Summary Grid -->
+    <section class="summary-grid" aria-label="KPI Stats">
+        <!-- Open POs -->
+        <article class="summary-card">
+            <div class="summary-top">
+                <span class="summary-icon summary-primary material-symbols-outlined">shopping_cart</span>
+                <div>
+                    <p>Open Purchase Orders</p>
+                    <strong>@Model.OpenPOCount</strong>
+                </div>
+            </div>
+            <div class="card-subtext">Active orders pending delivery</div>
+        </article>
+
+        <!-- Actionable Returns -->
+        <article class="summary-card">
+            <div class="summary-top">
+                <span class="summary-icon summary-warning material-symbols-outlined">pending_actions</span>
+                <div>
+                    <p>Pending Authorizations</p>
+                    <strong>@Model.PendingReturnCount</strong>
+                </div>
+            </div>
+            <div class="card-subtext">Returns awaiting RMA number</div>
+        </article>
+
+        <!-- Supplied Value -->
+        <article class="summary-card">
+            <div class="summary-top">
+                <span class="summary-icon summary-success material-symbols-outlined">payments</span>
+                <div>
+                    <p>Supplied Value</p>
+                    <strong>Rs. @Model.SuppliedValue.ToString("N2")</strong>
+                </div>
+            </div>
+            <div class="card-subtext">Total value of received goods</div>
+        </article>
+
+        <!-- Quality Score -->
+        <article class="summary-card">
+            <div class="summary-top">
+                <span class="summary-icon summary-info material-symbols-outlined">verified_user</span>
+                <div>
+                    <p>Quality Score</p>
+                    <strong>@Model.QCPassRate.ToString("N1")%</strong>
+                </div>
+            </div>
+            <div class="card-subtext">QC acceptance pass rate</div>
+        </article>
+    </section>
+
+    <!-- Visual Charts Grid -->
+    <section class="charts-grid mt-4">
+        <!-- supplied value trend -->
+        <article class="chart-card">
+            <h2>Delivered Value Trend (Last 6 Months)</h2>
+            <div class="chart-container">
+                @{
+                    decimal maxVal = 0;
+                    foreach (var trend in Model.SuppliedValueTrend)
+                    {
+                        if (trend.Value > maxVal) maxVal = trend.Value;
+                    }
+                    if (maxVal == 0) maxVal = 1;
+                }
+                <svg class="svg-chart dashboard-bar-chart" viewBox="0 0 550 220" width="100%" height="100%">
+                    <!-- Grid Lines -->
+                    <g class="grid-lines">
+                        <line x1="40" y1="20" x2="520" y2="20" />
+                        <line x1="40" y1="70" x2="520" y2="70" />
+                        <line x1="40" y1="120" x2="520" y2="120" />
+                        <line x1="40" y1="170" x2="520" y2="170" />
+                    </g>
+                    @for (int i = 0; i < Model.SuppliedValueTrend.Count; i++)
+                    {
+                        var trend = Model.SuppliedValueTrend[i];
+                        decimal barH = (trend.Value / maxVal) * 150;
+                        decimal rx = 60 + (i * 75);
+                        decimal ry = 170 - barH;
+                        
+                        <rect x="@rx" y="@ry" width="30" height="@barH" rx="4" class="chart-bar" />
+                        @: <text x="@(rx + 15)" y="195" text-anchor="middle" class="chart-label">@trend.MonthLabel</text>
+                        @: <text x="@(rx + 15)" y="@(ry - 8)" text-anchor="middle" class="chart-value">Rs. @(trend.Value >= 1000000 ? $"{(trend.Value / 1000000):N1}M" : trend.Value >= 1000 ? $"{(trend.Value / 1000):N0}K" : trend.Value.ToString("N0"))</text>
+                    }
+                    <line x1="40" y1="170" x2="520" y2="170" class="base-axis" />
+                </svg>
+            </div>
+        </article>
+
+        <!-- quality pass trend -->
+        <article class="chart-card">
+            <h2>QC Acceptance Score Trend</h2>
+            <div class="chart-container">
+                <svg class="svg-chart dashboard-line-chart" viewBox="0 0 550 220" width="100%" height="100%">
+                    <!-- Grid Lines -->
+                    <g class="grid-lines">
+                        <line x1="40" y1="20" x2="520" y2="20" />
+                        <line x1="40" y1="70" x2="520" y2="70" />
+                        <line x1="40" y1="120" x2="520" y2="120" />
+                        <line x1="40" y1="170" x2="520" y2="170" />
+                    </g>
+                    @{
+                        var ptsList = new List<string>();
+                        for (int i = 0; i < Model.SuppliedValueTrend.Count; i++)
+                        {
+                            var trend = Model.SuppliedValueTrend[i];
+                            decimal ry = 170 - (trend.Rate / 100 * 150);
+                            decimal rx = 60 + (i * 75) + 15;
+                            ptsList.Add($"{rx:0.##},{ry:0.##}");
+                        }
+                        string linesStr = string.Join(" ", ptsList);
+                    }
+                    <polyline points="@linesStr" class="chart-line" />
+                    @for (int i = 0; i < Model.SuppliedValueTrend.Count; i++)
+                    {
+                        var trend = Model.SuppliedValueTrend[i];
+                        decimal ry = 170 - (trend.Rate / 100 * 150);
+                        decimal rx = 60 + (i * 75) + 15;
+                        
+                        <circle cx="@rx" cy="@ry" r="4" class="chart-point" />
+                        @: <text x="@rx" y="195" text-anchor="middle" class="chart-label">@trend.MonthLabel</text>
+                        @: <text x="@rx" y="@(ry - 10)" text-anchor="middle" class="chart-value">@trend.Rate.ToString("N0")%</text>
+                    }
+                    <line x1="40" y1="170" x2="520" y2="170" class="base-axis" />
+                </svg>
+            </div>
+        </article>
+    </section>
+
+    <!-- Bottom Widgets Grid -->
+    <div class="widgets-layout-grid mt-4">
+        <!-- Actionable Returns List -->
+        <section class="widget-card">
+            <div class="widget-header">
+                <h2>Pending RMA Authorizations</h2>
+                <span class="badge badge-warning">@Model.ActionableReturns.Count Actionable</span>
+            </div>
+            <div class="widget-content">
+                @if (Model.ActionableReturns.Any())
+                {
+                    <div class="action-list">
+                        @foreach (var ret in Model.ActionableReturns)
+                        {
+                            <div class="action-item">
+                                <div class="action-info">
+                                    <strong>@ret.ReturnNo</strong>
+                                    <span>Created: @ret.CreatedAt</span>
+                                    <p class="remarks text-truncate">@ret.Remarks</p>
+                                </div>
+                                <a class="btn btn-sm btn-primary" asp-page="/SupplierPortal/Returns" asp-route-returnId="@ret.ReturnID">
+                                    Authorize Return
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">task_alt</span>
+                        <p>No pending return authorizations found.</p>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <!-- Approved Supplied Products -->
+        <section class="widget-card">
+            <div class="widget-header">
+                <h2>Approved Products Supplied</h2>
+                <span class="badge badge-success">@Model.ProvidedProducts.Count Items</span>
+            </div>
+            <div class="widget-content">
+                @if (Model.ProvidedProducts.Any())
+                {
+                    <div class="table-responsive custom-scrollbar" style="max-height: 350px;">
+                        <table class="ims-table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Supplier SKU</th>
+                                    <th class="text-end">Last Price</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var prod in Model.ProvidedProducts)
+                                {
+                                    <tr>
+                                        <td><strong>@prod.SKU</strong></td>
+                                        <td>@prod.ProductName</td>
+                                        <td>@prod.Category</td>
+                                        <td>@(string.IsNullOrEmpty(prod.SupplierSKU) ? "-" : prod.SupplierSKU)</td>
+                                        <td class="text-end font-mono">Rs. @prod.LastQuotedPrice.ToString("N2")</td>
+                                        <td class="text-center">
+                                            <span class="badge-dot badge-@(prod.Status.ToLower())">@prod.Status</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">inventory_2</span>
+                        <p>You have no products mapped to your profile yet.</p>
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>

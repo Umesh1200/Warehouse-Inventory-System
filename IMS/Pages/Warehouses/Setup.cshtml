@@ -1,0 +1,727 @@
+@page
+@model IMS.Pages.Warehouses.SetupModel
+@{
+    ViewData["Title"] = "Warehouse Setup";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/warehouse-setup.css" asp-append-version="true" />
+}
+
+<div class="setup-container">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">Warehouse Setup</h2>
+            <div class="page-subtitle">Warehouse -> Floor -> Room -> Rack -> Shelf</div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">check_circle</span> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="setup-stats-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <div class="stat-card">
+                <div class="stat-icon @card.ColorClass">
+                    <span class="material-symbols-outlined">@card.Icon</span>
+                </div>
+                <div>
+                    <div class="stat-label">@card.Title</div>
+                    <div class="stat-value">@card.Value</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="setup-controls">
+        <div class="section-header">
+            <h3>Structure</h3>
+        </div>
+        <div class="controls-grid">
+            <button class="btn-setup" data-bs-toggle="modal" data-bs-target="#addWarehouseModal">
+                <span class="step-number">1</span>
+                <span class="material-symbols-outlined">warehouse</span>
+                <span>Add Warehouse</span>
+            </button>
+            <button class="btn-setup" data-bs-toggle="modal" data-bs-target="#addFloorModal" @(Model.WarehouseOptions.Any() ? "" : "disabled")>
+                <span class="step-number">2</span>
+                <span class="material-symbols-outlined">layers</span>
+                <span>Add Floor</span>
+            </button>
+            <button class="btn-setup" data-bs-toggle="modal" data-bs-target="#addRoomModal" @(Model.FloorOptions.Any() ? "" : "disabled")>
+                <span class="step-number">3</span>
+                <span class="material-symbols-outlined">meeting_room</span>
+                <span>Add Room</span>
+            </button>
+            <button class="btn-setup" data-bs-toggle="modal" data-bs-target="#addRackModal" @(Model.RoomOptions.Any() ? "" : "disabled")>
+                <span class="step-number">4</span>
+                <span class="material-symbols-outlined">view_module</span>
+                <span>Add Rack</span>
+            </button>
+            <button class="btn-setup" data-bs-toggle="modal" data-bs-target="#addShelfModal" @(Model.RackOptions.Any() ? "" : "disabled")>
+                <span class="step-number">5</span>
+                <span class="material-symbols-outlined">shelves</span>
+                <span>Add Shelf</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="filters-panel">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label for="warehouseFilter">Warehouse</label>
+                <select id="warehouseFilter" class="filter-input">
+                    @foreach (var wh in Model.Warehouses)
+                    {
+                        <option value="@wh">@wh</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="typeFilter">Shelf Type</label>
+                <select id="typeFilter" class="filter-input">
+                    <option value="All Types">All Types</option>
+                    <option value="Raw Material">Raw Material</option>
+                    <option value="Finished Goods">Finished Goods</option>
+                    <option value="General">General</option>
+                    <option value="QC Hold">QC Hold</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="statusFilter">Status</label>
+                <select id="statusFilter" class="filter-input">
+                    <option value="All Statuses">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="shelfSearch">Search</label>
+                <div class="search-wrap">
+                    <span class="material-symbols-outlined">search</span>
+                    <input id="shelfSearch" type="text" class="filter-input" placeholder="Shelf, rack, room..." />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="setup-table-panel">
+        <div class="table-toolbar">
+            <div>
+                <div class="table-title">Shelf Capacity</div>
+                <div class="table-meta">@Model.Shelves.Count shelves</div>
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnExpandAll">
+                    <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">expand</span> Expand All
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCollapseAll">
+                    <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle;">compress</span> Collapse All
+                </button>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th>Structure / Code</th>
+                        <th>Type</th>
+                        <th class="text-right">Used / Max Qty</th>
+                        <th class="text-right">Max Weight</th>
+                        <th>Utilization</th>
+                        <th>Status</th>
+                        <th class="text-center" style="width: 160px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Shelves.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="empty-cell">No warehouse shelves found.</td>
+                        </tr>
+                    }
+                    @{
+                        var groupedWarehouses = Model.Shelves
+                            .GroupBy(s => new { s.WarehouseID, s.Warehouse, s.WarehouseCode, s.WarehouseActive })
+                            .OrderBy(g => g.Key.WarehouseCode);
+                    }
+                    @foreach (var whGroup in groupedWarehouses)
+                    {
+                        <tr class="tree-row level-wh" data-id="wh-@whGroup.Key.WarehouseID" data-level="0">
+                            <td colspan="5">
+                                <span class="tree-toggle material-symbols-outlined">expand_more</span>
+                                <span class="material-symbols-outlined tree-icon">warehouse</span>
+                                <strong>@whGroup.Key.Warehouse (@whGroup.Key.WarehouseCode)</strong>
+                            </td>
+                            <td>
+                                <span class="status-badge status-@(whGroup.Key.WarehouseActive ? "active" : "inactive")">
+                                    @(whGroup.Key.WarehouseActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="action-buttons-wrap">
+                                    <button type="button" class="icon-button edit-wh-btn" title="Edit Warehouse" data-id="@whGroup.Key.WarehouseID">
+                                        <span class="material-symbols-outlined">edit</span>
+                                    </button>
+                                    <button type="button" class="icon-button primary add-floor-btn" title="Add Floor" data-id="@whGroup.Key.WarehouseID">
+                                        <span class="material-symbols-outlined">add_box</span>
+                                    </button>
+                                    <form method="post" asp-page-handler="ToggleWarehouseStatus" style="display:inline;" onsubmit="return confirm('Toggle status for this warehouse and all its contents?');">
+                                        <input type="hidden" name="id" value="@whGroup.Key.WarehouseID" />
+                                        <input type="hidden" name="isActive" value="@(whGroup.Key.WarehouseActive ? "false" : "true")" />
+                                        <button type="submit" class="icon-button @(whGroup.Key.WarehouseActive ? "danger" : "success")" title="@(whGroup.Key.WarehouseActive ? "Deactivate" : "Activate")">
+                                            <span class="material-symbols-outlined">@(whGroup.Key.WarehouseActive ? "toggle_on" : "toggle_off")</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        var whFloors = whGroup.GroupBy(s => new { s.FloorID, s.Floor, s.FloorActive }).OrderBy(g => g.Key.Floor);
+                        foreach (var floorGroup in whFloors)
+                        {
+                            if (floorGroup.Key.FloorID == 0) continue;
+                            <tr class="tree-row level-floor" data-id="floor-@floorGroup.Key.FloorID" data-parent="wh-@whGroup.Key.WarehouseID" data-level="1">
+                                <td colspan="5">
+                                    <span class="tree-toggle material-symbols-outlined">expand_more</span>
+                                    <span class="material-symbols-outlined tree-icon">layers</span>
+                                    <span>@floorGroup.Key.Floor</span>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-@(floorGroup.Key.FloorActive ? "active" : "inactive")">
+                                        @(floorGroup.Key.FloorActive ? "Active" : "Inactive")
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="action-buttons-wrap">
+                                        <button type="button" class="icon-button edit-floor-btn" title="Edit Floor" data-id="@floorGroup.Key.FloorID">
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button type="button" class="icon-button primary add-room-btn" title="Add Room" data-id="@floorGroup.Key.FloorID">
+                                            <span class="material-symbols-outlined">add_box</span>
+                                        </button>
+                                        <form method="post" asp-page-handler="ToggleFloorStatus" style="display:inline;" onsubmit="return confirm('Toggle status for this floor and all its contents?');">
+                                            <input type="hidden" name="id" value="@floorGroup.Key.FloorID" />
+                                            <input type="hidden" name="isActive" value="@(floorGroup.Key.FloorActive ? "false" : "true")" />
+                                            <button type="submit" class="icon-button @(floorGroup.Key.FloorActive ? "danger" : "success")" title="@(floorGroup.Key.FloorActive ? "Deactivate" : "Activate")">
+                                                <span class="material-symbols-outlined">@(floorGroup.Key.FloorActive ? "toggle_on" : "toggle_off")</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            var floorRooms = floorGroup.GroupBy(s => new { s.RoomID, s.Room, s.RoomActive }).OrderBy(g => g.Key.Room);
+                            foreach (var roomGroup in floorRooms)
+                            {
+                                if (roomGroup.Key.RoomID == 0) continue;
+                                <tr class="tree-row level-room" data-id="room-@roomGroup.Key.RoomID" data-parent="floor-@floorGroup.Key.FloorID" data-level="2">
+                                    <td colspan="5">
+                                        <span class="tree-toggle material-symbols-outlined">expand_more</span>
+                                        <span class="material-symbols-outlined tree-icon">meeting_room</span>
+                                        <span>@roomGroup.Key.Room</span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-@(roomGroup.Key.RoomActive ? "active" : "inactive")">
+                                            @(roomGroup.Key.RoomActive ? "Active" : "Inactive")
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="action-buttons-wrap">
+                                            <button type="button" class="icon-button edit-room-btn" title="Edit Room" data-id="@roomGroup.Key.RoomID">
+                                                <span class="material-symbols-outlined">edit</span>
+                                            </button>
+                                            <button type="button" class="icon-button primary add-rack-btn" title="Add Rack" data-id="@roomGroup.Key.RoomID">
+                                                <span class="material-symbols-outlined">add_box</span>
+                                            </button>
+                                            <form method="post" asp-page-handler="ToggleRoomStatus" style="display:inline;" onsubmit="return confirm('Toggle status for this room and all its contents?');">
+                                                <input type="hidden" name="id" value="@roomGroup.Key.RoomID" />
+                                                <input type="hidden" name="isActive" value="@(roomGroup.Key.RoomActive ? "false" : "true")" />
+                                                <button type="submit" class="icon-button @(roomGroup.Key.RoomActive ? "danger" : "success")" title="@(roomGroup.Key.RoomActive ? "Deactivate" : "Activate")">
+                                                    <span class="material-symbols-outlined">@(roomGroup.Key.RoomActive ? "toggle_on" : "toggle_off")</span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                var roomRacks = roomGroup.GroupBy(s => new { s.RackID, s.Rack, s.RackActive }).OrderBy(g => g.Key.Rack);
+                                foreach (var rackGroup in roomRacks)
+                                {
+                                    if (rackGroup.Key.RackID == 0) continue;
+                                    <tr class="tree-row level-rack" data-id="rack-@rackGroup.Key.RackID" data-parent="room-@roomGroup.Key.RoomID" data-level="3">
+                                        <td colspan="5">
+                                            <span class="tree-toggle material-symbols-outlined">expand_more</span>
+                                            <span class="material-symbols-outlined tree-icon">view_module</span>
+                                            <span>@rackGroup.Key.Rack</span>
+                                        </td>
+                                        <td>
+                                            <span class="status-badge status-@(rackGroup.Key.RackActive ? "active" : "inactive")">
+                                                @(rackGroup.Key.RackActive ? "Active" : "Inactive")
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="action-buttons-wrap">
+                                                <button type="button" class="icon-button edit-rack-btn" title="Edit Rack" data-id="@rackGroup.Key.RackID">
+                                                    <span class="material-symbols-outlined">edit</span>
+                                                </button>
+                                                <button type="button" class="icon-button primary add-shelf-btn" title="Add Shelf" data-id="@rackGroup.Key.RackID">
+                                                    <span class="material-symbols-outlined">add_box</span>
+                                                </button>
+                                                <form method="post" asp-page-handler="ToggleRackStatus" style="display:inline;" onsubmit="return confirm('Toggle status for this rack and all its contents?');">
+                                                    <input type="hidden" name="id" value="@rackGroup.Key.RackID" />
+                                                    <input type="hidden" name="isActive" value="@(rackGroup.Key.RackActive ? "false" : "true")" />
+                                                    <button type="submit" class="icon-button @(rackGroup.Key.RackActive ? "danger" : "success")" title="@(rackGroup.Key.RackActive ? "Deactivate" : "Activate")">
+                                                        <span class="material-symbols-outlined">@(rackGroup.Key.RackActive ? "toggle_on" : "toggle_off")</span>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    foreach (var shelf in rackGroup.OrderBy(s => s.Code))
+                                    {
+                                        if (shelf.ShelfID == 0) continue;
+                                        <tr class="tree-row level-shelf setup-row @(shelf.IsWarning ? "row-warning" : "") @(shelf.IsQCHold ? "row-qchold" : "") @(shelf.Status == "Inactive" ? "row-inactive" : "")"
+                                            data-id="shelf-@shelf.ShelfID"
+                                            data-parent="rack-@rackGroup.Key.RackID"
+                                            data-level="4"
+                                            data-warehouse="@shelf.Warehouse"
+                                            data-type="@shelf.Type"
+                                            data-status="@shelf.Status"
+                                            data-search="@($"{shelf.Warehouse} {shelf.WarehouseCode} {shelf.Floor} {shelf.Room} {shelf.Rack} {shelf.Code} {shelf.Name} {shelf.Type}".ToLower())">
+                                            <td>
+                                                <span class="material-symbols-outlined tree-icon">shelves</span>
+                                                <span class="id-cell font-mono">@shelf.Code</span>
+                                                <span class="level-badge level-badge-@shelf.TierLevel" title="Physical Rack Tier / Level @shelf.TierLevel">Level @shelf.TierLevel</span>
+                                                @if (!string.IsNullOrWhiteSpace(shelf.Name))
+                                                {
+                                                    <span class="muted-cell">(@shelf.Name)</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="type-badge type-@shelf.Type.ToLower().Replace(" ", "-")">@shelf.Type</span>
+                                            </td>
+                                            <td class="text-right font-mono">
+                                                @shelf.CurrentQty.ToString("N0") / @shelf.MaxQty.ToString("N0")
+                                            </td>
+                                            <td class="text-right font-mono">@shelf.MaxWeight.ToString("N1") kg</td>
+                                            <td>
+                                                <div class="util-box">
+                                                    <div class="util-bar-bg">
+                                                        <div class="util-bar-fill" style="width: @Math.Min(shelf.Utilization, 100)%; background-color: @(shelf.Utilization > 90 ? "var(--danger)" : (shelf.Utilization > 70 ? "var(--warning)" : "var(--success)"));"></div>
+                                                    </div>
+                                                    <span class="@(shelf.Utilization > 90 ? "text-danger font-bold" : "")">@shelf.Utilization%</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="status-badge status-@shelf.Status.ToLower()">@shelf.Status</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="action-buttons-wrap">
+                                                    <button type="button" class="icon-button edit-shelf-btn" title="Edit Shelf" data-id="@shelf.ShelfID">
+                                                        <span class="material-symbols-outlined">edit</span>
+                                                    </button>
+                                                    <form method="post" asp-page-handler="ToggleShelfStatus" style="display:inline;" onsubmit="return confirm('Toggle status for this shelf?');">
+                                                        <input type="hidden" name="id" value="@shelf.ShelfID" />
+                                                        <input type="hidden" name="isActive" value="@(shelf.Status == "Active" ? "false" : "true")" />
+                                                        <button type="submit" class="icon-button @(shelf.Status == "Active" ? "danger" : "success")" title="@(shelf.Status == "Active" ? "Deactivate" : "Activate")">
+                                                            <span class="material-symbols-outlined">@(shelf.Status == "Active" ? "toggle_on" : "toggle_off")</span>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addWarehouseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <form method="post" asp-page-handler="CreateWarehouse">
+                <div class="modal-header ims-modal-header">
+                    <h5 class="modal-title">Add Warehouse</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Warehouse Code *</label>
+                    <input type="text" name="code" class="form-control mb-3" placeholder="KTM-DC" required />
+                    <label class="form-label">Warehouse Name *</label>
+                    <input type="text" name="name" class="form-control mb-3" placeholder="Kathmandu Central DC" required />
+                    <label class="form-label">Location</label>
+                    <input type="text" name="location" class="form-control" placeholder="Kathmandu" />
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Warehouse</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addFloorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <form method="post" asp-page-handler="CreateFloor">
+                <div class="modal-header ims-modal-header">
+                    <h5 class="modal-title">Add Floor</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Warehouse *</label>
+                    <select name="warehouseId" id="add-floor-wh-select" class="form-select mb-3" required>
+                        <option value="">Select warehouse</option>
+                        @foreach (var wh in Model.WarehouseOptions)
+                        {
+                            <option value="@wh.ID">@wh.Name</option>
+                        }
+                    </select>
+                    <label class="form-label">Floor Code *</label>
+                    <input type="text" name="code" class="form-control mb-3" placeholder="F1" required />
+                    <label class="form-label">Floor Name *</label>
+                    <input type="text" name="name" class="form-control" placeholder="Ground Floor" required />
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Floor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addRoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <form method="post" asp-page-handler="CreateRoom">
+                <div class="modal-header ims-modal-header">
+                    <h5 class="modal-title">Add Room</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Floor *</label>
+                    <select name="floorId" id="add-room-floor-select" class="form-select mb-3" required>
+                        <option value="">Select floor</option>
+                        @foreach (var floor in Model.FloorOptions)
+                        {
+                            <option value="@floor.ID">@floor.Name</option>
+                        }
+                    </select>
+                    <label class="form-label">Room Code *</label>
+                    <input type="text" name="code" class="form-control mb-3" placeholder="R01" required />
+                    <label class="form-label">Room Name *</label>
+                    <input type="text" name="name" class="form-control" placeholder="Raw Material Room" required />
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Room</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addRackModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <form method="post" asp-page-handler="CreateRack">
+                <div class="modal-header ims-modal-header">
+                    <h5 class="modal-title">Add Rack</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Room *</label>
+                    <select name="roomId" id="add-rack-room-select" class="form-select mb-3" required>
+                        <option value="">Select room</option>
+                        @foreach (var room in Model.RoomOptions)
+                        {
+                            <option value="@room.ID">@room.Name</option>
+                        }
+                    </select>
+                    <label class="form-label">Rack Code *</label>
+                    <input type="text" name="code" class="form-control mb-3" placeholder="A01" required />
+                    <label class="form-label">Rack Name *</label>
+                    <input type="text" name="name" class="form-control" placeholder="Rack A01" required />
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Rack</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addShelfModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <form method="post" asp-page-handler="CreateShelf">
+                <div class="modal-header ims-modal-header">
+                    <h5 class="modal-title">Add Shelf</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Rack *</label>
+                    <select name="rackId" id="add-shelf-rack-select" class="form-select mb-3" required>
+                        <option value="">Select rack</option>
+                        @foreach (var rack in Model.RackOptions)
+                        {
+                            <option value="@rack.ID">@rack.Name</option>
+                        }
+                    </select>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Rack Tier / Level *</label>
+                            <select name="tierLevel" id="add-shelf-tier-select" class="form-select" required>
+                                <option value="1">Level 1 (Ground / Bottom)</option>
+                                <option value="2">Level 2 (Second Tier)</option>
+                                <option value="3">Level 3 (Third Tier)</option>
+                                <option value="4" selected>Level 4 (Top Tier)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Shelf Type *</label>
+                            <select name="type" class="form-select" required>
+                                <option value="General">General</option>
+                                <option value="Raw Material">Raw Material</option>
+                                <option value="Finished Goods">Finished Goods</option>
+                                <option value="QC Hold">QC Hold</option>
+                                <option value="Quarantine">Quarantine</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <label class="form-label">Shelf Code *</label>
+                    <input type="text" name="code" id="add-shelf-code-input" class="form-control mb-1" placeholder="e.g. KTM-F1-R01-A01-S3" required />
+                    <div class="form-text mb-3" style="font-size: 11px;">Convention: [Warehouse]-[Floor]-[Room]-[Rack]-S[Level] (e.g. S1 for Level 1, S3 for Level 3)</div>
+
+                    <label class="form-label">Shelf Name</label>
+                    <input type="text" name="name" class="form-control mb-3" placeholder="e.g. Level 3 Shelf / Bulk Material" />
+                    <div class="form-grid-2">
+                        <div>
+                            <label class="form-label">Max Qty *</label>
+                            <input type="number" name="maxQty" class="form-control" min="1" step="0.01" required />
+                        </div>
+                        <div>
+                            <label class="form-label">Max Weight Kg *</label>
+                            <input type="number" name="maxWeight" class="form-control" min="1" step="0.01" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Shelf</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editWarehouseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <form method="post" asp-page-handler="UpdateWarehouse">
+                <input type="hidden" id="edit-wh-id" name="id" />
+                <div class="modal-header ims-modal-header">
+                    <h5 class="modal-title">Edit Warehouse</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Warehouse Code *</label>
+                    <input type="text" id="edit-wh-code" name="code" class="form-control mb-3" required />
+                    <label class="form-label">Warehouse Name *</label>
+                    <input type="text" id="edit-wh-name" name="name" class="form-control mb-3" required />
+                    <label class="form-label">Location</label>
+                    <input type="text" id="edit-wh-location" name="location" class="form-control" />
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editFloorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <form method="post" asp-page-handler="UpdateFloor">
+                <input type="hidden" id="edit-floor-id" name="id" />
+                <div class="modal-header ims-modal-header">
+                    <h5 class="modal-title">Edit Floor</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Warehouse *</label>
+                    <select id="edit-floor-wh" name="warehouseId" class="form-select mb-3" required>
+                        @foreach (var wh in Model.WarehouseOptions)
+                        {
+                            <option value="@wh.ID">@wh.Name</option>
+                        }
+                    </select>
+                    <label class="form-label">Floor Code *</label>
+                    <input type="text" id="edit-floor-code" name="code" class="form-control mb-3" required />
+                    <label class="form-label">Floor Name *</label>
+                    <input type="text" id="edit-floor-name" name="name" class="form-control" required />
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editRoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <form method="post" asp-page-handler="UpdateRoom">
+                <input type="hidden" id="edit-room-id" name="id" />
+                <div class="modal-header ims-modal-header">
+                    <h5 class="modal-title">Edit Room</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Floor *</label>
+                    <select id="edit-room-floor" name="floorId" class="form-select mb-3" required>
+                        @foreach (var floor in Model.FloorOptions)
+                        {
+                            <option value="@floor.ID">@floor.Name</option>
+                        }
+                    </select>
+                    <label class="form-label">Room Code *</label>
+                    <input type="text" id="edit-room-code" name="code" class="form-control mb-3" required />
+                    <label class="form-label">Room Name *</label>
+                    <input type="text" id="edit-room-name" name="name" class="form-control" required />
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editRackModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <form method="post" asp-page-handler="UpdateRack">
+                <input type="hidden" id="edit-rack-id" name="id" />
+                <div class="modal-header ims-modal-header">
+                    <h5 class="modal-title">Edit Rack</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Room *</label>
+                    <select id="edit-rack-room" name="roomId" class="form-select mb-3" required>
+                        @foreach (var room in Model.RoomOptions)
+                        {
+                            <option value="@room.ID">@room.Name</option>
+                        }
+                    </select>
+                    <label class="form-label">Rack Code *</label>
+                    <input type="text" id="edit-rack-code" name="code" class="form-control mb-3" required />
+                    <label class="form-label">Rack Name *</label>
+                    <input type="text" id="edit-rack-name" name="name" class="form-control" required />
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editShelfModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <form method="post" asp-page-handler="UpdateShelf">
+                <input type="hidden" id="edit-shelf-id" name="id" />
+                <div class="modal-header ims-modal-header">
+                    <h5 class="modal-title">Edit Shelf</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Rack *</label>
+                    <select id="edit-shelf-rack" name="rackId" class="form-select mb-3" required>
+                        @foreach (var rack in Model.RackOptions)
+                        {
+                            <option value="@rack.ID">@rack.Name</option>
+                        }
+                    </select>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Rack Tier / Level *</label>
+                            <select id="edit-shelf-tier" name="tierLevel" class="form-select" required>
+                                <option value="1">Level 1 (Ground / Bottom)</option>
+                                <option value="2">Level 2 (Second Tier)</option>
+                                <option value="3">Level 3 (Third Tier)</option>
+                                <option value="4">Level 4 (Top Tier)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Shelf Type *</label>
+                            <select id="edit-shelf-type" name="type" class="form-select" required>
+                                <option value="General">General</option>
+                                <option value="Raw Material">Raw Material</option>
+                                <option value="Finished Goods">Finished Goods</option>
+                                <option value="QC Hold">QC Hold</option>
+                                <option value="Quarantine">Quarantine</option>
+                            </select>
+                        </div>
+                    </div>
+                    <label class="form-label">Shelf Code *</label>
+                    <input type="text" id="edit-shelf-code" name="code" class="form-control mb-3" required />
+                    <label class="form-label">Shelf Name</label>
+                    <input type="text" id="edit-shelf-name" name="name" class="form-control mb-3" />
+                    <div class="form-grid-2">
+                        <div>
+                            <label class="form-label">Max Qty *</label>
+                            <input type="number" id="edit-shelf-maxqty" name="maxQty" class="form-control" min="1" step="0.01" required />
+                        </div>
+                        <div>
+                            <label class="form-label">Max Weight Kg *</label>
+                            <input type="number" id="edit-shelf-maxweight" name="maxWeight" class="form-control" min="1" step="0.01" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/warehouse-setup.js" asp-append-version="true"></script>
+}

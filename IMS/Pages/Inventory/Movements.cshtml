@@ -1,0 +1,315 @@
+@page
+@model IMS.Pages.Inventory.MovementsModel
+@{
+    ViewData["Title"] = "Stock Movements";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/stock-movements.css" asp-append-version="true" />
+}
+
+<div class="movements-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h2 class="page-title">Stock Movements</h2>
+        <div style="display: flex; gap: 0.75rem;">
+            <button class="btn-ims btn-outline">
+                <span class="material-symbols-outlined">download</span>
+                Export Log
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+        </div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="movements-stats-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <div class="stat-card">
+                <div class="stat-icon @card.ColorClass">
+                    <span class="stat-icon-label">@card.Icon</span>
+                </div>
+                <div>
+                    <div class="stat-label">@card.Title</div>
+                    <div class="stat-value">@card.Value</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Insight Charts -->
+    <div class="movement-insights-grid">
+        <section class="insight-panel insight-wide">
+            <div class="panel-header">
+                <div>
+                    <h3>Inbound vs Outbound Trend</h3>
+                    <p>Last 7 days of quantity flow</p>
+                </div>
+            </div>
+            <div class="chart-box">
+                <canvas id="movementTrendChart"></canvas>
+            </div>
+        </section>
+        <section class="insight-panel">
+            <div class="panel-header">
+                <div>
+                    <h3>Movement Mix</h3>
+                    <p>Count by transaction type</p>
+                </div>
+            </div>
+            <div class="chart-box">
+                <canvas id="movementTypeChart"></canvas>
+            </div>
+        </section>
+        <section class="insight-panel insight-wide">
+            <div class="panel-header">
+                <div>
+                    <h3>Warehouse Flow</h3>
+                    <p>Inbound and outbound units by warehouse</p>
+                </div>
+            </div>
+            <div class="chart-box">
+                <canvas id="warehouseFlowChart"></canvas>
+            </div>
+        </section>
+        <section class="insight-panel">
+            <div class="panel-header">
+                <div>
+                    <h3>Most Active SKUs</h3>
+                    <p>Highest moved quantity in recent transactions</p>
+                </div>
+            </div>
+            <div class="chart-box">
+                <canvas id="topProductsChart"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-panel">
+        <div class="filters-header">
+            <div>
+                <strong>Filter movements</strong>
+                <span id="movementResultCount">@Model.Movements.Count movement@(Model.Movements.Count == 1 ? "" : "s") shown</span>
+            </div>
+            <button type="button" class="btn-ims btn-outline compact" id="resetMovementFilters">Reset</button>
+        </div>
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label>Search Movements</label>
+                <div style="position: relative;">
+                    <span class="material-symbols-outlined" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-muted);">search</span>
+                    <input type="text" id="movementSearch" class="filter-input" placeholder="SKU, Ref, Staff..." style="padding-left: 2.5rem;" />
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Movement Type</label>
+                <select class="filter-input" id="movementTypeFilter">
+                    @foreach (var type in Model.MovementTypes)
+                    {
+                        <option>@type</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Warehouse</label>
+                <select class="filter-input" id="movementWarehouseFilter">
+                    @foreach (var wh in Model.Warehouses)
+                    {
+                        <option>@wh</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Date Range</label>
+                <select class="filter-input" id="movementDateFilter">
+                    <option value="all">All Dates</option>
+                    <option value="today">Today</option>
+                    <option value="7">Last 7 Days</option>
+                    <option value="30">Last 30 Days</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Movements Table -->
+    <div class="movements-table-panel">
+        <div style="overflow-x: auto;">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th style="width: 110px;">Move ID</th>
+                        <th>Date / Time</th>
+                        <th>Product / SKU</th>
+                        <th>Location (Shelf)</th>
+                        <th>Type</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Before</th>
+                        <th class="text-right">After</th>
+                        <th>Reference</th>
+                        <th>Performed By</th>
+                        <th style="width: 150px;">Remarks</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var move in Model.Movements)
+                    {
+                        <tr class="movement-row"
+                            data-search="@($"{move.ID} {move.Product} {move.SKU} {move.Shelf} {move.Type} {move.RefType} {move.RefNo} {move.PerformedBy} {move.Remarks}")"
+                            data-type="@move.Type"
+                            data-warehouse="@move.Warehouse"
+                            data-date="@move.RawDate">
+                            <td class="id-cell">@move.ID</td>
+                            <td style="font-size: 12px; color: var(--text-muted); white-space: nowrap;">@move.DateTime</td>
+                            <td>
+                                <div class="product-cell">@move.Product</div>
+                                <div class="font-mono" style="font-size: 11px; color: var(--text-muted);">@move.SKU</div>
+                            </td>
+                            <td class="location-cell">@move.Shelf</td>
+                            <td>
+                                @{
+                                    var typeClass = move.Type.ToLower() switch {
+                                        "stockin" => "m-stockin",
+                                        "stockout" => "m-stockout",
+                                        "reserve" => "m-reserve",
+                                        "unreserve" => "m-unreserve",
+                                        var t when t.Contains("adjustment") => "m-adjustment",
+                                        var t when t.Contains("production") => "m-production",
+                                        _ => "m-unreserve"
+                                    };
+                                }
+                                <span class="m-badge @typeClass">@move.Type</span>
+                            </td>
+                            <td class="text-right font-mono @(move.Qty.StartsWith("+") ? "qty-plus" : (move.Qty.StartsWith("-") ? "qty-minus" : ""))">@move.Qty</td>
+                            <td class="text-right font-mono" style="color: var(--text-muted);">@move.BeforeQty</td>
+                            <td class="text-right font-mono" style="font-weight: 700;">@move.AfterQty</td>
+                            <td>
+                                <div style="font-size: 12px; font-weight: 600;">@move.RefType</div>
+                                <div class="font-mono" style="font-size: 10px; color: var(--secondary);">@move.RefNo</div>
+                            </td>
+                            <td style="font-size: 13px;">@move.PerformedBy</td>
+                            <td style="font-size: 12px; color: var(--text-muted); max-width: 150px;" class="truncate">@move.Remarks</td>
+                            <td class="text-center">
+                                <button type="button"
+                                        class="action-icon-button js-view-movement"
+                                        data-movement-id="@move.ID"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#movementDetailModal"
+                                        title="View Transaction Details"
+                                        aria-label="View transaction details for @move.ID">
+                                    <span class="material-symbols-outlined">visibility</span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                    <tr id="movementEmptyRow" style="display: none;">
+                        <td colspan="12">
+                            <div class="empty-filter-state">
+                                <span class="material-symbols-outlined">filter_alt_off</span>
+                                <strong>No movements match these filters</strong>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="movementDetailModal" tabindex="-1" aria-labelledby="movementDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content ims-modal movement-detail-modal">
+            <div class="modal-header ims-modal-header">
+                <div>
+                    <h5 class="modal-title" id="movementDetailModalLabel">Transaction Details</h5>
+                    <p id="movementDetailSubtitle">Movement audit trail</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-summary">
+                    <div>
+                        <span>Movement ID</span>
+                        <strong id="detailId">-</strong>
+                    </div>
+                    <div>
+                        <span>Type</span>
+                        <strong id="detailType">-</strong>
+                    </div>
+                    <div>
+                        <span>Quantity</span>
+                        <strong id="detailQty">-</strong>
+                    </div>
+                    <div>
+                        <span>Balance Change</span>
+                        <strong id="detailBalance">-</strong>
+                    </div>
+                </div>
+
+                <div class="detail-grid">
+                    <div class="detail-field">
+                        <span>Product</span>
+                        <strong id="detailProduct">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>SKU</span>
+                        <strong id="detailSku">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>Warehouse</span>
+                        <strong id="detailWarehouse">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>Shelf</span>
+                        <strong id="detailShelf">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>Reference Type</span>
+                        <strong id="detailRefType">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>Reference No.</span>
+                        <strong id="detailRefNo">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>Performed By</span>
+                        <strong id="detailUser">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>Date / Time</span>
+                        <strong id="detailDate">-</strong>
+                    </div>
+                </div>
+
+                <div class="detail-remarks">
+                    <span>Remarks</span>
+                    <p id="detailRemarks">-</p>
+                </div>
+            </div>
+            <div class="modal-footer ims-modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.stockMovementData = {
+            movementTypes: @Html.Raw(Model.MovementTypeChartJson),
+            warehouseFlow: @Html.Raw(Model.WarehouseFlowChartJson),
+            dailyTrend: @Html.Raw(Model.DailyTrendChartJson),
+            topProducts: @Html.Raw(Model.TopProductsChartJson),
+            details: @Html.Raw(Model.MovementDetailsJson)
+        };
+    </script>
+    <script src="~/js/stock-movements.js" asp-append-version="true"></script>
+}

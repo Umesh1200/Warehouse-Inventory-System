@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Create New Purchase Order - InventoryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-dim": "#dbd9dc",
+                      "on-primary": "#ffffff",
+                      "inverse-on-surface": "#f2f0f3",
+                      "secondary-fixed-dim": "#adc6ff",
+                      "tertiary": "#141819",
+                      "primary-container": "#1a2b4b",
+                      "on-secondary-fixed": "#001a42",
+                      "on-surface": "#1b1b1e",
+                      "surface-bright": "#fbf8fc",
+                      "surface-variant": "#e4e2e5",
+                      "error-container": "#ffdad6",
+                      "status-error": "#EF4444",
+                      "outline": "#75777f",
+                      "status-warning": "#F59E0B",
+                      "surface-container-highest": "#e4e2e5",
+                      "tertiary-fixed": "#e0e3e5",
+                      "on-background": "#1b1b1e",
+                      "on-tertiary-container": "#909395",
+                      "primary-fixed": "#d8e2ff",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "data-fill": "#DBEAFE",
+                      "on-tertiary-fixed": "#191c1e",
+                      "background": "#fbf8fc",
+                      "surface-tint": "#4e5e81",
+                      "on-tertiary-fixed-variant": "#444749",
+                      "on-primary-container": "#8293b8",
+                      "secondary-fixed": "#d8e2ff",
+                      "tertiary-fixed-dim": "#c4c7c9",
+                      "secondary-container": "#2170e4",
+                      "error": "#ba1a1a",
+                      "inverse-primary": "#b6c6ef",
+                      "inverse-surface": "#303033",
+                      "surface-border": "#E2E8F0",
+                      "on-secondary": "#ffffff",
+                      "secondary": "#0058be",
+                      "on-surface-variant": "#44474e",
+                      "tertiary-container": "#292c2e",
+                      "on-secondary-fixed-variant": "#004395",
+                      "outline-variant": "#c5c6cf",
+                      "status-success": "#10B981",
+                      "primary-fixed-dim": "#b6c6ef",
+                      "primary": "#031635",
+                      "on-primary-fixed": "#081b3a",
+                      "on-tertiary": "#ffffff",
+                      "status-info": "#6366F1",
+                      "surface": "#fbf8fc",
+                      "surface-container-low": "#f5f3f6",
+                      "surface-container-high": "#e9e7eb",
+                      "on-secondary-container": "#fefcff",
+                      "sidebar-bg": "#0F172A",
+                      "surface-container": "#efedf0",
+                      "on-primary-fixed-variant": "#364768",
+                      "on-error-container": "#93000a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "gutter": "1.5rem",
+                      "table-cell-padding": "0.75rem 1rem",
+                      "stack-md": "1rem",
+                      "container-padding": "2rem",
+                      "sidebar-width": "260px",
+                      "stack-sm": "0.5rem"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "table-header": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "label-mono": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "table-header": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-mono": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+      </script>
+<style>
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-on-surface font-body-md antialiased min-h-screen">
+<!-- Global Sidebar -->
+<nav class="fixed left-0 top-0 h-full w-[260px] bg-sidebar-bg dark:bg-sidebar-bg flex flex-col py-4 z-50">
+<!-- Brand -->
+<div class="px-gutter mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary-fixed text-2xl">local_shipping</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md text-on-primary font-black tracking-tight">InventoryPro</h1>
+<p class="text-body-sm font-body-sm text-secondary-fixed opacity-80">Enterprise Logistics</p>
+</div>
+</div>
+<!-- CTA -->
+<div class="px-gutter mb-6">
+<button class="w-full bg-secondary hover:bg-secondary-container transition-colors duration-150 text-on-primary py-2 px-4 rounded flex items-center justify-center gap-2 font-medium">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Transaction
+            </button>
+</div>
+<!-- Navigation Tabs -->
+<div class="flex-1 overflow-y-auto no-scrollbar px-2 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:text-secondary-fixed transition-colors">dashboard</span>
+<span class="font-body-md text-body-md font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:text-secondary-fixed transition-colors">inventory_2</span>
+<span class="font-body-md text-body-md font-medium">Items</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 bg-secondary-container text-on-secondary-container rounded-lg mx-2 transition-colors duration-150 shadow-sm" href="#">
+<span class="material-symbols-outlined text-xl">shopping_cart</span>
+<span class="font-body-md text-body-md font-semibold">Purchase</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:text-secondary-fixed transition-colors">warehouse</span>
+<span class="font-body-md text-body-md font-medium">Inventory</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:text-secondary-fixed transition-colors">receipt_long</span>
+<span class="font-body-md text-body-md font-medium">Sales</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:text-secondary-fixed transition-colors">assessment</span>
+<span class="font-body-md text-body-md font-medium">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:text-secondary-fixed transition-colors">notifications</span>
+<span class="font-body-md text-body-md font-medium">Alerts</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 group" href="#">
+<span class="material-symbols-outlined text-xl group-hover:text-secondary-fixed transition-colors">settings</span>
+<span class="font-body-md text-body-md font-medium">Settings</span>
+</a>
+</div>
+<!-- Footer Actions -->
+<div class="mt-auto px-2 space-y-1 pt-4 border-t border-outline-variant/20">
+<button class="w-full flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 text-left">
+<span class="material-symbols-outlined text-xl">location_on</span>
+<span class="font-body-sm text-body-sm">Warehouse Selector</span>
+</button>
+<button class="w-full flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 text-left">
+<span class="material-symbols-outlined text-xl">help_outline</span>
+<span class="font-body-sm text-body-sm">Support</span>
+</button>
+</div>
+</nav>
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-260px)] h-16 bg-[#F8FAFC] border-b border-surface-border flex justify-between items-center px-gutter z-40">
+<!-- Breadcrumbs / Context -->
+<div class="flex items-center gap-4">
+<button class="p-2 -ml-2 text-on-surface-variant hover:text-primary transition-colors lg:hidden rounded-full hover:bg-surface-variant">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<nav class="hidden md:flex items-center text-body-sm font-body-sm text-on-surface-variant gap-2">
+<a class="hover:text-secondary transition-colors" href="#">Purchase</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-primary font-medium">Create New Purchase Order</span>
+</nav>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-3">
+<div class="relative hidden md:block mr-2">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-64 pl-9 pr-4 py-1.5 bg-surface-container-low border border-surface-border rounded-full text-body-sm focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all" placeholder="Global search..." type="text"/>
+</div>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-variant relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-status-error rounded-full"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors rounded-full hover:bg-surface-variant">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary overflow-hidden border border-surface-border ml-2 cursor-pointer">
+<img alt="Admin User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_9NvWLE7bCbMjV22M0mif4c3KAj_XySTnB_dM4Wrll_yIyPiMECFgYDHgDNvxrkixksqossbXPjkr9GZ0zWLq_0BZfnxc2pMPxUnDKDSPFsiWWjZT1mS_DirMS1sjQyRen8cONkWfi1kMXeRrciMkA2wBjhq-xvFV8G2ToAJ9aTQOnCpUTA2rieBviPi5LhV_tErfhTryJ1za-iDYlssMg0_A4XMtJ41_xOZ-55C7TOlzjIuhMVY7K9yFUDaUTlhwpmciV_4cBTZB"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[260px] mt-16 p-container-padding">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h2 class="text-headline-lg font-headline-lg text-primary font-bold">Create New Purchase Order</h2>
+<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-variant text-on-surface-variant uppercase tracking-wider">Draft</span>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant">Fill in the details below to generate a new PO for vendor fulfillment.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 border border-surface-border rounded text-body-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors bg-white">Cancel</button>
+<button class="px-4 py-2 border border-secondary text-secondary rounded text-body-sm font-medium hover:bg-secondary/5 transition-colors bg-white">Save as Draft</button>
+<button class="px-5 py-2 bg-primary text-white rounded text-body-sm font-medium flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">send</span>
+                    Send for Approval
+                </button>
+</div>
+</div>
+<!-- Content Grid Layout -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+<!-- Left Column: Main Form (Spans 8 columns on large screens) -->
+<div class="xl:col-span-8 space-y-6">
+<!-- Supplier Information Card -->
+<div class="bg-white border border-surface-border rounded-lg shadow-sm">
+<div class="px-6 py-4 border-b border-surface-border flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">store</span>
+<h3 class="text-headline-md font-headline-md text-primary">Supplier Information</h3>
+</div>
+<div class="p-6">
+<div class="mb-5">
+<label class="block text-body-sm font-medium text-on-surface mb-1.5">Vendor <span class="text-status-error">*</span></label>
+<div class="relative">
+<input class="w-full pl-4 pr-10 py-2.5 border border-surface-border rounded focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary text-body-md transition-all" placeholder="Search or select a vendor..." type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">arrow_drop_down</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<div>
+<label class="block text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Contact Email</label>
+<div class="w-full px-4 py-2.5 bg-[#F1F5F9] border border-transparent rounded text-body-md text-on-surface cursor-not-allowed flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-on-surface-variant">mail</span>
+                                    orders@acmeglobal.com
+                                </div>
+</div>
+<div>
+<label class="block text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Standard Lead Time</label>
+<div class="w-full px-4 py-2.5 bg-[#F1F5F9] border border-transparent rounded text-body-md text-on-surface cursor-not-allowed flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-on-surface-variant">local_shipping</span>
+                                    5-7 Business Days
+                                </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Order Details Card -->
+<div class="bg-white border border-surface-border rounded-lg shadow-sm">
+<div class="px-6 py-4 border-b border-surface-border flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">receipt_long</span>
+<h3 class="text-headline-md font-headline-md text-primary">Order Details</h3>
+</div>
+<div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+<div>
+<label class="block text-body-sm font-medium text-on-surface mb-1.5">PO Number</label>
+<input class="w-full px-3 py-2 bg-[#F1F5F9] border border-transparent rounded text-body-sm font-label-mono text-on-surface cursor-not-allowed" readonly="" type="text" value="PO-2023-8842"/>
+</div>
+<div>
+<label class="block text-body-sm font-medium text-on-surface mb-1.5">Expected Delivery <span class="text-status-error">*</span></label>
+<div class="relative">
+<input class="w-full pl-3 pr-10 py-2 border border-surface-border rounded text-body-sm focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary transition-all text-on-surface" type="date"/>
+</div>
+</div>
+<div>
+<label class="block text-body-sm font-medium text-on-surface mb-1.5">Destination Warehouse <span class="text-status-error">*</span></label>
+<div class="relative">
+<select class="w-full pl-3 pr-10 py-2 border border-surface-border rounded text-body-sm focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary appearance-none bg-white transition-all text-on-surface"><option>WH-KTM-01 (Kathmandu Central)</option><option>WH-PKR-02 (Pokhara Hub)</option><option>WH-BWA-03 (Bhairahawa Logistics)</option></select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-sm">arrow_drop_down</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Line Items Data Table Card -->
+<div class="bg-white border border-surface-border rounded-lg shadow-sm overflow-hidden">
+<div class="px-6 py-4 border-b border-surface-border flex justify-between items-center bg-white">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">list_alt</span>
+<h3 class="text-headline-md font-headline-md text-primary">Line Items</h3>
+</div>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 border border-surface-border rounded text-body-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors flex items-center gap-1.5 bg-white">
+<span class="material-symbols-outlined text-[16px]">barcode_scanner</span>
+                                Scan
+                            </button>
+<button class="px-3 py-1.5 bg-primary text-white rounded text-body-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-1.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                                Add Row
+                            </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[800px]">
+<thead>
+<tr class="bg-[#F1F5F9] border-b border-surface-border text-table-header font-table-header text-on-surface-variant uppercase">
+<th class="p-table-cell-padding w-12 text-center">#</th>
+<th class="p-table-cell-padding">Product / SKU</th>
+<th class="p-table-cell-padding w-32 text-right">Qty</th>
+<th class="p-table-cell-padding w-40 text-right">Unit Price</th>
+<th class="p-table-cell-padding w-40 text-right">Total</th>
+<th class="p-table-cell-padding w-12"></th>
+</tr>
+</thead>
+<tbody class="text-body-sm font-body-sm divide-y divide-surface-border">
+<!-- Row 1 -->
+<tr class="hover:bg-[#F8FAFC] transition-colors group">
+<td class="p-table-cell-padding text-center text-on-surface-variant">1</td>
+<td class="p-table-cell-padding">
+<div class="relative">
+<input class="w-full px-3 py-1.5 border border-transparent group-hover:border-surface-border rounded focus:outline-none focus:border-secondary focus:bg-white bg-transparent font-label-mono text-on-surface transition-all" type="text" value="PROD-AX-992"/>
+</div>
+<div class="text-[11px] text-on-surface-variant px-3 mt-0.5">Industrial Bearing - High Load</div>
+</td>
+<td class="p-table-cell-padding">
+<input class="w-full px-3 py-1.5 border border-surface-border rounded focus:outline-none focus:border-secondary text-right font-label-mono bg-white" type="number" value="100"/>
+</td>
+<td class="p-table-cell-padding">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-label-mono">Rs.</span>
+<input class="w-full pl-7 pr-3 py-1.5 border border-surface-border rounded focus:outline-none focus:border-secondary text-right font-label-mono bg-white" type="text" value="45.00"/>
+</div>
+</td>
+<td class="p-table-cell-padding text-right font-label-mono font-medium text-on-surface">Rs. 4,500.00</td>
+<td class="p-table-cell-padding text-center">
+<button class="p-1 text-outline-variant hover:text-status-error transition-colors rounded">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-[#F8FAFC] transition-colors group">
+<td class="p-table-cell-padding text-center text-on-surface-variant">2</td>
+<td class="p-table-cell-padding">
+<div class="relative">
+<input class="w-full px-3 py-1.5 border border-transparent group-hover:border-surface-border rounded focus:outline-none focus:border-secondary focus:bg-white bg-transparent font-label-mono text-on-surface transition-all" type="text" value="PROD-BX-104"/>
+</div>
+<div class="text-[11px] text-on-surface-variant px-3 mt-0.5">Steel Housing Unit v2</div>
+</td>
+<td class="p-table-cell-padding">
+<input class="w-full px-3 py-1.5 border border-surface-border rounded focus:outline-none focus:border-secondary text-right font-label-mono bg-white" type="number" value="50"/>
+</td>
+<td class="p-table-cell-padding">
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-label-mono">Rs.</span>
+<input class="w-full pl-7 pr-3 py-1.5 border border-surface-border rounded focus:outline-none focus:border-secondary text-right font-label-mono bg-white" type="text" value="170.00"/>
+</div>
+</td>
+<td class="p-table-cell-padding text-right font-label-mono font-medium text-on-surface">Rs. 8,500.00</td>
+<td class="p-table-cell-padding text-center">
+<button class="p-1 text-outline-variant hover:text-status-error transition-colors rounded">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</td>
+</tr>
+<!-- Empty Row / Add New -->
+<tr class="hover:bg-[#F8FAFC] transition-colors bg-surface-container-lowest border-t-2 border-dashed border-surface-border">
+<td class="p-table-cell-padding text-center text-on-surface-variant">3</td>
+<td class="p-table-cell-padding" colspan="5">
+<input class="w-full px-3 py-2 border border-transparent rounded focus:outline-none focus:border-secondary focus:bg-white bg-transparent text-on-surface-variant italic transition-all" placeholder="Search SKU or description to add item..." type="text"/>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Notes Card -->
+<div class="bg-white border border-surface-border rounded-lg shadow-sm p-6">
+<label class="block text-body-sm font-medium text-on-surface mb-2">Internal Notes / Instructions</label>
+<textarea class="w-full p-3 border border-surface-border rounded focus:outline-none focus:border-secondary focus:ring-1 focus:ring-secondary text-body-sm resize-none" placeholder="Add any special instructions for receiving or accounting..." rows="3"></textarea>
+</div>
+</div>
+<!-- Right Column: Order Summary (Spans 4 columns) -->
+<div class="xl:col-span-4">
+<div class="bg-white border border-surface-border rounded-lg shadow-sm sticky top-24">
+<div class="px-6 py-4 border-b border-surface-border">
+<h3 class="text-headline-md font-headline-md text-primary">Order Summary</h3>
+</div>
+<div class="p-6">
+<div class="space-y-4 text-body-sm mb-6">
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant">Subtotal (2 items)</span>
+<span class="font-label-mono text-on-surface">Rs. 13,000.00</span>
+</div>
+<div class="flex justify-between items-center group">
+<span class="text-on-surface-variant border-b border-dashed border-outline-variant cursor-help" title="Based on destination state rate">Estimated Tax (8.5%)</span>
+<div class="relative">
+<span class="absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[10px]">Rs.</span>
+<input class="w-24 pl-5 pr-2 py-1 border border-transparent hover:border-surface-border rounded focus:outline-none focus:border-secondary text-right font-label-mono bg-transparent transition-all" type="text" value="1105.00"/>
+</div>
+</div>
+<div class="flex justify-between items-center group">
+<span class="text-on-surface-variant">Shipping &amp; Handling</span>
+<div class="relative">
+<span class="absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[10px]">Rs.</span>
+<input class="w-24 pl-5 pr-2 py-1 border border-transparent hover:border-surface-border rounded focus:outline-none focus:border-secondary text-right font-label-mono bg-transparent transition-all" type="text" value="250.00"/>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t border-surface-border mb-6">
+<div class="flex justify-between items-end">
+<span class="text-body-md font-bold text-primary">Grand Total</span>
+<div class="text-right"><span class="text-headline-lg font-headline-lg font-bold text-primary block font-label-mono">Rs. 14,355.00</span><span class="text-[10px] text-on-surface-variant uppercase tracking-wider">NPR - All figures estimated</span></div>
+</div>
+</div>
+<div class="space-y-3">
+<button class="w-full py-3 bg-primary text-white rounded-lg text-body-md font-medium flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[20px]">send</span>
+                                Send for Approval
+                            </button>
+<button class="w-full py-2.5 bg-surface-container-low text-primary rounded-lg text-body-sm font-medium hover:bg-surface-variant transition-colors border border-surface-border">
+                                Save as Draft
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

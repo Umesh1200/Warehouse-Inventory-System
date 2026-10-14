@@ -1,0 +1,281 @@
+@page
+@model IMS.Pages.Production.IndexModel
+@{
+    ViewData["Title"] = "Manufacturing & Production Hub";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/production-hub.css" asp-append-version="true" />
+}
+
+<div class="production-hub-container">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger mb-3" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <!-- Header -->
+    <header class="hub-header">
+        <div>
+            <span class="text-uppercase fw-bold text-primary" style="font-size: 11px; letter-spacing: .08em;">Manufacturing Operations</span>
+            <h1>Production Control Center</h1>
+            <p>End-to-end recipe engineering, work order scheduling, material issuance, and finished output receipts.</p>
+        </div>
+        <div class="hub-actions">
+            <a asp-page="/Production/Planning" class="btn btn-primary d-inline-flex align-items-center gap-1 shadow-sm">
+                <span class="material-symbols-outlined" style="font-size: 18px;">add_circle</span>
+                New Work Order
+            </a>
+            <a asp-page="/Production/MaterialIssueReturn" class="btn btn-outline-primary d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined" style="font-size: 18px;">output</span>
+                Issue Material
+            </a>
+            <a asp-page="/Production/FinishedGoodsReceipt" class="btn btn-outline-success d-inline-flex align-items-center gap-1">
+                <span class="material-symbols-outlined" style="font-size: 18px;">inventory_2</span>
+                Receive Output
+            </a>
+        </div>
+    </header>
+
+    <!-- Top KPI Grid -->
+    <section class="kpi-grid-4">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <div class="hub-kpi-card">
+                <div class="hub-kpi-icon @card.ColorClass">
+                    <span class="material-symbols-outlined">@card.Icon</span>
+                </div>
+                <div class="hub-kpi-content">
+                    <div class="hub-kpi-title">@card.Title</div>
+                    <div class="hub-kpi-val">@card.Value</div>
+                    <div class="hub-kpi-sub">@card.Subtitle</div>
+                </div>
+            </div>
+        }
+    </section>
+
+    <!-- Sub-module Navigation Grid -->
+    <section class="modules-grid">
+        <a asp-page="/Production/BOM" class="module-card">
+            <div>
+                <div class="module-icon-wrap">
+                    <span class="material-symbols-outlined">account_tree</span>
+                </div>
+                <h2>Bill of Materials (BOM)</h2>
+                <p>Configure raw material recipes, scrap tolerances, and automated unit production cost rollups.</p>
+            </div>
+            <div class="module-arrow">
+                <span>Manage Recipes</span>
+                <span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+            </div>
+        </a>
+
+        <a asp-page="/Production/Planning" class="module-card">
+            <div>
+                <div class="module-icon-wrap" style="color: #0284c7; background: #e0f2fe;">
+                    <span class="material-symbols-outlined">event_note</span>
+                </div>
+                <h2>Production Planning</h2>
+                <p>Create batches, run automated raw material readiness checks, and dispatch assembly runs.</p>
+            </div>
+            <div class="module-arrow" style="color: #0284c7;">
+                <span>View Batches</span>
+                <span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+            </div>
+        </a>
+
+        <a asp-page="/Production/MaterialIssueReturn" class="module-card">
+            <div>
+                <div class="module-icon-wrap" style="color: #ea580c; background: #fff7ed;">
+                    <span class="material-symbols-outlined">output</span>
+                </div>
+                <h2>Material Issue & Return</h2>
+                <p>Issue staging materials directly from warehouse shelves and return unused surplus stock.</p>
+            </div>
+            <div class="module-arrow" style="color: #ea580c;">
+                <span>Floor Staging</span>
+                <span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+            </div>
+        </a>
+
+        <a asp-page="/Production/FinishedGoodsReceipt" class="module-card">
+            <div>
+                <div class="module-icon-wrap" style="color: #10b981; background: #ecfdf5;">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                </div>
+                <h2>Finished Goods Receipt</h2>
+                <p>Record manufactured units into warehouse shelves, route to QC Hold, and calculate batch yield.</p>
+            </div>
+            <div class="module-arrow" style="color: #10b981;">
+                <span>Inward Output</span>
+                <span class="material-symbols-outlined" style="font-size: 16px;">arrow_forward</span>
+            </div>
+        </a>
+    </section>
+
+    <!-- Two-column Content Section -->
+    <div class="hub-content-grid">
+        <!-- Active Work Orders Pipeline -->
+        <div class="hub-card">
+            <div class="hub-card-header">
+                <h2>
+                    <span class="material-symbols-outlined text-primary">precision_manufacturing</span>
+                    Active Assembly Batches
+                </h2>
+                <a asp-page="/Production/Planning" class="btn btn-sm btn-link text-decoration-none fw-bold p-0">View All Work Orders &rarr;</a>
+            </div>
+            <div class="hub-card-body">
+                @if (Model.ActiveWorkOrders.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="hub-table">
+                            <thead>
+                                <tr>
+                                    <th>Work Order #</th>
+                                    <th>Finished Item</th>
+                                    <th>Recipe</th>
+                                    <th class="text-center">Target Qty</th>
+                                    <th class="text-center">Produced</th>
+                                    <th>Status</th>
+                                    <th>Progress</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var order in Model.ActiveWorkOrders)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-page="/Production/Planning" class="fw-bold text-decoration-none font-mono">@order.PlanNumber</a>
+                                            @if (order.Priority == "URGENT")
+                                            {
+                                                <span class="priority-badge priority-urgent ms-1">Urgent</span>
+                                            }
+                                            else if (order.Priority == "HIGH")
+                                            {
+                                                <span class="priority-badge priority-high ms-1">High</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold">@order.ProductName</div>
+                                            <div class="text-muted font-mono" style="font-size: 11px;">@order.SKU</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark font-mono">@order.BOMVersion</span>
+                                        </td>
+                                        <td class="text-center fw-bold">@order.PlannedQty.ToString("N0")</td>
+                                        <td class="text-center font-mono">
+                                            @((order.ProducedQty > 0 ? order.ProducedQty : order.TotalAcceptedFinishedQty).ToString("N0"))
+                                        </td>
+                                        <td>
+                                            @if (order.Status == "In Production")
+                                            {
+                                                <span class="status-badge-hub status-in-prod">
+                                                    <span class="spinner-grow spinner-grow-sm" style="width: 8px; height: 8px;"></span>
+                                                    In Assembly
+                                                </span>
+                                            }
+                                            else if (order.Status == "Approved")
+                                            {
+                                                <span class="status-badge-hub status-approved">Approved</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="status-badge-hub status-draft">Draft</span>
+                                            }
+                                        </td>
+                                        <td style="min-width: 110px;">
+                                            <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 11px;">
+                                                <span class="text-muted">Yield</span>
+                                                <span class="fw-bold">@order.ProgressPercent%</span>
+                                            </div>
+                                            <div class="progress-bar-wrap">
+                                                <div class="progress-bar-fill @(order.ProgressPercent >= 100 ? "bg-success" : "")" style="width: @order.ProgressPercent%;"></div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            @if (order.Status == "In Production")
+                                            {
+                                                <a asp-page="/Production/FinishedGoodsReceipt" asp-route-planId="@order.PlanID" class="btn btn-sm btn-outline-success py-0 px-2" style="font-size: 12px;">Receive</a>
+                                            }
+                                            else if (order.Status == "Approved")
+                                            {
+                                                <a asp-page="/Production/MaterialIssueReturn" asp-route-planId="@order.PlanID" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 12px;">Issue</a>
+                                            }
+                                            else
+                                            {
+                                                <a asp-page="/Production/Planning" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 12px;">Review</a>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 text-center text-muted">
+                        <span class="material-symbols-outlined text-muted mb-2" style="font-size: 36px;">task_alt</span>
+                        <p class="mb-0">No active work orders at the moment.</p>
+                        <a asp-page="/Production/Planning" class="btn btn-sm btn-primary mt-2">Schedule First Batch</a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Recent Production Activity -->
+        <div class="hub-card">
+            <div class="hub-card-header">
+                <h2>
+                    <span class="material-symbols-outlined text-success">history</span>
+                    Recent Activity
+                </h2>
+                <span class="text-muted small">Floor & Inward</span>
+            </div>
+            <div class="hub-card-body">
+                <ul class="activity-feed-list">
+                    @if (Model.RecentReceipts.Any())
+                    {
+                        @foreach (var r in Model.RecentReceipts.Take(3))
+                        {
+                            <li class="activity-feed-item">
+                                <div class="activity-icon-circle activity-icon-receipt">
+                                    <span class="material-symbols-outlined">inventory_2</span>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark" style="font-size: 13px;">Output: +@r.AcceptedQty.ToString("N0") @r.ProductName</div>
+                                    <div class="text-muted font-mono" style="font-size: 11px;">Receipt @r.ReceiptNumber &bull; Batch @(string.IsNullOrEmpty(r.BatchNumber) ? "Standard" : r.BatchNumber)</div>
+                                    <div class="text-muted mt-1" style="font-size: 10px;">@r.ReceiptDate.ToString("MMM dd, HH:mm")</div>
+                                </div>
+                            </li>
+                        }
+                    }
+                    @if (Model.RecentIssues.Any())
+                    {
+                        @foreach (var i in Model.RecentIssues.Take(3))
+                        {
+                            <li class="activity-feed-item">
+                                <div class="activity-icon-circle activity-icon-issue">
+                                    <span class="material-symbols-outlined">output</span>
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark" style="font-size: 13px;">Issued: @i.IssuedQty.ToString("N0") @i.ProductName</div>
+                                    <div class="text-muted font-mono" style="font-size: 11px;">Shelf @i.ShelfCode &rarr; Plan @i.PlanNumber</div>
+                                    <div class="text-muted mt-1" style="font-size: 10px;">@i.IssueDate.ToString("MMM dd, HH:mm")</div>
+                                </div>
+                            </li>
+                        }
+                    }
+                    @if (!Model.RecentReceipts.Any() && !Model.RecentIssues.Any())
+                    {
+                        <li class="p-3 text-center text-muted" style="font-size: 13px;">
+                            No material issues or FG receipts logged yet.
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,352 @@
+@page
+@model IMS.Pages.WarehouseOperations.PickingPackingModel
+@{
+    ViewData["Title"] = "Picking & Packing";
+    var canAllocate = Model.SelectedOrderItems.Any()
+        && Model.SelectedOrderItems.All(item => Model.ProductShelves.ContainsKey(item.ProductID) && Model.ProductShelves[item.ProductID].Any());
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/picking-packing.css" asp-append-version="true" />
+}
+
+<div class="pickpack-page">
+    <header class="page-header">
+        <div>
+            <div class="eyebrow">
+                <span class="material-symbols-outlined">inventory_2</span>
+                Warehouse Operations
+            </div>
+            <h1>Picking & Packing</h1>
+            <p>Allocate confirmed sales orders, guide shelf picking, and close packing before dispatch.</p>
+        </div>
+        <a class="header-link" asp-page="/Warehouses/Visualization">
+            <span class="material-symbols-outlined">warehouse</span>
+            Warehouse view
+        </a>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <section class="summary-grid" aria-label="Picking and packing summary">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <article class="summary-card">
+                <span class="summary-icon summary-@card.ColorClass material-symbols-outlined">@card.Icon</span>
+                <div>
+                    <p>@card.Title</p>
+                    <strong>@card.Value</strong>
+                </div>
+            </article>
+        }
+    </section>
+
+    <section class="work-grid">
+        <aside class="queue-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Orders Queue</h2>
+                    <p>@Model.OrdersQueue.Count order(s) ready for picking workflow</p>
+                </div>
+            </div>
+
+            <div class="queue-tools">
+                <label class="search-wrap" for="orderSearch">
+                    <span class="material-symbols-outlined">search</span>
+                    <input id="orderSearch" type="search" placeholder="Search SO or customer" autocomplete="off" />
+                </label>
+                <select id="statusFilter" class="form-select" aria-label="Filter by status">
+                    <option value="">All statuses</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Picking">Picking</option>
+                    <option value="Picked">Picked</option>
+                </select>
+            </div>
+
+            <div class="queue-list">
+                @if (Model.OrdersQueue.Any())
+                {
+                    @foreach (var order in Model.OrdersQueue)
+                    {
+                        <a asp-page="./PickingPacking"
+                           asp-route-soid="@order.SOID"
+                           class="queue-item @(order.IsSelected ? "selected" : "")"
+                           data-status="@order.Status"
+                           data-search="@($"{order.SONumber} {order.Customer}")">
+                            <div class="queue-topline">
+                                <span class="mono">@order.SONumber</span>
+                                <span class="status-badge status-@order.PickStatusColor">@order.Status</span>
+                            </div>
+                            <div class="queue-customer">@order.Customer</div>
+                            <div class="queue-meta">
+                                <span>@order.ItemCount item(s)</span>
+                                <span>@order.TotalUnits unit(s)</span>
+                                <span class="status-badge status-@order.PackStatusColor">@order.PackStatus</span>
+                            </div>
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">playlist_remove</span>
+                        <strong>No picking orders</strong>
+                        <p>Confirmed sales orders will appear here when they are ready for allocation.</p>
+                    </div>
+                }
+            </div>
+        </aside>
+
+        <main class="detail-panel">
+            @if (Model.SelectedOrder.SOID > 0)
+            {
+                <div class="detail-header">
+                    <div>
+                        <div class="order-title-row">
+                            <h2>@Model.SelectedOrder.SONumber</h2>
+                            <span class="status-badge status-@Model.SelectedOrder.PickStatusColor">@Model.SelectedOrder.Status</span>
+                            <span class="status-badge status-@Model.SelectedOrder.PackStatusColor">@Model.SelectedOrder.PackStatus</span>
+                        </div>
+                        <p>@Model.SelectedOrder.Customer</p>
+                    </div>
+                    <div class="action-group">
+                        @if (Model.SelectedOrder.Status == "Confirmed")
+                        {
+                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#allocateModal" @(canAllocate ? "" : "disabled")>
+                                <span class="material-symbols-outlined">fact_check</span>
+                                Allocate
+                            </button>
+                        }
+                        @if (Model.SelectedOrder.Status == "Pending")
+                        {
+                            <form method="post" asp-page-handler="StartPicking">
+                                <input type="hidden" name="StartPickID" value="@Model.SelectedOrder.PickID" />
+                                <button type="submit" class="btn btn-info btn-sm text-white">
+                                    <span class="material-symbols-outlined">play_arrow</span>
+                                    Start
+                                </button>
+                            </form>
+                        }
+                        @if (Model.SelectedOrder.Status == "Picking")
+                        {
+                            <form method="post" asp-page-handler="MarkPicked">
+                                <input type="hidden" name="MarkPickedID" value="@Model.SelectedOrder.PickID" />
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <span class="material-symbols-outlined">done_all</span>
+                                    Picked
+                                </button>
+                            </form>
+                        }
+                        @if (Model.SelectedOrder.Status == "Picked" && Model.SelectedOrder.PackStatus != "Packed")
+                        {
+                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#packModal">
+                                <span class="material-symbols-outlined">inventory_2</span>
+                                Pack
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                @if (Model.SelectedOrder.Status == "Confirmed" && !canAllocate)
+                {
+                    <div class="capacity-warning">
+                        <span class="material-symbols-outlined">warning</span>
+                        <div>
+                            <strong>Allocation is blocked.</strong>
+                            <p>One or more products do not have available stock on active shelves. Put away stock before creating the pick task.</p>
+                        </div>
+                    </div>
+                }
+
+                <div class="workflow-strip" aria-label="Picking workflow">
+                    <div class="workflow-step @(Model.SelectedOrder.Status == "Confirmed" ? "active" : "complete")">
+                        <span class="material-symbols-outlined">assignment</span>
+                        Confirmed
+                    </div>
+                    <div class="workflow-step @(Model.SelectedOrder.Status == "Pending" ? "active" : Model.SelectedOrder.Status is "Picking" or "Picked" ? "complete" : "")">
+                        <span class="material-symbols-outlined">task_alt</span>
+                        Allocated
+                    </div>
+                    <div class="workflow-step @(Model.SelectedOrder.Status == "Picking" ? "active" : Model.SelectedOrder.Status == "Picked" ? "complete" : "")">
+                        <span class="material-symbols-outlined">directions_run</span>
+                        Picking
+                    </div>
+                    <div class="workflow-step @(Model.SelectedOrder.Status == "Picked" ? "active" : "")">
+                        <span class="material-symbols-outlined">inventory_2</span>
+                        Packing
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="ims-table">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th class="text-end">Ordered</th>
+                                <th class="text-end">Reserved</th>
+                                <th>Pick Location</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.SelectedOrderItems)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@item.ProductName</strong>
+                                        <span class="mono">@item.SKU</span>
+                                    </td>
+                                    <td class="text-end mono">@item.QtyOrdered</td>
+                                    <td class="text-end mono reserved">@item.QtyReserved</td>
+                                    <td>
+                                        <span class="location-badge">@(string.IsNullOrWhiteSpace(item.Location) ? "Not allocated" : item.Location)</span>
+                                    </td>
+                                    <td><span class="status-badge status-@item.Severity">@item.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state detail-empty">
+                    <span class="material-symbols-outlined">inventory</span>
+                    <strong>No order selected</strong>
+                    <p>Select an order from the queue to review allocation and packing actions.</p>
+                </div>
+            }
+        </main>
+    </section>
+</div>
+
+<div class="modal fade" id="allocateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <div>
+                    <h5 class="modal-title">Allocate Pick Task</h5>
+                    <p>@Model.SelectedOrder.SONumber - @Model.SelectedOrder.Customer</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="CreatePickTask">
+                <input type="hidden" name="NewPickTask.SOID" value="@Model.SelectedOrder.SOID" />
+                <div class="modal-body">
+                    <div class="modal-grid">
+                        <label class="form-field">
+                            <span>Assign To Staff</span>
+                            <select name="NewPickTask.AssignedTo" class="form-select" required>
+                                <option value="">Select staff</option>
+                                @foreach (var staff in Model.StaffList)
+                                {
+                                    <option value="@staff.ID">@staff.Name</option>
+                                }
+                            </select>
+                        </label>
+                        <div class="context-card">
+                            <span class="material-symbols-outlined">rule</span>
+                            <div>
+                                <strong>Reservation rule</strong>
+                                <p>Each item is reserved from a shelf that currently has available stock for that product.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="allocation-lines">
+                        @for (var i = 0; i < Model.SelectedOrderItems.Count; i++)
+                        {
+                            var item = Model.SelectedOrderItems[i];
+                            var shelfOptions = Model.ProductShelves.ContainsKey(item.ProductID)
+                                ? Model.ProductShelves[item.ProductID]
+                                : new List<ShelfSelectOption>();
+
+                            <div class="allocation-line">
+                                <input type="hidden" name="NewPickTask.Items[@i].ProductID" value="@item.ProductID" />
+                                <input type="hidden" name="NewPickTask.Items[@i].QtyToReserve" value="@item.QtyOrdered" />
+                                <div>
+                                    <strong>@item.ProductName</strong>
+                                    <span class="mono">@item.SKU</span>
+                                    <small>@item.QtyOrdered unit(s) required</small>
+                                </div>
+                                <label>
+                                    <span>Reserve from shelf</span>
+                                    <select name="NewPickTask.Items[@i].ShelfID" class="form-select" required disabled="@(!shelfOptions.Any())">
+                                        <option value="">Select available shelf</option>
+                                        @foreach (var shelf in shelfOptions)
+                                        {
+                                            <option value="@shelf.ID">@shelf.Name</option>
+                                        }
+                                    </select>
+                                </label>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" disabled="@(!canAllocate)">
+                        <span class="material-symbols-outlined">playlist_add_check</span>
+                        Create Pick Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="packModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <div>
+                    <h5 class="modal-title">Complete Packing</h5>
+                    <p>@Model.SelectedOrder.SONumber - @Model.SelectedOrder.TotalUnits unit(s)</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="CompletePacking">
+                <input type="hidden" name="NewPacking.SOID" value="@Model.SelectedOrder.SOID" />
+                <div class="modal-body">
+                    <label class="form-field">
+                        <span>Container Type</span>
+                        <select name="NewPacking.ContainerType" class="form-select" required>
+                            <option value="Standard Box">Standard Box</option>
+                            <option value="Large Crate">Large Crate</option>
+                            <option value="Pallet">Pallet</option>
+                            <option value="Bubble Mailer">Bubble Mailer</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="material-symbols-outlined">inventory_2</span>
+                        Confirm Packed
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/picking-packing.js" asp-append-version="true"></script>
+}

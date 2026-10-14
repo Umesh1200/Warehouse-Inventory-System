@@ -1,0 +1,225 @@
+@page
+@model IMS.Pages.Reports.AuditLogsModel
+@{
+    ViewData["Title"] = "Stock Movement Audit Logs";
+}
+
+<div class="audit-container">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+        </div>
+    }
+
+    <!-- Header -->
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem;">
+        <div>
+            <h2 class="page-title" style="margin: 0; font-size: 24px; font-weight: 700; color: var(--primary);">Audit Trail</h2>
+            <p style="color: var(--text-muted); margin: 0.25rem 0 0 0; font-size: 14px;">Trace every stock movement and system action across the enterprise.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <a asp-page-handler="ExportCsv" asp-all-route-data='new Dictionary<string, string> { 
+                { "Filter.DateFrom", Model.Filter.DateFrom?.ToString("yyyy-MM-dd") ?? "" },
+                { "Filter.DateTo", Model.Filter.DateTo?.ToString("yyyy-MM-dd") ?? "" },
+                { "Filter.MovementType", Model.Filter.MovementType ?? "" },
+                { "Filter.ProductID", Model.Filter.ProductID?.ToString() ?? "" },
+                { "Filter.PerformedByUserID", Model.Filter.PerformedByUserID?.ToString() ?? "" },
+                { "Filter.ReferenceNo", Model.Filter.ReferenceNo ?? "" }
+            }' class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <span class="material-symbols-outlined">download</span>
+                Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm p-3" style="border-left: 4px solid var(--primary) !important;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Actions</div>
+                <div style="font-size: 20px; font-weight: 800; color: var(--text-primary);">@Model.Summary.TotalMovements</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm p-3" style="border-left: 4px solid var(--success) !important;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Stock In Qty</div>
+                <div style="font-size: 20px; font-weight: 800; color: var(--success);">+@Model.Summary.TotalStockIn.ToString("N0")</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm p-3" style="border-left: 4px solid var(--danger) !important;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Stock Out Qty</div>
+                <div style="font-size: 20px; font-weight: 800; color: var(--danger);">-@Model.Summary.TotalStockOut.ToString("N0")</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm p-3" style="border-left: 4px solid var(--info) !important;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Adjustments</div>
+                <div style="font-size: 20px; font-weight: 800; color: var(--info);">@Model.Summary.TotalAdjustments.ToString("N0")</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm p-3" style="border-left: 4px solid var(--secondary) !important;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Transfers</div>
+                <div style="font-size: 20px; font-weight: 800; color: var(--secondary);">@Model.Summary.TotalTransfers.ToString("N0")</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label" style="font-size: 12px; font-weight: 600;">Date From</label>
+                    <input type="date" asp-for="Filter.DateFrom" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" style="font-size: 12px; font-weight: 600;">Date To</label>
+                    <input type="date" asp-for="Filter.DateTo" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" style="font-size: 12px; font-weight: 600;">Movement Type</label>
+                    <select asp-for="Filter.MovementType" class="form-select form-select-sm">
+                        <option value="">All Types</option>
+                        @foreach (var type in Model.MovementTypes)
+                        {
+                            <option value="@type.Value">@type.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" style="font-size: 12px; font-weight: 600;">Product</label>
+                    <select asp-for="Filter.ProductID" class="form-select form-select-sm">
+                        <option value="">All Products</option>
+                        @foreach (var p in Model.Products)
+                        {
+                            <option value="@p.Value">@p.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" style="font-size: 12px; font-weight: 600;">Performed By</label>
+                    <select asp-for="Filter.PerformedByUserID" class="form-select form-select-sm">
+                        <option value="">All Users</option>
+                        @foreach (var u in Model.Users)
+                        {
+                            <option value="@u.Value">@u.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1">Filter</button>
+                    <a asp-page="/Reports/AuditLogs" class="btn btn-outline-secondary btn-sm">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Audit Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                <thead class="table-light">
+                    <tr>
+                        <th style="padding: 1rem;">ID</th>
+                        <th>Timestamp</th>
+                        <th>Type</th>
+                        <th>Product</th>
+                        <th>Warehouse -> Shelf</th>
+                        <th class="text-end">Qty</th>
+                        <th>Reference</th>
+                        <th>Performed By</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.AuditLogs.Any())
+                    {
+                        foreach (var log in Model.AuditLogs)
+                        {
+                            <tr>
+                                <td style="padding: 1rem;" class="text-muted font-mono">#@log.MovementID</td>
+                                <td>
+                                    <div style="font-weight: 600;">@log.MovementDate.ToString("MMM dd, yyyy")</div>
+                                    <div style="font-size: 11px; color: var(--text-muted);">@log.MovementDate.ToString("HH:mm:ss")</div>
+                                </td>
+                                <td>
+                                    <span class="badge @GetMovementTypeClass(log.MovementType)">@log.MovementType</span>
+                                </td>
+                                <td>
+                                    <div style="font-weight: 600;">@log.SKU</div>
+                                    <div style="font-size: 11px; color: var(--text-muted);">@log.ProductName</div>
+                                </td>
+                                <td>
+                                    <div style="font-size: 12px;">@log.WarehouseName</div>
+                                    <div style="font-weight: 700; color: var(--primary);">@log.ShelfCode</div>
+                                </td>
+                                <td class="text-end">
+                                    <div style="font-weight: 800; color: @(log.Quantity >= 0 ? "var(--success)" : "var(--danger)");">
+                                        @(log.Quantity >= 0 ? "+" : "")@log.Quantity.ToString("N0")
+                                    </div>
+                                    <div style="font-size: 10px; color: var(--text-muted);">@log.BeforeQty -> @log.AfterQty</div>
+                                </td>
+                                <td>
+                                    <div style="font-weight: 600;">@log.ReferenceNo</div>
+                                    <div style="font-size: 11px; color: var(--text-muted);">@log.ReferenceType</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;">
+                                            @log.PerformedBy.Substring(0, Math.Min(2, log.PerformedBy.Length)).ToUpper()
+                                        </div>
+                                        @log.PerformedBy
+                                    </div>
+                                </td>
+                                <td class="text-muted" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="@log.Remarks">
+                                    @log.Remarks
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <span class="material-symbols-outlined" style="font-size: 48px; display: block; margin-bottom: 1rem;">history</span>
+                                No stock movements found matching your criteria.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetMovementTypeClass(string type)
+    {
+        return type switch
+        {
+            "StockIn" or "ReturnIn" or "ProductionReturn" => "bg-success-subtle text-success border border-success-subtle",
+            "StockOut" or "DamageOut" or "ProductionIssue" => "bg-danger-subtle text-danger border border-danger-subtle",
+            "Reserve" or "Unreserve" => "bg-warning-subtle text-warning border border-warning-subtle",
+            "TransferOut" or "TransferIn" => "bg-info-subtle text-info border border-info-subtle",
+            "AdjustmentIn" or "AdjustmentOut" => "bg-primary-subtle text-primary border border-primary-subtle",
+            _ => "bg-light text-muted border"
+        };
+    }
+}
+
+<style>
+    .bg-success-subtle { background-color: #d1fae5; }
+    .bg-danger-subtle { background-color: #fee2e2; }
+    .bg-warning-subtle { background-color: #fef3c7; }
+    .bg-info-subtle { background-color: #e0f2fe; }
+    .bg-primary-subtle { background-color: #e0e7ff; }
+    
+    .text-success { color: #065f46 !important; }
+    .text-danger { color: #991b1b !important; }
+    .text-warning { color: #92400e !important; }
+    .text-info { color: #075985 !important; }
+    .text-primary { color: #3730a3 !important; }
+</style>

@@ -1,0 +1,369 @@
+.reports-container {
+    padding: 1.5rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+    margin: 0;
+}
+
+/* Summary Cards */
+.reports-stats-grid {
+    display: grid;
+    grid-template-cols: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon.primary { background-color: #d8e2ff; color: var(--secondary); }
+.stat-icon.danger { background-color: #fef2f2; color: var(--danger); }
+.stat-icon.info { background-color: #e0f2fe; color: var(--info); }
+.stat-icon.success { background-color: #ecfdf5; color: var(--success); }
+
+.stat-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+.stat-value { font-size: 20px; font-weight: 700; color: var(--primary); }
+
+/* Filters */
+.filters-panel {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-cols: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.filter-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+}
+
+.filter-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 14px;
+    outline: none;
+    background-color: #F8FAFC;
+}
+
+/* Report Table */
+.reports-table-panel {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.ims-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.ims-table th {
+    padding: 0.75rem 1rem;
+    background-color: #F8FAFC;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.ims-table td {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.ims-table tr:hover { background-color: #F8FAFC; }
+
+.report-name { font-weight: 700; color: var(--primary); font-size: 15px; margin-bottom: 0.25rem; }
+.report-desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; max-width: 400px; }
+
+/* Category Badges */
+.cat-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 0.125rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    background-color: #F1F5F9;
+    color: var(--text-muted);
+}
+
+.status-ready { background-color: #ecfdf5; color: #10B981; }
+
+/* Format Pills */
+.format-pill {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: white;
+    margin-right: 4px;
+}
+
+/* Actions */
+.btn-ims {
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    transition: all 0.2s;
+}
+
+.btn-primary { background-color: var(--secondary); color: white; border: none; }
+.btn-outline { background: white; border: 1px solid var(--border-color); color: var(--text-muted); }
+.btn-outline:hover { border-color: var(--secondary); color: var(--secondary); }
+
+.action-icon-button {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.action-icon-button:hover {
+    background-color: #F1F5F9;
+    color: var(--secondary);
+}
+
+.action-icon-button.danger:hover {
+    color: var(--danger);
+    background-color: #fee2e2;
+}
+
+.action-icon {
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.action-icon:hover { background-color: #F1F5F9; color: var(--secondary); }
+
+/* Report Viewer Modal */
+.report-modal-header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: white;
+    padding: 1.25rem 1.5rem;
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+}
+
+.report-modal-header .modal-title {
+    font-weight: 700;
+    font-size: 18px;
+    color: white;
+    margin: 0;
+}
+
+.report-modal-header .modal-subtitle {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 2px 0 0 0;
+}
+
+.viewer-toolbar {
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.viewer-metrics {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.metric-chip {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.25rem 0.625rem;
+    font-size: 12px;
+}
+
+.metric-chip .chip-label {
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.metric-chip .chip-value {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.viewer-table-container {
+    max-height: 550px;
+    overflow-y: auto;
+}
+
+.viewer-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.viewer-table th {
+    position: sticky;
+    top: 0;
+    background-color: #f1f5f9;
+    padding: 0.625rem 0.875rem;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    border-bottom: 2px solid #cbd5e1;
+    z-index: 2;
+}
+
+.viewer-table td {
+    padding: 0.625rem 0.875rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+.viewer-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Schedule List in Modal */
+.schedule-item-card {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.schedule-info h6 {
+    margin: 0 0 0.25rem 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.schedule-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 1rem;
+}
+
+/* Print Friendly Layout */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #reportViewerModal, #reportViewerModal * {
+        visibility: visible;
+    }
+    #reportViewerModal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    .modal-dialog {
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+    .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .viewer-toolbar, .btn-close, .modal-footer {
+        display: none !important;
+    }
+    .viewer-table-container {
+        max-height: none !important;
+        overflow: visible !important;
+    }
+    .report-modal-header {
+        background: none !important;
+        color: black !important;
+        border-bottom: 2px solid #000;
+        padding: 0 0 1rem 0;
+    }
+    .report-modal-header .modal-title {
+        color: black !important;
+        font-size: 20px !important;
+    }
+    .report-modal-header .modal-subtitle {
+        color: #475569 !important;
+    }
+}
+
+/* Utilities */
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.font-mono { font-family: 'JetBrains Mono', monospace; }

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bill of Materials Management - InventoryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#191c1e",
+                        "outline-variant": "#c5c6cf",
+                        "on-surface-variant": "#44474e",
+                        "on-primary-container": "#8293b8",
+                        "on-secondary-container": "#fefcff",
+                        "on-primary-fixed": "#081b3a",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "inverse-primary": "#b6c6ef",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#303033",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-surface": "#1b1b1e",
+                        "on-error": "#ffffff",
+                        "primary-container": "#1a2b4b",
+                        "surface-tint": "#4e5e81",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "secondary-fixed": "#d8e2ff",
+                        "secondary": "#0058be",
+                        "status-success": "#10B981",
+                        "background": "#fbf8fc",
+                        "sidebar-bg": "#0F172A",
+                        "on-tertiary-container": "#909395",
+                        "on-background": "#1b1b1e",
+                        "surface-container-highest": "#e4e2e5",
+                        "surface-border": "#E2E8F0",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#2170e4",
+                        "on-secondary-fixed-variant": "#004395",
+                        "status-warning": "#F59E0B",
+                        "surface-container-low": "#f5f3f6",
+                        "tertiary-container": "#292c2e",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-container": "#efedf0",
+                        "on-primary-fixed-variant": "#364768",
+                        "on-tertiary": "#ffffff",
+                        "data-fill": "#DBEAFE",
+                        "surface-container-high": "#e9e7eb",
+                        "on-secondary-fixed": "#001a42",
+                        "surface": "#fbf8fc",
+                        "status-info": "#6366F1",
+                        "status-error": "#EF4444",
+                        "surface-bright": "#fbf8fc",
+                        "on-primary": "#ffffff",
+                        "primary": "#031635",
+                        "surface-variant": "#e4e2e5",
+                        "tertiary-fixed": "#e0e3e5",
+                        "inverse-on-surface": "#f2f0f3",
+                        "surface-dim": "#dbd9dc",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#141819",
+                        "outline": "#75777f",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "0.5rem",
+                        "gutter": "1.5rem",
+                        "container-padding": "2rem",
+                        "table-cell-padding": "0.75rem 1rem",
+                        "stack-md": "1rem",
+                        "sidebar-width": "260px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "table-header": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "table-header": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #fbf8fc; color: #1b1b1e; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .table-row-hover:hover { background-color: #f8fafc; }
+        .sidebar-active { background-color: #2170e4; color: #fefcff; border-radius: 0.5rem; margin: 0 0.5rem; }
+        .sidebar-inactive { color: #8293b8; border-radius: 0.5rem; margin: 0 0.5rem; }
+        .sidebar-inactive:hover { background-color: #1a2b4b; color: #8293b8; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex overflow-hidden">
+<!-- Fixed Sidebar -->
+<aside class="fixed left-0 top-0 h-full w-[260px] bg-sidebar-bg flex flex-col py-4 border-r border-outline-variant z-50">
+<div class="px-6 mb-8">
+<h1 class="text-headline-lg font-headline-lg font-black text-on-primary">InventoryPro</h1>
+<p class="text-body-sm font-body-sm text-on-primary-container">Enterprise Logistics</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-4 py-3 sidebar-inactive" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="dashboard">dashboard</span>
+<span class="text-body-sm font-body-sm">Dashboard</span>
+</a>
+<a class="flex items-center px-4 py-3 sidebar-active" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="inventory_2">inventory_2</span>
+<span class="text-body-sm font-body-sm">Items</span>
+</a>
+<a class="flex items-center px-4 py-3 sidebar-inactive" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="shopping_cart">shopping_cart</span>
+<span class="text-body-sm font-body-sm">Purchase</span>
+</a>
+<a class="flex items-center px-4 py-3 sidebar-inactive" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="warehouse">warehouse</span>
+<span class="text-body-sm font-body-sm">Inventory</span>
+</a>
+<a class="flex items-center px-4 py-3 sidebar-inactive" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="receipt_long">receipt_long</span>
+<span class="text-body-sm font-body-sm">Sales</span>
+</a>
+<a class="flex items-center px-4 py-3 sidebar-inactive" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="assessment">assessment</span>
+<span class="text-body-sm font-body-sm">Reports</span>
+</a>
+<a class="flex items-center px-4 py-3 sidebar-inactive" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="notifications">notifications</span>
+<span class="text-body-sm font-body-sm">Alerts</span>
+</a>
+<a class="flex items-center px-4 py-3 sidebar-inactive" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="settings">settings</span>
+<span class="text-body-sm font-body-sm">Settings</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full bg-secondary hover:bg-blue-700 text-on-secondary py-2.5 rounded-xl font-medium transition-all active:scale-95 flex items-center justify-center gap-2 mb-6">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                New Transaction
+            </button>
+<div class="space-y-1">
+<a class="flex items-center px-4 py-2 sidebar-inactive" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="location_on">location_on</span>
+<span class="text-body-sm font-body-sm">Warehouse Selector</span>
+</a>
+<a class="flex items-center px-4 py-2 sidebar-inactive" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="help_outline">help_outline</span>
+<span class="text-body-sm font-body-sm">Support</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[260px] w-[calc(100%-260px)] h-screen flex flex-col">
+<!-- Top Bar -->
+<header class="h-16 flex items-center justify-between px-gutter bg-surface-bright border-b border-surface-border">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer" data-icon="menu">menu</span>
+<h2 class="font-headline-lg text-headline-lg text-primary">Warehouse Visualization</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex items-center gap-6">
+<a class="text-on-surface-variant font-medium hover:text-secondary" href="#">Inventory</a>
+<a class="text-primary font-bold border-b-2 border-secondary" href="#">Warehouse Visualization</a>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer" data-icon="help">help</span>
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden">
+<img alt="Admin User" data-alt="A professional headshot of a corporate logistics manager wearing a suit and smiling, set against a clean, softly blurred modern office background with neutral gray and blue tones to match the high-end industrial UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlzkv7V01HwcF49zewDIvZVWhw4hMNYgN3piKhsvRJ94YPf-jCR8blYEWJD3mNGxJuljlKwsSEFw2d5V56GE8Miwwgni_X0r7Y3Iz3URHLzrnoQgGwpavWQR5ti7BlM3H-8EiVQuf5mfBJbpIZfH9bDWDFC6AOd2A2AVoD7bqqd1uLTPJjKdLq8qA9cL2p1iFcqopG-J1OzNnflLwB_PaEGbdleq_fwJJnUM9Lrv7Vqa4G61--wR13iUg4gjsmorsdVysav115rmw6"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 overflow-y-auto p-container-padding">
+<!-- BOM Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+<div>
+<nav class="flex text-body-sm text-on-surface-variant mb-2">
+<span class="hover:underline cursor-pointer">Products</span>
+<span class="mx-2">/</span>
+<span class="hover:underline cursor-pointer">Assembly</span>
+<span class="mx-2">/</span>
+<span class="text-primary font-semibold">BOM-2023-089</span>
+</nav>
+<h3 class="font-headline-lg text-headline-lg text-primary flex items-center gap-3">
+                        Industrial Servo Motor - AX200
+                        <span class="bg-status-success/10 text-status-success text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Active BOM</span>
+</h3>
+<p class="text-body-md text-on-surface-variant mt-1">Primary production configuration for high-torque industrial applications.</p>
+</div>
+<div class="flex gap-3">
+<button class="bg-white border border-surface-border text-primary px-4 py-2 rounded-lg font-medium hover:bg-surface-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-icon="history">history</span>
+                        Version History
+                    </button>
+<button class="bg-secondary text-on-secondary px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+                        Edit BOM
+                    </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Main Component List (Col 8) -->
+<div class="col-span-12 lg:col-span-8 space-y-6">
+<div class="bg-white border border-surface-border rounded-xl shadow-sm overflow-hidden">
+<div class="p-6 border-b border-surface-border flex justify-between items-center">
+<h4 class="font-headline-md text-headline-md text-primary">Component Breakdown</h4>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline text-[18px]" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 border border-surface-border rounded-lg text-body-sm w-64 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none" placeholder="Search SKU or name..." type="text"/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-[#F1F5F9] border-b border-surface-border">
+<tr>
+<th class="p-table-cell-padding font-table-header text-table-header uppercase">SKU / Component</th>
+<th class="p-table-cell-padding font-table-header text-table-header uppercase">Quantity (Unit)</th>
+<th class="p-table-cell-padding font-table-header text-table-header uppercase">Unit Cost</th>
+<th class="p-table-cell-padding font-table-header text-table-header uppercase">Availability</th>
+<th class="p-table-cell-padding font-table-header text-table-header uppercase text-right">Total</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-border">
+<tr class="table-row-hover transition-colors">
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="settings_input_component">settings_input_component</span>
+</div>
+<div>
+<div class="text-body-md font-semibold">Stator Core Core-X1</div>
+<div class="text-label-mono font-label-mono text-outline-variant">ELEC-STAT-292</div>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding text-body-md">1.00 pcs</td>
+<td class="p-table-cell-padding text-body-md">NPR 12,450.00</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-status-success/10 text-status-success">
+<span class="w-1.5 h-1.5 rounded-full bg-status-success"></span> IN STOCK
+                                            </span>
+</td>
+<td class="p-table-cell-padding text-body-md font-semibold text-right">NPR 12,450.00</td>
+</tr>
+<tr class="table-row-hover transition-colors">
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="cable">cable</span>
+</div>
+<div>
+<div class="text-body-md font-semibold">Copper Winding 0.5mm</div>
+<div class="text-label-mono font-label-mono text-outline-variant">WIRE-COP-005</div>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding text-body-md">250.00 m</td>
+<td class="p-table-cell-padding text-body-md">NPR 45.50</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-status-success/10 text-status-success">
+<span class="w-1.5 h-1.5 rounded-full bg-status-success"></span> IN STOCK
+                                            </span>
+</td>
+<td class="p-table-cell-padding text-body-md font-semibold text-right">NPR 11,375.00</td>
+</tr>
+<tr class="table-row-hover transition-colors">
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="hardware">hardware</span>
+</div>
+<div>
+<div class="text-body-md font-semibold">Precision Ball Bearing</div>
+<div class="text-label-mono font-label-mono text-outline-variant">MECH-BRG-881</div>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding text-body-md">2.00 pcs</td>
+<td class="p-table-cell-padding text-body-md">NPR 1,200.00</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-status-warning/10 text-status-warning">
+<span class="w-1.5 h-1.5 rounded-full bg-status-warning"></span> LOW STOCK
+                                            </span>
+</td>
+<td class="p-table-cell-padding text-body-md font-semibold text-right">NPR 2,400.00</td>
+</tr>
+<tr class="table-row-hover transition-colors">
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="memory">memory</span>
+</div>
+<div>
+<div class="text-body-md font-semibold">Encoder Module - 10bit</div>
+<div class="text-label-mono font-label-mono text-outline-variant">ELEC-ENC-10B</div>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding text-body-md">1.00 pcs</td>
+<td class="p-table-cell-padding text-body-md">NPR 8,700.00</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-status-error/10 text-status-error">
+<span class="w-1.5 h-1.5 rounded-full bg-status-error"></span> OUT OF STOCK
+                                            </span>
+</td>
+<td class="p-table-cell-padding text-body-md font-semibold text-right">NPR 8,700.00</td>
+</tr>
+<tr class="table-row-hover transition-colors">
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-surface-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="square_foot">square_foot</span>
+</div>
+<div>
+<div class="text-body-md font-semibold">Aluminum Housing Unit</div>
+<div class="text-label-mono font-label-mono text-outline-variant">METL-HOU-202</div>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding text-body-md">1.00 pcs</td>
+<td class="p-table-cell-padding text-body-md">NPR 5,200.00</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-status-success/10 text-status-success">
+<span class="w-1.5 h-1.5 rounded-full bg-status-success"></span> IN STOCK
+                                            </span>
+</td>
+<td class="p-table-cell-padding text-body-md font-semibold text-right">NPR 5,200.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 bg-surface-container-lowest border-t border-surface-border text-center">
+<button class="text-secondary font-medium hover:underline text-body-sm flex items-center justify-center gap-1 mx-auto">
+<span class="material-symbols-outlined text-[18px]" data-icon="expand_more">expand_more</span>
+                                View all 14 components
+                            </button>
+</div>
+</div>
+</div>
+<!-- Summary & Financials (Col 4) -->
+<div class="col-span-12 lg:col-span-4 space-y-6">
+<!-- Total Cost Card -->
+<div class="bg-primary text-on-primary rounded-xl p-6 shadow-md relative overflow-hidden">
+<div class="relative z-10">
+<p class="text-on-primary-container font-medium text-body-sm uppercase tracking-widest mb-1">Total Unit Cost (BOM)</p>
+<h2 class="text-[32px] font-black leading-none mb-4">NPR 40,125.00</h2>
+<div class="flex items-center gap-2 text-status-success text-body-sm font-semibold bg-white/10 w-fit px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[16px]" data-icon="trending_down">trending_down</span>
+                                4.2% from last version
+                            </div>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-[120px]" data-icon="account_balance_wallet">account_balance_wallet</span>
+</div>
+</div>
+<!-- Production Metrics -->
+<div class="bg-white border border-surface-border rounded-xl p-6">
+<h4 class="font-headline-md text-headline-md text-primary mb-4">Production Readiness</h4>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-body-sm mb-1.5">
+<span class="text-on-surface-variant">Inventory Availability</span>
+<span class="font-bold text-status-warning">78%</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-2">
+<div class="bg-status-warning h-2 rounded-full" style="width: 78%"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-2">
+<div class="p-3 bg-surface-container-low rounded-lg">
+<p class="text-[10px] uppercase font-bold text-on-surface-variant">Can Produce</p>
+<p class="text-headline-md font-headline-md text-primary">14 Units</p>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg">
+<p class="text-[10px] uppercase font-bold text-on-surface-variant">Lead Time</p>
+<p class="text-headline-md font-headline-md text-primary">8 Days</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Regional Compliance / Context Card -->
+<div class="bg-surface-container-lowest border border-surface-border rounded-xl p-6 border-l-4 border-l-secondary">
+<div class="flex items-start gap-4">
+<div class="bg-secondary/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-secondary" data-icon="info">info</span>
+</div>
+<div>
+<h5 class="text-body-md font-bold text-primary mb-1">Local Compliance (Nepal)</h5>
+<p class="text-body-sm text-on-surface-variant leading-relaxed">
+                                    BOM costs include 13% VAT adjustments for locally sourced components. Currency conversion set at fixed NRB rates.
+                                </p>
+</div>
+</div>
+</div>
+<!-- Visualization Shortcut -->
+<div class="relative group cursor-pointer overflow-hidden rounded-xl h-48 border border-surface-border">
+<img alt="Warehouse Visualization" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="A macro photograph of highly detailed industrial motor components, copper wirings, and steel gears arranged artistically on a clean white technical surface. The lighting is bright and sharp, highlighting textures of brushed metal and vibrant copper, fitting a professional engineering design aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKsZWWhG7rQxDo_5fj3JduCU6R28f0mngQF1_OhuX-OW_067P41D7sWlufChS8kE9bGAbXRMpY6fcLJnIFNshKWsnMa9HKR6TmILqK04S2qgqW1gfElYZJBkBMNjkbM7Lkp7YyB6_uEKueWM54IXggrljz2FBxjUGBk7xRN2GRQWdrpDVZKI1kpL_Co9oGhDBBHak8aduT7hLafGfFCYcEQ-BKCdRVeAswnuJVZin_TOKHKOaKDnv03dDRE8FcarsYeQJsghLralDe"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent flex flex-col justify-end p-6">
+<p class="text-white font-bold flex items-center gap-2">
+                                3D Assembly View
+                                <span class="material-symbols-outlined text-[18px]" data-icon="open_in_new">open_in_new</span>
+</p>
+<p class="text-white/70 text-body-sm">Inspect component fitment virtually.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB for quick action -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-secondary text-on-secondary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group">
+<span class="material-symbols-outlined text-[28px]" data-icon="add">add</span>
+<span class="absolute right-full mr-4 bg-primary text-white px-3 py-1.5 rounded-lg text-body-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">Add Component</span>
+</button>
+<script>
+        // Simple micro-interaction for table rows
+        document.querySelectorAll('tr').forEach(row => {
+            row.addEventListener('click', () => {
+                if(row.parentElement.tagName === 'TBODY') {
+                    console.log('Row clicked - context menu or detail view could open here.');
+                }
+            });
+        });
+    </script>
+</body></html>

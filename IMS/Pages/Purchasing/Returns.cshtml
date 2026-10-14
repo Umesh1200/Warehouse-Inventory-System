@@ -1,0 +1,522 @@
+@page
+@model IMS.Pages.Purchasing.ReturnsModel
+@{
+    ViewData["Title"] = "Supplier Returns";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/supplier-returns.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+}
+
+<div class="returns-page">
+    <header class="page-header">
+        <div>
+            <span class="eyebrow">Procurement</span>
+            <h1>Supplier Returns (RTV)</h1>
+            <p>Manage Return to Vendor (RTV) shipments, track RMA numbers, carrier details, and credit status.</p>
+        </div>
+        <div class="header-actions">
+            <a class="ghost-button" href="/Purchasing/Suppliers">
+                <span class="material-symbols-outlined">factory</span>
+                Suppliers
+            </a>
+            @if (Model.UserContext.Role != "Supplier")
+            {
+                <button class="primary-button" type="button" data-bs-toggle="modal" data-bs-target="#createReturnModal">
+                    <span class="material-symbols-outlined">add</span>
+                    New Return / RTV
+                </button>
+            }
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="ims-alert success" role="alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="margin-left:auto; border:none; background:transparent;">&times;</button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="ims-alert danger" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="margin-left:auto; border:none; background:transparent;">&times;</button>
+        </div>
+    }
+
+    <section class="summary-grid" aria-label="Supplier return summary">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <article class="summary-card @card.ColorClass">
+                <div class="summary-top">
+                    <span class="summary-icon material-symbols-outlined">@card.Icon</span>
+                    <span class="summary-label">@card.Title</span>
+                </div>
+                <div class="summary-value">@card.Value</div>
+            </article>
+        }
+    </section>
+
+    <section class="filter-panel" aria-label="Supplier return filters">
+        <div class="filter-field search-field">
+            <label for="returnSearch">Search</label>
+            <span class="material-symbols-outlined">search</span>
+            <input id="returnSearch" type="search" placeholder="Return #, Supplier, Carrier, Tracking, RMA" autocomplete="off" />
+        </div>
+        <div class="filter-field">
+            <label for="supplierFilter">Supplier</label>
+            <select id="supplierFilter">
+                <option value="All Suppliers">All Suppliers</option>
+                @foreach (var supplier in Model.ActiveSuppliersList)
+                {
+                    <option value="@supplier.SupplierName">@supplier.SupplierName</option>
+                }
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="statusFilter">Status</label>
+            <select id="statusFilter">
+                <option value="All Statuses">All Statuses</option>
+                <option value="Draft">Draft</option>
+                <option value="Shipped">Shipped</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="creditFilter">Credit Status</label>
+            <select id="creditFilter">
+                <option value="All Credits">All Credits</option>
+                <option value="Pending">Pending</option>
+                <option value="Issued">Issued</option>
+                <option value="Denied">Denied</option>
+            </select>
+        </div>
+    </section>
+
+    <main class="returns-layout">
+        <!-- Master List Panel -->
+        <section class="returns-panel" aria-label="Supplier returns list">
+            <div class="panel-heading">
+                <div>
+                    <h2>Returns Log</h2>
+                    <p><span id="visibleReturnCount">@Model.ReturnsList.Count</span> visible of @Model.ReturnsList.Count</p>
+                </div>
+            </div>
+
+            <div class="return-list" id="returnList">
+                @if (Model.ReturnsList.Any())
+                {
+                    @foreach (var ret in Model.ReturnsList)
+                    {
+                        <a class="return-row @(ret.IsSelected ? "selected" : "")"
+                           href="/Purchasing/Returns?returnId=@ret.ReturnID"
+                           data-search="@($"{ret.ReturnNo} {ret.SupplierName} {ret.RMANumber} {ret.Carrier} {ret.TrackingNumber} {ret.Remarks}")"
+                           data-supplier="@ret.SupplierName"
+                           data-status="@ret.Status"
+                           data-credit="@ret.CreditStatus">
+                            <div class="row-main">
+                                <div>
+                                    <div class="row-title">@ret.ReturnNo</div>
+                                    <div class="row-subtitle">@ret.SupplierName</div>
+                                </div>
+                                <div class="badge-stack">
+                                    <span class="status-pill status-@ret.Status.ToLower()">@ret.Status</span>
+                                    <span class="credit-pill credit-@ret.CreditStatus.ToLower()">Credit: @ret.CreditStatus</span>
+                                </div>
+                            </div>
+                            <div class="row-meta">
+                                <span>Date: @ret.ReturnDate</span>
+                                @if (!string.IsNullOrEmpty(ret.RMANumber))
+                                {
+                                    <span>RMA: @ret.RMANumber</span>
+                                }
+                            </div>
+                            <div class="row-foot">
+                                <span>Carrier: @(string.IsNullOrEmpty(ret.Carrier) ? "N/A" : ret.Carrier)</span>
+                                <span>Created by @ret.CreatorName</span>
+                            </div>
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">keyboard_return</span>
+                        <p>No supplier returns found.</p>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <!-- Selected Details Panel -->
+        <aside class="detail-panel" aria-label="Selected return details">
+            @if (Model.SelectedReturn != null)
+            {
+                var selected = Model.SelectedReturn;
+                <div class="detail-header">
+                    <div>
+                        <span class="eyebrow">Selected Return / RTV</span>
+                        <h2>@selected.ReturnNo</h2>
+                        <p>@selected.SupplierName</p>
+                    </div>
+                    <div class="detail-actions">
+                        @if (Model.UserContext.Role != "Supplier")
+                        {
+                            @if (selected.Status == "Draft")
+                            {
+                                <form method="post" asp-page-handler="Confirm" style="display:inline;">
+                                    <input type="hidden" name="ConfirmReturnID" value="@selected.ReturnID" />
+                                    <button type="submit" class="primary-button compact">
+                                        <span class="material-symbols-outlined">local_shipping</span>
+                                        Confirm Shipment
+                                    </button>
+                                </form>
+                                <form method="post" asp-page-handler="Cancel" style="display:inline;">
+                                    <input type="hidden" name="CancelReturnID" value="@selected.ReturnID" />
+                                    <button type="submit" class="danger-button compact" onclick="return confirm('Are you sure you want to cancel this Return?')">
+                                        <span class="material-symbols-outlined">cancel</span>
+                                        Cancel
+                                    </button>
+                                </form>
+                            }
+                            else if (selected.Status == "Shipped")
+                            {
+                                <button type="button" class="primary-button compact" data-bs-toggle="modal" data-bs-target="#updateCreditModal" data-return-id="@selected.ReturnID" data-credit-status="@selected.CreditStatus">
+                                    <span class="material-symbols-outlined">payments</span>
+                                    Credit Note Status
+                                </button>
+                            }
+                        }
+                        else
+                        {
+                            @if (selected.Status == "Draft")
+                            {
+                                <button type="button" class="primary-button compact" data-bs-toggle="modal" data-bs-target="#supplierAuthorizeModal" data-return-id="@selected.ReturnID" data-rma="@selected.RMANumber" data-carrier="@selected.Carrier" data-tracking="@selected.TrackingNumber">
+                                    <span class="material-symbols-outlined">assignment_turned_in</span>
+                                    Authorize & Provide RMA
+                                </button>
+                            }
+                        }
+                    </div>
+
+                </div>
+
+                <div class="detail-cards">
+                    <div class="detail-card">
+                        <h3>Shipment & RMA</h3>
+                        <div class="info-grid">
+                            <div class="info-label">RMA Number:</div>
+                            <div class="info-value">@(string.IsNullOrEmpty(selected.RMANumber) ? "None" : selected.RMANumber)</div>
+                            
+                            <div class="info-label">Carrier Name:</div>
+                            <div class="info-value">@(string.IsNullOrEmpty(selected.Carrier) ? "None" : selected.Carrier)</div>
+
+                            <div class="info-label">Tracking Number:</div>
+                            <div class="info-value">@(string.IsNullOrEmpty(selected.TrackingNumber) ? "None" : selected.TrackingNumber)</div>
+
+                            <div class="info-label">Created At:</div>
+                            <div class="info-value">@selected.CreatedAt</div>
+                        </div>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Status Log</h3>
+                        <div class="info-grid">
+                            <div class="info-label">Shipment Status:</div>
+                            <div class="info-value"><span class="status-pill status-@selected.Status.ToLower()">@selected.Status</span></div>
+                            
+                            <div class="info-label">Credit Status:</div>
+                            <div class="info-value"><span class="credit-pill credit-@selected.CreditStatus.ToLower()">@selected.CreditStatus</span></div>
+
+                            <div class="info-label">Remarks:</div>
+                            <div class="info-value text-muted">@(string.IsNullOrEmpty(selected.Remarks) ? "No remarks." : selected.Remarks)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-items-section">
+                    <div class="section-title">
+                        <h3>Returned Items</h3>
+                        <span>@Model.SelectedItems.Count items</span>
+                    </div>
+
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Item Details</th>
+                                <th>Source Shelf</th>
+                                <th class="num">Qty</th>
+                                <th class="num">Cost / Unit</th>
+                                <th class="num">Total</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.SelectedItems)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="item-name">@item.ProductName</div>
+                                        <div class="item-sku">@item.SKU</div>
+                                    </td>
+                                    <td>
+                                        <span class="shelf-tag">@item.SourceShelfCode</span>
+                                    </td>
+                                    <td class="num font-mono">@item.Quantity.ToString("N2")</td>
+                                    <td class="num font-mono">Rs. @item.UnitPrice.ToString("N2")</td>
+                                    <td class="num font-mono">Rs. @item.TotalPrice.ToString("N2")</td>
+                                    <td class="text-muted" style="font-size: 13px;">@item.Reason</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" class="num font-weight-bold">Grand Total:</td>
+                                <td class="num font-mono font-weight-bold" style="color: var(--primary);">Rs. @Model.SelectedItems.Sum(i => i.TotalPrice).ToString("N2")</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state select-prompt">
+                    <span class="material-symbols-outlined">dock_to_right</span>
+                    <p>Select a supplier return to view its detailed logs and line items.</p>
+                </div>
+            }
+        </aside>
+    </main>
+</div>
+
+@if (Model.UserContext.Role != "Supplier")
+{
+<!-- CREATE RETURN MODAL -->
+<div class="modal fade" id="createReturnModal" tabindex="-1" aria-labelledby="createReturnModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title" id="createReturnModalLabel" style="font-weight: 700; color: var(--returns-ink);">New Supplier Return / RTV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="border:none; background:transparent; font-size: 1.5rem;">&times;</button>
+            </div>
+            <form method="post" asp-page-handler="Create" id="createReturnForm">
+                <input type="hidden" asp-for="NewReturnItemsJson" id="NewReturnItemsJson" />
+                
+                <div class="modal-body p-4" style="max-height: 75vh; overflow-y: auto;">
+                    <!-- Step 1: Supplier & Headers -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-weight: 600; font-size: 13px;">Supplier *</label>
+                            <select class="form-select" asp-for="NewReturn.SupplierID" id="newReturnSupplier" required>
+                                <option value="">-- Select Supplier --</option>
+                                @foreach (var supplier in Model.ActiveSuppliersList)
+                                {
+                                    <option value="@supplier.SupplierID">@supplier.SupplierName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-weight: 600; font-size: 13px;">RMA Number</label>
+                            <input type="text" class="form-control" asp-for="NewReturn.RMANumber" placeholder="e.g. RMA-993829" />
+                        </div>
+
+                        <!-- Policy Info Panel -->
+                        <div class="col-12 d-none" id="policyPanel">
+                            <div class="p-3 rounded bg-light border" style="font-size: 13px;">
+                                <div class="row">
+                                    <div class="col-md-4"><strong>Return Email:</strong> <span id="policyEmail">-</span></div>
+                                    <div class="col-md-4"><strong>Pref. Carrier:</strong> <span id="policyCarrier">-</span></div>
+                                </div>
+                                <div class="mt-2"><strong>Return Policy:</strong> <p class="mb-0 text-muted mt-1" id="policyText"></p></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-weight: 600; font-size: 13px;">Shipment Carrier</label>
+                            <input type="text" class="form-control" asp-for="NewReturn.Carrier" id="newReturnCarrier" placeholder="e.g. DHL, Fedex, Local" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-weight: 600; font-size: 13px;">Tracking Number</label>
+                            <input type="text" class="form-control" asp-for="NewReturn.TrackingNumber" placeholder="e.g. TRK-294829482" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" style="font-weight: 600; font-size: 13px;">Remarks / Reason Details</label>
+                            <textarea class="form-control" asp-for="NewReturn.Remarks" rows="2" placeholder="Describe context or carrier booking reference..."></textarea>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <!-- Step 2: Line Items Section -->
+                    <h6 style="font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 5px;">
+                        <span class="material-symbols-outlined" style="font-size: 20px; color: var(--primary);">inventory_2</span>
+                        Items in Quarantine to Return
+                    </h6>
+
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-5">
+                                <label class="form-label" style="font-weight: 600; font-size: 12px;">Select Item & Source Shelf</label>
+                                <select class="form-select form-select-sm" id="quarantineItemSelect">
+                                    <option value="">-- Choose Item from Quarantine --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-weight: 600; font-size: 12px;">Qty to Return</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm" id="itemQty" min="0.01" value="1" />
+                                <div class="form-text" style="font-size:10px; margin-top:2px;">Available: <span id="lblAvailQty">0.00</span></div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-weight: 600; font-size: 12px;">Unit Cost</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm" id="itemUnitPrice" min="0" value="0.00" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-weight: 600; font-size: 12px;">Reason / Fault</label>
+                                <input type="text" class="form-control form-control-sm" id="itemReason" placeholder="e.g. Failed QC" />
+                            </div>
+                            <div class="col-12 text-end mt-2">
+                                <button type="button" class="btn btn-sm btn-primary px-3" id="btnAddReturnItem">
+                                    <span class="material-symbols-outlined" style="font-size:16px; vertical-align:middle; margin-right:2px;">add</span> Add Item
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="table table-sm align-middle mb-0" id="addedItemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item Details</th>
+                                <th>Source Shelf</th>
+                                <th class="text-end">Qty</th>
+                                <th class="text-end">Unit Cost</th>
+                                <th class="text-end">Total</th>
+                                <th>Reason</th>
+                                <th class="text-center" style="width: 50px;">Remove</th>
+                            </tr>
+                        </thead>
+                        <tbody id="addedItemsList">
+                            <tr id="emptyItemsRow">
+                                <td colspan="7" class="text-center text-muted py-3">No return items added yet. Choose items above to add to this shipment.</td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="d-none" id="itemsTableFoot">
+                            <tr class="fw-bold">
+                                <td colspan="4" class="text-end">Grand Total:</td>
+                                <td class="text-end text-primary" id="lblGrandTotal">Rs. 0.00</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmitReturn" disabled>Save Return Draft</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+}
+
+@if (Model.UserContext.Role != "Supplier")
+{
+<!-- UPDATE CREDIT STATUS MODAL -->
+<div class="modal fade" id="updateCreditModal" tabindex="-1" aria-labelledby="updateCreditModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title" id="updateCreditModalLabel" style="font-weight: 700; color: var(--returns-ink);">Update Credit Note Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="border:none; background:transparent; font-size: 1.5rem;">&times;</button>
+            </div>
+            <form method="post" asp-page-handler="UpdateCredit">
+                <input type="hidden" asp-for="CreditReturnID" id="modalCreditReturnID" />
+                
+                <div class="modal-body p-4">
+                    <label class="form-label d-block mb-3" style="font-weight: 600; font-size: 13px;">Select Credit Note Status from Vendor:</label>
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" asp-for="CreditStatus" id="optCreditPending" value="Pending" checked />
+                        <label class="form-check-label" for="optCreditPending" style="font-weight: 500;">
+                            Pending Review
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" asp-for="CreditStatus" id="optCreditIssued" value="Issued" />
+                        <label class="form-check-label" for="optCreditIssued" style="font-weight: 500; color: var(--success);">
+                            Issued / Received (Closes Return)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" asp-for="CreditStatus" id="optCreditDenied" value="Denied" />
+                        <label class="form-check-label" for="optCreditDenied" style="font-weight: 500; color: var(--danger);">
+                            Denied by Supplier
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+}
+
+@if (Model.UserContext.Role == "Supplier")
+{
+<!-- SUPPLIER AUTHORIZE & RMA MODAL -->
+<div class="modal fade" id="supplierAuthorizeModal" tabindex="-1" aria-labelledby="supplierAuthorizeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title" id="supplierAuthorizeModalLabel" style="font-weight: 700; color: var(--primary);">Authorize Return & Provide RMA</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="border:none; background:transparent; font-size: 1.5rem;">&times;</button>
+            </div>
+            <form method="post" asp-page-handler="SupplierAuthorize">
+                <input type="hidden" asp-for="AuthorizeReturnID" id="modalAuthorizeReturnID" />
+                
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; font-size: 13px;">RMA Number *</label>
+                        <input type="text" asp-for="AuthorizeRMANumber" id="modalAuthorizeRMANumber" class="form-control" placeholder="e.g. RMA-293849" required />
+                        <div class="form-text" style="font-size:11px;">Enter the authorization number for this return shipment.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; font-size: 13px;">Preferred Carrier</label>
+                        <input type="text" asp-for="AuthorizeCarrier" id="modalAuthorizeCarrier" class="form-control" placeholder="e.g. DHL, FedEx, UPS" />
+                        <div class="form-text" style="font-size:11px;">Specify which carrier our team should use to send the items back.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; font-size: 13px;">Tracking Number / Shipping Label Reference</label>
+                        <input type="text" asp-for="AuthorizeTracking" id="modalAuthorizeTracking" class="form-control" placeholder="e.g. TRK-9283948" />
+                        <div class="form-text" style="font-size:11px;">Provide tracking or label reference if applicable.</div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Authorize & Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+}
+
+@section Scripts {
+    <script>
+        window.activeSuppliers = @Html.Raw(Model.ActiveSuppliersJson);
+        window.quarantineStock = @Html.Raw(Model.QuarantineStockJson);
+    </script>
+    <script src="~/js/supplier-returns.js" asp-append-version="true"></script>
+}

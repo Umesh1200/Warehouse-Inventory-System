@@ -1,0 +1,428 @@
+@page
+@model IMS.Pages.WarehouseOperations.PutawayModel
+@{
+    ViewData["Title"] = "Putaway Tasks";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/putaway.css" asp-append-version="true" />
+}
+
+<div class="putaway-container">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">Putaway Tasks</h2>
+            <div class="page-subtitle">Move accepted QC stock into compatible shelves with capacity checks.</div>
+        </div>
+        @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+        {
+            <a class="btn-ims" asp-page="/Warehouses/Visualization">
+                <span class="material-symbols-outlined">warehouse</span>
+                View Shelves
+            </a>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">check_circle</span> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="putaway-stats-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <div class="stat-card">
+                <div class="stat-icon @card.ColorClass">
+                    <span class="material-symbols-outlined">@card.Icon</span>
+                </div>
+                <div>
+                    <div class="stat-label">@card.Title</div>
+                    <div class="stat-value">@card.Value</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="filters-panel">
+        <div class="d-flex align-items-center gap-3">
+            <div class="search-wrap flex-grow-1" style="max-width: 400px; position: relative;">
+                <span class="material-symbols-outlined" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">search</span>
+                <input id="putawaySearch" type="text" class="filter-input w-100" style="padding-left: 40px;" placeholder="PO, SKU, product, shelf..." />
+            </div>
+            <div class="dropdown" title="Filter Tasks">
+                <button class="icon-button border-0 bg-white shadow-sm d-flex align-items-center justify-content-center rounded-circle" style="width: 42px; height: 42px;" type="button" id="taskFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                    <span class="material-symbols-outlined text-primary">filter_alt</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow-sm border-0" aria-labelledby="taskFilterDropdown" style="width: 280px; border-radius: 12px;">
+                    <h6 class="dropdown-header px-0 text-dark fw-bold mb-2">Filter Tasks</h6>
+                    <div class="mb-3">
+                        <label for="timeFilter" class="form-label small fw-bold text-muted mb-1">Time</label>
+                        <select id="timeFilter" class="form-select form-select-sm">
+                            <option value="Today" selected>Today</option>
+                            <option value="All Time">All Time</option>
+                        </select>
+                        <div class="form-text" style="font-size: 0.75rem;">Pending tasks always show.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="statusFilter" class="form-label small fw-bold text-muted mb-1">Status</label>
+                        <select id="statusFilter" class="form-select form-select-sm">
+                            <option value="All Statuses">All Statuses</option>
+                            <option value="Pending Task">Pending Task</option>
+                            <option value="Pending" selected>Pending</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="typeFilter" class="form-label small fw-bold text-muted mb-1">Item Type</label>
+                        <select id="typeFilter" class="form-select form-select-sm">
+                            @foreach (var type in Model.ItemTypes)
+                            {
+                                <option value="@type">@type</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="putaway-table-panel">
+        <div class="table-toolbar">
+            <div>
+                <div class="table-title">Putaway Queue</div>
+                <div class="table-meta">@Model.Tasks.Count tasks and accepted QC receipts</div>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th>Task / Ref</th>
+                        <th>Product</th>
+                        <th class="text-right">Qty</th>
+                        <th>Batch</th>
+                        <th>Storage Shelf</th>
+                        <th>Capacity</th>
+                        <th>Assigned</th>
+                        <th>Status</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Tasks.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="empty-cell">No putaway tasks found. Accepted QC items will appear here.</td>
+                        </tr>
+                    }
+                    @foreach (var task in Model.Tasks)
+                    {
+                        <tr class="putaway-row"
+                            data-type="@task.ItemType"
+                            data-status="@task.Status"
+                            data-search="@($"{task.TaskNo} {task.Reference} {task.Product} {task.SKU} {task.Batch} {task.DisplayShelf}".ToLower())"
+                            data-taskno="@task.TaskNo"
+                            data-reference="@task.Reference"
+                            data-product="@task.Product"
+                            data-sku="@task.SKU"
+                            data-batch="@task.Batch"
+                            data-qty="@task.Qty"
+                            data-suggested="@task.SuggestedShelf"
+                            data-actual="@task.ActualShelf"
+                            data-display-shelf="@task.DisplayShelf"
+                            data-capacity="@task.ShelfCapacity"
+                            data-available="@task.ShelfAvailableCapacity.ToString("N0")"
+                            data-warehouse="@task.Warehouse"
+                            data-floor="@task.Floor"
+                            data-room="@task.Room"
+                            data-rack="@task.Rack"
+                            data-assigned="@task.AssignedStaff"
+                            data-date="@(task.CompletedDate?.ToString("yyyy-MM-dd") ?? "")">
+                            <td>
+                                <div class="task-cell">@task.TaskNo</div>
+                                <div class="muted-cell d-flex align-items-center gap-1">
+                                    <span>@task.Reference</span>
+                                    @if (task.SourceType == "Production")
+                                    {
+                                        <span class="badge" style="background-color: #8b5cf6; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px;">PROD</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px;">PO</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="product-cell">@task.Product</div>
+                                <div class="muted-cell">SKU: @task.SKU</div>
+                                @if (!string.IsNullOrWhiteSpace(task.ItemType))
+                                {
+                                    <span class="type-badge">@task.ItemType</span>
+                                }
+                            </td>
+                            <td class="text-right font-mono">@task.Qty.ToString("N0")</td>
+                            <td class="font-mono muted-text">@(!string.IsNullOrWhiteSpace(task.Batch) ? task.Batch : "-")</td>
+                            <td>
+                                <div class="location-cell">@task.DisplayShelf</div>
+                                @if (!string.IsNullOrWhiteSpace(task.ActualShelf))
+                                {
+                                    <div class="muted-cell">Actual location</div>
+                                }
+                                else if (task.SuggestedShelf != "NOT ASSIGNED")
+                                {
+                                    <div class="muted-cell">Suggested location</div>
+                                }
+                            </td>
+                            <td>
+                                <div class="capacity-box">
+                                    <div class="capacity-bar-bg">
+                                        <div class="capacity-bar-fill" style="width: @Math.Min(100, Math.Max(0, (int)task.ShelfUtilization))%; background-color: @(task.ShelfWarning ? "var(--danger)" : "var(--success)");"></div>
+                                    </div>
+                                    <span class="@(task.ShelfWarning ? "text-danger" : "")">@task.ShelfCapacity</span>
+                                </div>
+                            </td>
+                            <td>@task.AssignedStaff</td>
+                            <td>
+                                <span class="status-badge status-@task.StatusColor">@task.Status</span>
+                            </td>
+                            <td class="text-center">
+                                <button type="button"
+                                        class="icon-button view-putaway-btn"
+                                        title="View Details"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#putawayDetailModal">
+                                    <span class="material-symbols-outlined">visibility</span>
+                                </button>
+                                @if (task.TaskID == null)
+                                {
+                                    <button type="button"
+                                            class="icon-button create-task-btn"
+                                            title="Create Putaway Task"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#createTaskModal"
+                                            data-qcid="@task.QCID"
+                                            data-productid="@task.ProductID"
+                                            data-qty="@task.Qty"
+                                            data-sku="@task.SKU"
+                                            data-name="@task.Product"
+                                            data-ref="@task.Reference"
+                                            data-batch="@task.Batch"
+                                            data-type="@task.ItemType">
+                                        <span class="material-symbols-outlined">assignment_add</span>
+                                    </button>
+                                }
+                                else if (task.Status != "Completed")
+                                {
+                                    <button type="button"
+                                            class="icon-button success complete-putaway-btn"
+                                            title="Complete Putaway"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#completeModal"
+                                            data-taskid="@task.TaskID"
+                                            data-productid="@task.ProductID"
+                                            data-taskno="@task.TaskNo"
+                                            data-qty="@task.Qty"
+                                            data-sku="@task.SKU"
+                                            data-name="@task.Product"
+                                            data-ref="@task.Reference"
+                                            data-batch="@task.Batch"
+                                            data-type="@task.ItemType"
+                                            data-suggested="@task.SuggestedShelfID">
+                                        <span class="material-symbols-outlined">check_circle</span>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="muted-cell">-</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="putawayDetailModal" tabindex="-1" aria-labelledby="putawayDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <div>
+                    <h5 class="modal-title" id="putawayDetailModalLabel">Putaway Details</h5>
+                    <p id="detail-subtitle">Task and shelf context</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-summary">
+                    <div><span>Task</span><strong id="detail-taskno">-</strong></div>
+                    <div><span>Status</span><strong id="detail-status">-</strong></div>
+                    <div><span>Qty</span><strong id="detail-qty">-</strong></div>
+                    <div><span>Capacity</span><strong id="detail-capacity">-</strong></div>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-field"><span>Reference</span><strong id="detail-reference">-</strong></div>
+                    <div class="detail-field"><span>Batch</span><strong id="detail-batch">-</strong></div>
+                    <div class="detail-field"><span>Product</span><strong id="detail-product">-</strong></div>
+                    <div class="detail-field"><span>SKU</span><strong id="detail-sku">-</strong></div>
+                    <div class="detail-field"><span>Suggested Shelf</span><strong id="detail-suggested">-</strong></div>
+                    <div class="detail-field"><span>Actual Shelf</span><strong id="detail-actual">-</strong></div>
+                    <div class="detail-field"><span>Warehouse</span><strong id="detail-warehouse">-</strong></div>
+                    <div class="detail-field"><span>Rack Path</span><strong id="detail-path">-</strong></div>
+                    <div class="detail-field"><span>Available Qty Capacity</span><strong id="detail-available">-</strong></div>
+                    <div class="detail-field"><span>Assigned Staff</span><strong id="detail-assigned">-</strong></div>
+                </div>
+            </div>
+            <div class="modal-footer ims-modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="createTaskModal" tabindex="-1" aria-labelledby="createTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <form method="post" asp-page-handler="CreateTask" class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <div>
+                    <h5 class="modal-title" id="createTaskModalLabel">Create Putaway Task</h5>
+                    <p>Review recommended shelves before assigning the task.</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <input type="hidden" id="create-qcid" asp-for="NewTask.QCID" />
+            <input type="hidden" id="create-productid" asp-for="NewTask.ProductID" />
+            <input type="hidden" id="create-qty" asp-for="NewTask.QtyToPutaway" />
+            <div class="modal-body">
+                    <div class="putaway-context">
+                        <div>
+                            <span>Product</span>
+                            <strong id="create-disp-product"></strong>
+                            <div class="muted-cell" id="create-disp-sku"></div>
+                            <div class="muted-cell" id="create-disp-ref"></div>
+                        </div>
+                        <div>
+                            <span>Accepted Qty</span>
+                            <strong id="create-disp-qty"></strong>
+                            <div class="muted-cell" id="create-disp-batch"></div>
+                        </div>
+                    </div>
+                    <div class="shelf-insight-grid">
+                        <div class="shelf-insight">
+                            <span>Compatible shelves</span>
+                            <strong id="create-compatible-count">-</strong>
+                        </div>
+                        <div class="shelf-insight">
+                            <span>Best fit</span>
+                            <strong id="create-best-fit">-</strong>
+                        </div>
+                        <div class="shelf-insight">
+                            <span>After putaway</span>
+                            <strong id="create-projected-fill">-</strong>
+                        </div>
+                    </div>
+                    <label class="form-label">Suggested Shelf / Manual Selection</label>
+                    <select id="create-suggested-shelf" asp-for="NewTask.SuggestedShelfID" class="form-select">
+                        <option value="">-- Select Suggestion --</option>
+                        @foreach (var shelf in Model.ActiveShelvesList)
+                        {
+                            <option value="@shelf.ID">@shelf.Name</option>
+                        }
+                    </select>
+                      <div class="field-hint" id="create-shelf-hint"></div>
+                      <div class="shelf-candidates" id="create-shelf-candidates"></div>
+
+                      @if (User.IsInRole("Admin") || User.IsInRole("Manager"))
+                      {
+                          <div class="mt-3">
+                              <label class="form-label">Assign To Staff (Optional)</label>
+                              <select asp-for="NewTask.AssignedTo" class="form-select">
+                                  <option value="">-- Assign to Me --</option>
+                                  @foreach (var staff in Model.StaffUsers)
+                                  {
+                                      <option value="@staff.UserID">@staff.FullName (@staff.Username)</option>
+                                  }
+                              </select>
+                              <div class="form-text">Leave empty to assign the task to yourself.</div>
+                          </div>
+                      }
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary ims-btn">Create Task</button>
+              </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <form method="post" asp-page-handler="Complete" onsubmit="return confirm('Complete putaway? This will increase usable stock and create a stock movement record.');" class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header success">
+                <h5 class="modal-title" id="completeModalLabel">Complete Putaway</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <input type="hidden" id="complete-taskid" asp-for="CompleteTask.TaskID" />
+            <div class="modal-body">
+                    <div class="putaway-context">
+                        <div>
+                            <span>Task</span>
+                            <strong id="complete-disp-taskno"></strong>
+                            <div id="complete-disp-product"></div>
+                            <div class="muted-cell" id="complete-disp-sku"></div>
+                            <div class="muted-cell" id="complete-disp-ref"></div>
+                        </div>
+                        <div>
+                            <span>Qty</span>
+                            <strong id="complete-disp-qty"></strong>
+                            <div class="muted-cell" id="complete-disp-batch"></div>
+                        </div>
+                    </div>
+                    <div class="shelf-insight-grid">
+                        <div class="shelf-insight">
+                            <span>Compatible shelves</span>
+                            <strong id="complete-compatible-count">-</strong>
+                        </div>
+                        <div class="shelf-insight">
+                            <span>Selected shelf</span>
+                            <strong id="complete-best-fit">-</strong>
+                        </div>
+                        <div class="shelf-insight">
+                            <span>After putaway</span>
+                            <strong id="complete-projected-fill">-</strong>
+                        </div>
+                    </div>
+                    <label class="form-label">Actual Storage Shelf *</label>
+                    <select id="complete-actual-shelf" asp-for="CompleteTask.ActualShelfID" class="form-select" required>
+                        <option value="">-- Select Final Location --</option>
+                        @foreach (var shelf in Model.ActiveShelvesList)
+                        {
+                            <option value="@shelf.ID">@shelf.Name</option>
+                        }
+                    </select>
+                    <div class="field-hint" id="complete-shelf-hint"></div>
+                    <div class="shelf-candidates" id="complete-shelf-candidates"></div>
+                </div>
+            <div class="modal-footer ims-modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-success">Confirm Putaway</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/putaway.js" asp-append-version="true"></script>
+}

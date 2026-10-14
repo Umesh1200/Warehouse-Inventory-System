@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Finished Goods Receipt | InventoryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fbf8fc;
+        }
+        .sidebar-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed": "#191c1e",
+                      "outline-variant": "#c5c6cf",
+                      "on-surface-variant": "#44474e",
+                      "on-primary-container": "#8293b8",
+                      "on-secondary-container": "#fefcff",
+                      "on-primary-fixed": "#081b3a",
+                      "on-tertiary-fixed-variant": "#444749",
+                      "primary-fixed-dim": "#b6c6ef",
+                      "inverse-primary": "#b6c6ef",
+                      "on-error-container": "#93000a",
+                      "inverse-surface": "#303033",
+                      "error-container": "#ffdad6",
+                      "secondary-fixed-dim": "#adc6ff",
+                      "on-surface": "#1b1b1e",
+                      "on-error": "#ffffff",
+                      "primary-container": "#1a2b4b",
+                      "surface-tint": "#4e5e81",
+                      "tertiary-fixed-dim": "#c4c7c9",
+                      "secondary-fixed": "#d8e2ff",
+                      "secondary": "#0058be",
+                      "status-success": "#10B981",
+                      "background": "#fbf8fc",
+                      "sidebar-bg": "#0F172A",
+                      "on-tertiary-container": "#909395",
+                      "on-background": "#1b1b1e",
+                      "surface-container-highest": "#e4e2e5",
+                      "surface-border": "#E2E8F0",
+                      "on-secondary": "#ffffff",
+                      "secondary-container": "#2170e4",
+                      "on-secondary-fixed-variant": "#004395",
+                      "status-warning": "#F59E0B",
+                      "surface-container-low": "#f5f3f6",
+                      "tertiary-container": "#292c2e",
+                      "primary-fixed": "#d8e2ff",
+                      "surface-container": "#efedf0",
+                      "on-primary-fixed-variant": "#364768",
+                      "on-tertiary": "#ffffff",
+                      "data-fill": "#DBEAFE",
+                      "surface-container-high": "#e9e7eb",
+                      "on-secondary-fixed": "#001a42",
+                      "surface": "#fbf8fc",
+                      "status-info": "#6366F1",
+                      "status-error": "#EF4444",
+                      "surface-bright": "#fbf8fc",
+                      "on-primary": "#ffffff",
+                      "primary": "#031635",
+                      "surface-variant": "#e4e2e5",
+                      "tertiary-fixed": "#e0e3e5",
+                      "inverse-on-surface": "#f2f0f3",
+                      "surface-dim": "#dbd9dc",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary": "#141819",
+                      "outline": "#75777f",
+                      "error": "#ba1a1a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-sm": "0.5rem",
+                      "gutter": "1.5rem",
+                      "container-padding": "2rem",
+                      "table-cell-padding": "0.75rem 1rem",
+                      "stack-md": "1rem",
+                      "sidebar-width": "260px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Inter"],
+                      "headline-lg": ["Inter"],
+                      "table-header": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "body-md": ["Inter"],
+                      "label-mono": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                      "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                      "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "table-header": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="flex overflow-hidden">
+<!-- SideNavBar -->
+<aside class="sidebar-bg border-r border-outline-variant fixed left-0 top-0 h-full w-[260px] flex flex-col py-4 z-50">
+<div class="px-6 mb-8">
+<h1 class="text-headline-lg font-headline-lg font-black text-on-primary">InventoryPro</h1>
+<p class="font-body-sm text-body-sm text-on-primary-container opacity-80 uppercase tracking-widest mt-1">Enterprise Logistics</p>
+</div>
+<nav class="flex-1 space-y-1 overflow-y-auto custom-scrollbar">
+<!-- Dashboard (Inactive) -->
+<a class="flex items-center px-6 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span>
+<span class="font-body-sm text-body-sm">Dashboard</span>
+</a>
+<!-- Items (Inactive) -->
+<a class="flex items-center px-6 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">inventory_2</span>
+<span class="font-body-sm text-body-sm">Items</span>
+</a>
+<!-- Purchase (Inactive) -->
+<a class="flex items-center px-6 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">shopping_cart</span>
+<span class="font-body-sm text-body-sm">Purchase</span>
+</a>
+<!-- Inventory (Active Mapping for Receiving) -->
+<a class="flex items-center px-6 py-3 bg-secondary-container text-on-secondary-container rounded-lg mx-2 transition-transform scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined mr-3">warehouse</span>
+<span class="font-body-sm text-body-sm">Inventory</span>
+</a>
+<!-- Sales -->
+<a class="flex items-center px-6 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">receipt_long</span>
+<span class="font-body-sm text-body-sm">Sales</span>
+</a>
+<!-- Reports -->
+<a class="flex items-center px-6 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">assessment</span>
+<span class="font-body-sm text-body-sm">Reports</span>
+</a>
+<!-- Alerts -->
+<a class="flex items-center px-6 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">notifications</span>
+<span class="font-body-sm text-body-sm">Alerts</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center px-6 py-3 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined mr-3">settings</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+</nav>
+<div class="px-2 mt-auto border-t border-white/10 pt-4">
+<div class="flex items-center px-6 py-3 text-on-primary-container hover:bg-primary-container rounded-lg cursor-pointer mb-1">
+<span class="material-symbols-outlined mr-3">location_on</span>
+<span class="font-body-sm text-body-sm">Warehouse Selector</span>
+</div>
+<div class="flex items-center px-6 py-3 text-on-primary-container hover:bg-primary-container rounded-lg cursor-pointer">
+<span class="material-symbols-outlined mr-3">help_outline</span>
+<span class="font-body-sm text-body-sm">Support</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-[260px] flex flex-col h-screen overflow-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-260px)] h-16 bg-surface-bright border-b border-surface-border flex justify-between items-center px-gutter z-40">
+<div class="flex items-center space-x-4">
+<span class="material-symbols-outlined text-primary cursor-pointer active:opacity-70">menu</span>
+<h2 class="font-headline-lg text-headline-lg text-primary">Finished Goods Receipt</h2>
+</div>
+<div class="flex items-center space-x-6">
+<div class="flex items-center bg-surface-container rounded-lg px-3 py-1.5 w-64 border border-surface-border group focus-within:border-secondary transition-all">
+<span class="material-symbols-outlined text-outline text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md w-full ml-2 placeholder:text-outline-variant" placeholder="Search PO or Batch..." type="text"/>
+</div>
+<div class="flex items-center space-x-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-secondary transition-colors relative">
+                        notifications
+                        <span class="absolute top-0 right-0 w-2 h-2 bg-status-error rounded-full border-2 border-white"></span>
+</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-secondary transition-colors">help</button>
+<div class="flex items-center space-x-2 border-l border-surface-border pl-4 cursor-pointer hover:opacity-80">
+<img alt="Admin User" class="w-8 h-8 rounded-full border border-surface-border" data-alt="A professional portrait of a warehouse logistics manager in his 40s, wearing a high-visibility tactical vest over a clean corporate polo shirt. He is smiling slightly, set against a blurred background of a modern, high-tech industrial warehouse with racks of neatly stacked pallets. The lighting is bright and even, reinforcing an authoritative and trustworthy professional atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbn2iQephF2GG8R-qW854zHcVmfnC77_VT7u53Py1L8FmrfrNXo5aVR73LzzxAqZ3-Unp0Lzcd9hW69lt971sEUIURxCB1pQzzCuT7x3Tt_kdHaZYL4Jw8Azuv0XCCpAZwUPhS1lGtfcjr1DKONFCD5lgWJhGs3ZUcAjtHOqb5S_2Dheysujg0zDYjPabRgcvC7m12w2_ItHRA9WSv4J3hh8O5GcFkFoEJ9iUEer_t-9qy1t3w1r4zFWVvKVxHLTM6C7lYnspVnUsq"/>
+<div class="hidden xl:block">
+<p class="font-body-sm text-body-sm font-semibold text-primary">Arjun Thapa</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-tighter">Kathmandu Hub</p>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Canvas Area -->
+<div class="mt-16 p-gutter overflow-y-auto custom-scrollbar bg-background flex-1">
+<div class="max-w-6xl mx-auto space-y-6">
+<!-- Receipt Header Summary -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-lowest p-6 border border-surface-border rounded-xl shadow-sm">
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-1">Receipt Location</p>
+<h3 class="font-headline-md text-headline-md text-primary flex items-center">
+<span class="material-symbols-outlined mr-2 text-secondary">location_on</span>
+                            Kathmandu Warehouse (KTM-01)
+                        </h3>
+</div>
+<div class="bg-surface-container-lowest p-6 border border-surface-border rounded-xl shadow-sm">
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-1">Receipt Value (EST)</p>
+<h3 class="font-headline-md text-headline-md text-primary font-bold">
+                            NPR 14,25,400.00
+                        </h3>
+</div>
+<div class="bg-surface-container-lowest p-6 border border-surface-border rounded-xl shadow-sm flex items-center justify-between">
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-1">Production Status</p>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                COMPLETED
+                            </span>
+</div>
+<span class="material-symbols-outlined text-4xl text-status-success/20">check_circle</span>
+</div>
+</div>
+<!-- Form Section (Bento Style) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left Column: Primary Details -->
+<div class="lg:col-span-8 space-y-6">
+<div class="bg-surface-container-lowest border border-surface-border rounded-xl overflow-hidden">
+<div class="px-6 py-4 border-b border-surface-border bg-surface-container-low flex justify-between items-center">
+<h4 class="font-headline-md text-headline-md text-primary">Receipt Entry</h4>
+<span class="font-label-mono text-label-mono text-outline uppercase">REC-2024-0892</span>
+</div>
+<div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="block font-body-sm text-body-sm font-semibold text-primary">Batch Number <span class="text-status-error">*</span></label>
+<div class="relative">
+<input class="w-full h-10 border border-surface-border rounded-lg px-3 font-label-mono text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 transition-all outline-none" type="text" value="B-2024-KTM-05A"/>
+<span class="absolute right-3 top-2.5 material-symbols-outlined text-outline text-sm">qr_code_2</span>
+</div>
+<p class="text-[10px] text-on-surface-variant">System-suggested format: B-[YEAR]-[LOC]-[ID]</p>
+</div>
+<div class="space-y-2">
+<label class="block font-body-sm text-body-sm font-semibold text-primary">Quantity Produced <span class="text-status-error">*</span></label>
+<div class="flex items-center">
+<input class="flex-1 h-10 border border-surface-border rounded-l-lg px-3 text-body-md text-right focus:border-secondary focus:ring-1 focus:ring-secondary/20 transition-all outline-none" placeholder="0.00" type="number"/>
+<div class="h-10 px-4 flex items-center bg-surface-container-low border border-l-0 border-surface-border rounded-r-lg text-body-sm font-medium text-outline">UNITS</div>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block font-body-sm text-body-sm font-semibold text-primary">Inspector Assignment <span class="text-status-error">*</span></label>
+<select class="w-full h-10 border border-surface-border rounded-lg px-3 text-body-md bg-white focus:border-secondary focus:ring-1 focus:ring-secondary/20 transition-all outline-none appearance-none">
+<option>Select QC Inspector</option>
+<option selected="">Ramesh Adhikari (Senior QC)</option>
+<option>Sita Sharma (Associate QC)</option>
+<option>Binod Chaudhary (External Auditor)</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="block font-body-sm text-body-sm font-semibold text-primary">Production Line</label>
+<input class="w-full h-10 border border-surface-border bg-surface-container-low rounded-lg px-3 text-body-md text-outline cursor-not-allowed" readonly="" type="text" value="Line 04 - High-Capacity Assembly"/>
+</div>
+</div>
+</div>
+<!-- Item Table Widget -->
+<div class="bg-surface-container-lowest border border-surface-border rounded-xl overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low border-b border-surface-border">
+<tr>
+<th class="px-6 py-3 font-table-header text-table-header text-on-surface-variant uppercase tracking-wider">Item ID</th>
+<th class="px-6 py-3 font-table-header text-table-header text-on-surface-variant uppercase tracking-wider">Product Name</th>
+<th class="px-6 py-3 font-table-header text-table-header text-on-surface-variant uppercase tracking-wider text-right">Target</th>
+<th class="px-6 py-3 font-table-header text-table-header text-on-surface-variant uppercase tracking-wider text-right">Actual</th>
+<th class="px-6 py-3 font-table-header text-table-header text-on-surface-variant uppercase tracking-wider text-center">QC Priority</th>
+</tr>
+</thead>
+<tbody>
+<tr class="hover:bg-background border-b border-surface-border transition-colors">
+<td class="px-6 py-4 font-label-mono text-body-sm text-primary">FG-P0023</td>
+<td class="px-6 py-4 font-body-md text-body-md text-primary font-medium">Copper Coil 45mm x 10m</td>
+<td class="px-6 py-4 text-body-md text-right text-on-surface-variant">500.00</td>
+<td class="px-6 py-4 text-body-md text-right font-bold text-primary">505.00</td>
+<td class="px-6 py-4 text-center">
+<span class="px-2 py-1 text-[10px] font-bold rounded bg-status-warning/10 text-status-warning border border-status-warning/20">HIGH</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Right Column: Control & Visualization -->
+<div class="lg:col-span-4 space-y-6">
+<!-- Putaway Assignment -->
+<div class="bg-surface-container-lowest border border-surface-border rounded-xl p-6 space-y-4">
+<h4 class="font-headline-md text-headline-md text-primary">Putaway Logistics</h4>
+<div class="p-4 bg-data-fill/30 rounded-lg border border-data-fill flex items-start space-x-3">
+<span class="material-symbols-outlined text-secondary mt-1">smart_button</span>
+<div>
+<p class="font-body-md text-body-md font-bold text-secondary">Smart-Allocation Recommended</p>
+<p class="text-body-sm text-on-surface-variant">Recommended Zone: <strong>KTM-BULK-B12</strong></p>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-body-sm text-on-surface-variant">Assigned Forklift</span>
+<span class="text-body-sm font-semibold text-primary">FL-04 (Electric)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-body-sm text-on-surface-variant">Distance to Bin</span>
+<span class="text-body-sm font-semibold text-primary">85 Meters</span>
+</div>
+<div class="w-full h-32 bg-surface-container rounded-lg relative overflow-hidden group">
+<div class="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.6))]"></div>
+<!-- Bin Visualization Mockup -->
+<div class="absolute top-4 left-4 grid grid-cols-4 gap-1">
+<div class="w-4 h-4 bg-secondary rounded-sm opacity-20"></div>
+<div class="w-4 h-4 bg-secondary rounded-sm opacity-80"></div>
+<div class="w-4 h-4 bg-secondary rounded-sm opacity-20"></div>
+<div class="w-4 h-4 bg-secondary rounded-sm opacity-20"></div>
+<div class="w-4 h-4 bg-secondary rounded-sm opacity-20"></div>
+<div class="w-4 h-4 bg-status-warning rounded-sm animate-pulse"></div>
+<div class="w-4 h-4 bg-secondary rounded-sm opacity-20"></div>
+<div class="w-4 h-4 bg-secondary rounded-sm opacity-20"></div>
+</div>
+<div class="absolute bottom-3 right-3 text-[10px] bg-white/80 px-2 py-0.5 rounded border border-surface-border backdrop-blur-sm">ZONE B12 RACK-04</div>
+</div>
+</div>
+</div>
+<!-- Action Controls -->
+<div class="bg-surface-container-lowest border border-surface-border rounded-xl p-6 space-y-4">
+<button class="w-full bg-secondary hover:bg-on-secondary-fixed-variant text-white font-bold py-3 rounded-lg flex items-center justify-center space-x-2 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined">move_to_inbox</span>
+<span>Receive &amp; Trigger QC</span>
+</button>
+<button class="w-full border border-secondary text-secondary font-bold py-3 rounded-lg hover:bg-secondary/5 transition-all">
+                                Draft Receipt
+                            </button>
+<div class="pt-2">
+<label class="flex items-center space-x-3 cursor-pointer">
+<input class="rounded text-secondary focus:ring-secondary w-5 h-5 border-surface-border" type="checkbox"/>
+<span class="text-body-sm text-on-surface-variant">Print Barcode Labels Automatically</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Receipts History -->
+<div class="bg-surface-container-lowest border border-surface-border rounded-xl overflow-hidden">
+<div class="px-6 py-4 border-b border-surface-border flex justify-between items-center">
+<h4 class="font-headline-md text-headline-md text-primary">Warehouse History (Today)</h4>
+<button class="text-secondary font-body-sm font-semibold hover:underline">View Ledger</button>
+</div>
+<div class="p-0 overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-6 py-3 font-table-header text-table-header text-on-surface-variant">Timestamp</th>
+<th class="px-6 py-3 font-table-header text-table-header text-on-surface-variant">Batch</th>
+<th class="px-6 py-3 font-table-header text-table-header text-on-surface-variant">User</th>
+<th class="px-6 py-3 font-table-header text-table-header text-on-surface-variant">Status</th>
+<th class="px-6 py-3 font-table-header text-table-header text-on-surface-variant text-right">Value</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-border">
+<tr class="hover:bg-background transition-colors">
+<td class="px-6 py-3 text-body-sm text-outline">10:45 AM</td>
+<td class="px-6 py-3 font-label-mono text-body-sm">B-2024-KTM-05A</td>
+<td class="px-6 py-3 text-body-sm">Deepak K.</td>
+<td class="px-6 py-3 text-body-sm">
+<span class="text-status-warning flex items-center">
+<span class="w-1.5 h-1.5 rounded-full bg-status-warning mr-2"></span>
+                                            Awaiting QC
+                                        </span>
+</td>
+<td class="px-6 py-3 text-body-sm text-right font-semibold">NPR 4,12,000</td>
+</tr>
+<tr class="hover:bg-background transition-colors">
+<td class="px-6 py-3 text-body-sm text-outline">09:12 AM</td>
+<td class="px-6 py-3 font-label-mono text-body-sm">B-2024-KTM-04F</td>
+<td class="px-6 py-3 text-body-sm">Arjun T.</td>
+<td class="px-6 py-3 text-body-sm">
+<span class="text-status-success flex items-center">
+<span class="w-1.5 h-1.5 rounded-full bg-status-success mr-2"></span>
+                                            Completed
+                                        </span>
+</td>
+<td class="px-6 py-3 text-body-sm text-right font-semibold">NPR 1,05,000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Barcode Scanner Floating Interface -->
+<div class="fixed bottom-8 right-8 z-50 flex items-center space-x-4">
+<div class="hidden bg-sidebar-bg text-white px-4 py-2 rounded-lg shadow-xl font-body-sm animate-bounce" id="scan-feedback">
+            Ready for input...
+        </div>
+<button class="w-16 h-16 bg-secondary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-transform" onclick="toggleScanner()">
+<span class="material-symbols-outlined text-3xl">barcode_scanner</span>
+</button>
+</div>
+<script>
+        function toggleScanner() {
+            const feedback = document.getElementById('scan-feedback');
+            feedback.classList.toggle('hidden');
+            setTimeout(() => {
+                if (!feedback.classList.contains('hidden')) {
+                   feedback.classList.add('hidden');
+                }
+            }, 3000);
+        }
+
+        // Simple interactivity for the numeric inputs
+        const qtyInput = document.querySelector('input[type="number"]');
+        if (qtyInput) {
+            qtyInput.addEventListener('focus', function() {
+                this.parentElement.parentElement.classList.add('border-secondary');
+            });
+            qtyInput.addEventListener('blur', function() {
+                this.parentElement.parentElement.classList.remove('border-secondary');
+            });
+        }
+    </script>
+</body></html>

@@ -1,0 +1,410 @@
+@page
+@model IMS.Pages.Inventory.CycleCountsModel
+@{
+    ViewData["Title"] = "Cycle Counts";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/cycle-counts.css" asp-append-version="true" />
+}
+
+<div class="cycle-counts-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h2 class="page-title">Cycle Counts</h2>
+        <div style="display: flex; gap: 0.75rem;">
+            @if (Model.IsAdminOrManager)
+            {
+                <button type="button" class="btn-ims btn-primary" data-bs-toggle="modal" data-bs-target="#createCountModal">
+                    <span class="material-symbols-outlined">add_task</span>
+                    Create Count Task
+                </button>
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+        </div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="counts-stats-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <div class="stat-card">
+                <div class="stat-icon @card.ColorClass">
+                    <span class="material-symbols-outlined">@card.Icon</span>
+                </div>
+                <div>
+                    <div class="stat-label">@card.Title</div>
+                    <div class="stat-value">@card.Value</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-panel">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label>Search Count Tasks</label>
+                <div style="position: relative;">
+                    <span class="material-symbols-outlined" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-muted);">search</span>
+                    <input type="text" class="filter-input" placeholder="No, SKU, Product, Staff..." style="padding-left: 2.5rem;" />
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Warehouse</label>
+                <select class="filter-input">
+                    @foreach (var wh in Model.Warehouses)
+                    {
+                        <option>@wh</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select class="filter-input">
+                    <option>All Statuses</option>
+                    <option>Scheduled</option>
+                    <option>In Progress</option>
+                    <option>Completed</option>
+                    <option>Variance Found</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Count Type</label>
+                <select class="filter-input">
+                    @foreach (var type in Model.CountTypes)
+                    {
+                        <option>@type</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cycle Count Table -->
+    <div class="counts-table-panel">
+        <div style="overflow-x: auto;">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">Count No</th>
+                        <th>Product / SKU</th>
+                        <th>Location (Shelf)</th>
+                        <th class="text-right">System Qty</th>
+                        <th class="text-right">Counted Qty</th>
+                        <th class="text-right">Variance</th>
+                        <th>Count Type</th>
+                        <th>Assigned Staff</th>
+                        <th>Scheduled</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var task in Model.Tasks)
+                    {
+                        <tr>
+                            <td class="id-cell">@task.No</td>
+                            <td>
+                                <div class="product-cell">@task.Product</div>
+                                <div class="font-mono" style="font-size: 11px; color: var(--text-muted);">@task.SKU</div>
+                            </td>
+                            <td class="location-cell">@task.Shelf</td>
+                            <td class="text-right font-mono">@task.SystemQty</td>
+                            <td class="text-right font-mono" style="font-weight: 600;">
+                                @if (task.Status == "In Progress")
+                                {
+                                    <input type="number" step="0.01" name="countedQty" form="submit-form-@task.CountID" class="form-control form-control-sm text-right" style="width: 80px; display: inline-block;" required />
+                                }
+                                else if (task.Status == "Scheduled")
+                                {
+                                    <text>-</text>
+                                }
+                                else
+                                {
+                                    @task.CountedQty.ToString()
+                                }
+                            </td>
+                            <td class="text-right font-mono">
+                                @if (task.Variance > 0)
+                                {
+                                    <span class="var-positive">+@task.Variance</span>
+                                }
+                                else if (task.Variance < 0)
+                                {
+                                    <span class="var-negative">@task.Variance</span>
+                                }
+                                else
+                                {
+                                    <span class="var-none">0</span>
+                                }
+                            </td>
+                            <td style="font-size: 12px; color: var(--text-muted);">@task.Type</td>
+                            <td style="font-size: 13px;">@task.AssignedStaff</td>
+                            <td style="font-size: 12px; color: var(--text-muted);">@task.ScheduledDate</td>
+                            <td>
+                                <span class="status-badge status-@task.StatusColor">@task.Status</span>
+                            </td>
+                            <td class="text-center">
+                                <div style="display: flex; justify-content: center; gap: 0.25rem;">
+                                    <button type="button" 
+                                            class="action-icon-button js-view-count" 
+                                            data-count-id="@task.CountID"
+                                            data-no="@task.No"
+                                            data-product="@task.Product"
+                                            data-sku="@task.SKU"
+                                            data-shelf="@task.Shelf"
+                                            data-warehouse="@task.Warehouse"
+                                            data-system="@task.SystemQty"
+                                            data-counted="@task.CountedQty"
+                                            data-variance="@task.Variance"
+                                            data-type="@task.Type"
+                                            data-staff="@task.AssignedStaff"
+                                            data-date="@task.ScheduledDate"
+                                            data-status="@task.Status"
+                                            data-status-color="@task.StatusColor"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#countDetailModal" 
+                                            title="View Detail"
+                                            aria-label="View cycle count detail for @task.No">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                    </button>
+                                    @if (task.Status == "Scheduled")
+                                    {
+                                        <form method="post" asp-page-handler="StartCount" style="display:inline;">
+                                            <input type="hidden" name="countId" value="@task.CountID" />
+                                            <button type="submit" class="action-icon-button" style="color: var(--status-info);" title="Start Count">
+                                                <span class="material-symbols-outlined">play_circle</span>
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (task.Status == "In Progress")
+                                    {
+                                        <form method="post" asp-page-handler="SubmitCount" id="submit-form-@task.CountID" style="display:inline;">
+                                            <input type="hidden" name="countId" value="@task.CountID" />
+                                            <button type="submit" class="action-icon-button" style="color: var(--status-success);" title="Submit Count">
+                                                <span class="material-symbols-outlined">check_circle</span>
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (task.Status == "Variance Found")
+                                    {
+                                        <form method="post" asp-page-handler="CreateAdjustment" style="display:inline;">
+                                            <input type="hidden" name="countId" value="@task.CountID" />
+                                            <button type="submit" class="action-icon-button" style="color: var(--status-warning);" title="Create Adjustment">
+                                                <span class="material-symbols-outlined">edit_square</span>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Cycle Count Detail Modal -->
+<div class="modal fade" id="countDetailModal" tabindex="-1" aria-labelledby="countDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content ims-modal-content count-detail-modal" style="border-radius: 0.75rem; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="countDetailModalLabel">Cycle Count Task Details</h5>
+                    <p class="modal-subtitle" id="detailCountSubtitle">Stock audit inspection</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div class="detail-summary-card">
+                    <div>
+                        <span>Count No</span>
+                        <strong id="detailCountNo">-</strong>
+                    </div>
+                    <div>
+                        <span>Status</span>
+                        <strong id="detailCountStatus">-</strong>
+                    </div>
+                    <div>
+                        <span>Audit Type</span>
+                        <strong id="detailCountType">-</strong>
+                    </div>
+                    <div>
+                        <span>Variance</span>
+                        <strong id="detailCountVariance">-</strong>
+                    </div>
+                </div>
+
+                <div class="detail-grid-card">
+                    <div class="detail-field">
+                        <span>Product</span>
+                        <strong id="detailCountProduct">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>SKU</span>
+                        <strong id="detailCountSku" class="font-mono">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>Location (Shelf)</span>
+                        <strong id="detailCountShelf">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>Assigned Staff</span>
+                        <strong id="detailCountStaff">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>Scheduled Date</span>
+                        <strong id="detailCountDate">-</strong>
+                    </div>
+                    <div class="detail-field">
+                        <span>Quantities</span>
+                        <div>
+                            System: <strong id="detailCountSystem" class="font-mono">-</strong> |
+                            Counted: <strong id="detailCountPhysical" class="font-mono">-</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="detailCountActionSection" class="p-3 bg-light rounded border">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted" style="font-size: 12px; text-transform: uppercase; font-weight: 600;">Next Action</span>
+                            <p id="detailActionDescription" class="mb-0" style="font-size: 13px; font-weight: 500;">No pending action required.</p>
+                        </div>
+                        <div id="detailActionButtons"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 1rem 1.5rem; background-color: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem;">
+                <button type="button" class="btn btn-cancel-modal" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Cycle Count Modal -->
+<div class="modal fade" id="createCountModal" tabindex="-1" aria-labelledby="createCountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <form method="post" asp-page-handler="CreateCount" id="createCycleCountForm" class="modal-content ims-modal-content">
+            <div class="modal-header ims-modal-header">
+                <div>
+                    <h5 class="modal-title" id="createCountModalLabel">Create Cycle Count Task</h5>
+                    <p class="modal-subtitle">Schedule a physical stock audit with optional location or product scope</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body ims-modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label modal-field-label">Count Type <span class="text-danger">*</span></label>
+                        <select asp-for="NewCount.CountType" class="form-select modal-form-select" required id="NewCount_CountType">
+                            <option value="">Select Type...</option>
+                            <option value="Blind Count">Blind Count (System Qty Hidden from Staff)</option>
+                            <option value="Blind Double-Entry">Blind Double-Entry</option>
+                            <option value="Spot Check">Spot Check</option>
+                            <option value="Scheduled Audit">Scheduled Audit</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label modal-field-label">Scheduled Date <span class="text-danger">*</span></label>
+                        <input type="date" asp-for="NewCount.ScheduledDate" class="form-control modal-form-input" required id="NewCount_ScheduledDate" />
+                    </div>
+
+                    <div class="col-12"><hr class="modal-divider my-2" /></div>
+                    <h6 class="modal-section-title">Audit Scope & Location</h6>
+
+                    <div class="col-md-4">
+                        <label class="form-label modal-field-label">Warehouse <span class="text-danger">*</span></label>
+                        <select asp-for="NewCount.WarehouseID" class="form-select modal-form-select" required id="NewCount_WarehouseID">
+                            <option value="">Select Warehouse...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label modal-field-label">Floor</label>
+                        <select asp-for="NewCount.FloorID" class="form-select modal-form-select" id="NewCount_FloorID" disabled>
+                            <option value="">All Floors</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label modal-field-label">Specific Shelf</label>
+                        <select asp-for="NewCount.ShelfID" class="form-select modal-form-select" id="NewCount_ShelfID" disabled>
+                            <option value="">All Shelves</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label modal-field-label mb-0">Product Scope</label>
+                            <span class="product-scope-hint" id="productScopeHint">Showing all products</span>
+                        </div>
+
+                        <!-- Hidden input bound to Razor PageModel -->
+                        <input type="hidden" asp-for="NewCount.ProductID" id="NewCount_ProductID" />
+
+                        <!-- Custom Searchable Dropdown UI -->
+                        <div class="searchable-select-container" id="productSearchableDropdown">
+                            <div role="button" tabindex="0" class="searchable-trigger-btn" id="productSelectTrigger" aria-haspopup="listbox" aria-expanded="false">
+                                <div class="trigger-left">
+                                    <span class="material-symbols-outlined trigger-icon">inventory_2</span>
+                                    <span class="trigger-text" id="productSelectLabel">All Products in Location (Optional)</span>
+                                </div>
+                                <div class="trigger-right">
+                                    <button type="button" class="btn-clear-selection" id="productClearBtn" title="Clear selection" style="display: none;">
+                                        <span class="material-symbols-outlined">close</span>
+                                    </button>
+                                    <span class="material-symbols-outlined chevron-icon" id="productDropdownChevron">expand_more</span>
+                                </div>
+                            </div>
+
+                            <div class="searchable-popup-panel" id="productDropdownPanel" style="display: none;">
+                                <div class="search-input-header">
+                                    <span class="material-symbols-outlined search-icon">search</span>
+                                    <input type="text" class="search-input-control" id="productSearchInput" placeholder="Search by SKU, product name, or category..." autocomplete="off" />
+                                    <button type="button" class="btn-clear-search" id="productSearchClearBtn" title="Clear search" style="display: none;">
+                                        <span class="material-symbols-outlined">cancel</span>
+                                    </button>
+                                </div>
+
+                                <div class="dropdown-quick-info">
+                                    <span id="productResultCount">Loading products...</span>
+                                    <span class="quick-hint"><kbd>↑</kbd><kbd>↓</kbd> navigate <kbd>Enter</kbd> select</span>
+                                </div>
+
+                                <div class="product-options-list custom-scrollbar" id="productListOptions" role="listbox">
+                                    <!-- Dynamically populated via cycle-counts.js -->
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 11.5px;">Type SKU or product name to filter. If unselected, all products in the specified location will be included.</small>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label modal-field-label">Assigned Staff</label>
+                        <select asp-for="NewCount.AssignedTo" class="form-select modal-form-select" asp-items="Model.StaffList" id="NewCount_AssignedTo">
+                            <option value="">Select Staff...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer ims-modal-footer">
+                <button type="button" class="btn btn-cancel-modal" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn-ims btn-primary">
+                    <span class="material-symbols-outlined">add_task</span>
+                    Generate Task
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/cycle-counts.js" asp-append-version="true"></script>
+}

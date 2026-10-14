@@ -1,0 +1,567 @@
+@page
+@model IMS.Pages.Production.BOMModel
+@{
+    ViewData["Title"] = "Bill of Materials";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/bom.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+}
+
+<div class="bom-page">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="ims-alert danger" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="ims-alert success" role="alert" style="border-color: #bbf7d0; background: #f0fdf4; color: #166534;">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+        </div>
+    }
+
+    <header class="page-header">
+        <div>
+            <span class="eyebrow">Production</span>
+            <h1>Bill of Materials</h1>
+            <p>Review assembly recipes, component quantities, version status, and production readiness.</p>
+        </div>
+        <div class="header-actions">
+            <button class="ghost-button primary-accent" onclick="openCreateBomModal()">
+                <span class="material-symbols-outlined">add_circle</span>
+                Create BOM
+            </button>
+            <a class="ghost-button" href="/Production/Planning">
+                <span class="material-symbols-outlined">precision_manufacturing</span>
+                Production Plans
+            </a>
+            <a class="ghost-button" href="/Inventory/Products">
+                <span class="material-symbols-outlined">inventory_2</span>
+                Products
+            </a>
+        </div>
+    </header>
+
+    <section class="summary-grid" aria-label="BOM summary">
+        <article class="summary-card">
+            <span class="material-symbols-outlined">account_tree</span>
+            <div>
+                <p>Total BOMs</p>
+                <strong>@Model.Summary.TotalBoms</strong>
+            </div>
+        </article>
+        <article class="summary-card success">
+            <span class="material-symbols-outlined">verified</span>
+            <div>
+                <p>Active</p>
+                <strong>@Model.Summary.ActiveBoms</strong>
+            </div>
+        </article>
+        <article class="summary-card warning">
+            <span class="material-symbols-outlined">rate_review</span>
+            <div>
+                <p>Draft / Review</p>
+                <strong>@(Model.Summary.DraftBoms + Model.Summary.UnderReviewBoms)</strong>
+            </div>
+        </article>
+        <article class="summary-card muted">
+            <span class="material-symbols-outlined">archive</span>
+            <div>
+                <p>Archived</p>
+                <strong>@Model.Summary.ArchivedBoms</strong>
+            </div>
+        </article>
+    </section>
+
+    <main class="bom-layout">
+        <aside class="bom-list-panel" aria-label="Available BOMs">
+            <div class="panel-heading">
+                <div>
+                    <h2>BOM Library</h2>
+                    <p>@Model.AvailableBoms.Count product recipes</p>
+                </div>
+            </div>
+            <div class="bom-list">
+                @if (Model.AvailableBoms.Any())
+                {
+                    @foreach (var bom in Model.AvailableBoms)
+                    {
+                        <a class="bom-list-row @(bom.IsSelected ? "selected" : "")" href="/Production/BOM?bomId=@bom.BOMID">
+                            <div>
+                                <strong>@bom.ProductName</strong>
+                                <span>@bom.ProductSKU · @bom.Version</span>
+                            </div>
+                            <div class="row-side">
+                                <span class="status-pill status-@bom.StatusClass">@bom.Status</span>
+                                <small>@bom.ItemCount items</small>
+                            </div>
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">account_tree</span>
+                        <p>No BOMs were found.</p>
+                    </div>
+                }
+            </div>
+        </aside>
+
+        <section class="bom-workbench">
+            @if (Model.Metrics.LowStockComponents > 0 && Model.Components.Any(c => c.Availability != "In Stock"))
+            {
+                <div class="shortage-banner">
+                    <div>
+                        <span class="material-symbols-outlined warn-icon">warning</span>
+                        <div>
+                            <h3>Material Shortages Detected</h3>
+                            <p>There are @Model.Metrics.LowStockComponents component(s) with shortages or low stock. You can generate a draft purchase order for them.</p>
+                        </div>
+                    </div>
+                    <button class="btn-warning-accent" onclick="openOrderShortagesModal()">
+                        <span class="material-symbols-outlined">shopping_cart_checkout</span>
+                        Order Shortages
+                    </button>
+                </div>
+            }
+
+            <div class="product-panel">
+                <div class="product-header">
+                    <div>
+                        <span class="eyebrow">@Model.Product.SKU</span>
+                        <h2>
+                            @Model.Product.Name
+                            @if (!string.IsNullOrWhiteSpace(Model.Product.Status))
+                            {
+                                <span class="status-pill status-@Model.Product.StatusClass">@Model.Product.Status</span>
+                            }
+                        </h2>
+                        <p>@Model.Product.Description</p>
+                    </div>
+                    <div class="product-meta">
+                        <div>
+                            <span>Version</span>
+                            <strong>@Model.Product.CurrentVersion</strong>
+                        </div>
+                        <div>
+                            <span>Effective</span>
+                            <strong>@Model.Product.EffectiveDate</strong>
+                        </div>
+                        <div>
+                            <span>Created By</span>
+                            <strong>@Model.Product.CreatedBy</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="readiness-strip">
+                    <div class="cost-tile">
+                        <span>Total Unit Cost</span>
+                        <strong>@Model.Product.TotalCost</strong>
+                        <small>@Model.Metrics.CostTrend</small>
+                    </div>
+                    <div class="readiness-tile">
+                        <span>Inventory Availability</span>
+                        <strong>@Model.Metrics.InventoryAvailability%</strong>
+                        <div class="meter"><i style="width:@Model.Metrics.InventoryAvailability%"></i></div>
+                    </div>
+                    <div class="readiness-tile">
+                        <span>Can Produce</span>
+                        <strong>@Model.Metrics.CanProduceUnits units</strong>
+                        <small>@Model.Metrics.LowStockComponents low/short components</small>
+                    </div>
+                    <div class="readiness-tile">
+                        <span>Lead Time</span>
+                        <strong>@Model.Metrics.LeadTimeDays days</strong>
+                        <small class="lead-time-source @(Model.Metrics.HasOpenPOs ? "from-po" : "estimated")">
+                            <span class="material-symbols-outlined" style="font-size: 13px; vertical-align: -2px;">@(Model.Metrics.HasOpenPOs ? "local_shipping" : "estimate")</span>
+                            @Model.Metrics.LeadTimeSource
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="component-panel">
+                <div class="panel-heading component-heading">
+                    <div>
+                        <h2>Component Breakdown</h2>
+                        <p><span id="visibleComponentCount">@Model.Components.Count</span> visible of @Model.Components.Count</p>
+                    </div>
+                    <div class="search-field">
+                        <span class="material-symbols-outlined">search</span>
+                        <input id="componentSearch" type="search" placeholder="Search SKU, name, type" autocomplete="off" />
+                    </div>
+                </div>
+
+                <div class="component-table-wrap">
+                    <table class="component-table">
+                        <thead>
+                            <tr>
+                                <th>Component</th>
+                                <th>Type</th>
+                                <th>Quantity</th>
+                                <th>Unit Cost</th>
+                                <th>Wastage</th>
+                                <th>Availability</th>
+                                <th>Supplier</th>
+                                <th>Expected Delivery</th>
+                                <th class="text-right">Total Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var comp in Model.Components)
+                            {
+                                <tr data-component="@($"{comp.SKU} {comp.Name} {comp.Type} {comp.Availability} {comp.SupplierName}")">
+                                    <td>
+                                        <div class="component-cell">
+                                            <span class="component-icon material-symbols-outlined">@comp.Icon</span>
+                                            <div>
+                                                <strong>@comp.Name</strong>
+                                                <span>@comp.SKU</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@(string.IsNullOrWhiteSpace(comp.Type) ? "Material" : comp.Type)</td>
+                                    <td class="mono">@comp.Qty.ToString("N2") @comp.Unit</td>
+                                    <td>
+                                        <div class="cost-cell">
+                                            <span class="mono">NPR @comp.UnitCost.ToString("N2")</span>
+                                            <span class="cost-source-badge @comp.CostSourceBadgeClass" title="@(comp.CostSource == "PO" ? $"From {comp.LastPONumber} ({comp.LastPODate?.ToString("MMM dd, yyyy")})" : comp.CostSource == "Std" ? "From product standard cost" : "No pricing data available")">
+                                                @comp.CostSource
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>@comp.Wastage.ToString("N1")%</td>
+                                    <td>
+                                        <span class="availability @comp.AvailabilityClass">
+                                            <i></i>
+                                            @comp.Availability
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(comp.SupplierName))
+                                        {
+                                            <span class="supplier-name" title="Last supplied via @comp.LastPONumber">@comp.SupplierName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="no-data">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (comp.ExpectedDeliveryDate.HasValue)
+                                        {
+                                            var daysUntil = (int)(comp.ExpectedDeliveryDate.Value - DateTime.Today).TotalDays;
+                                            var deliveryClass = daysUntil <= 0 ? "delivery-overdue" : daysUntil <= 3 ? "delivery-soon" : "delivery-ok";
+                                            <div class="delivery-cell @deliveryClass">
+                                                <span>@comp.ExpectedDeliveryDate.Value.ToString("MMM dd")</span>
+                                                <small>@(daysUntil <= 0 ? "Overdue" : $"in {daysUntil}d") · @comp.OpenPONumber</small>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="no-data">—</span>
+                                        }
+                                    </td>
+                                    <td class="text-right mono">NPR @comp.TotalCost.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    @if (!Model.Components.Any())
+                    {
+                        <div class="empty-state">
+                            <span class="material-symbols-outlined">settings_input_component</span>
+                            <p>No components are attached to this BOM.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <aside class="side-panel" aria-label="Version history and guidance">
+            <section class="version-panel">
+                <div class="panel-heading">
+                    <div>
+                        <h2>Version History</h2>
+                        <p>@Model.Versions.Count versions for this product</p>
+                    </div>
+                </div>
+                <div class="version-list">
+                    @foreach (var version in Model.Versions)
+                    {
+                        <a class="version-row @(version.BOMID == Model.Product.BOMID ? "selected" : "")" href="/Production/BOM?bomId=@version.BOMID">
+                            <div>
+                                <strong>@version.VersionID</strong>
+                                <span>@version.Date</span>
+                            </div>
+                            <div>
+                                <span class="status-pill status-@version.StatusClass">@version.Status</span>
+                                <small>@version.Cost</small>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </section>
+
+            <section class="guidance-panel @(Model.Components.Any(c => c.CostSource == "PO") ? "procurement-linked" : "")">
+                <span class="material-symbols-outlined">@(Model.Components.Any(c => c.CostSource == "PO") ? "link" : "info")</span>
+                <div>
+                    @if (Model.Components.Any(c => c.CostSource == "PO"))
+                    {
+                        <h3>Procurement Linked</h3>
+                        <p>Component costs are sourced from Purchase Order history. @Model.Components.Count(c => c.CostSource == "PO") of @Model.Components.Count components have real PO pricing.</p>
+                    }
+                    else if (Model.Components.Any(c => c.CostSource == "Std"))
+                    {
+                        <h3>Standard Cost</h3>
+                        <p>Costs are based on product standard costs. Create Purchase Orders to get real supplier pricing.</p>
+                    }
+                    else
+                    {
+                        <h3>No Pricing Data</h3>
+                        <p>No Purchase Orders or standard costs found. Set up product costs or create POs to enable accurate costing.</p>
+                    }
+                </div>
+            </section>
+
+            <section class="assembly-card">
+                <div class="assembly-art" aria-hidden="true">
+                    <span class="material-symbols-outlined">precision_manufacturing</span>
+                    <span class="material-symbols-outlined">settings_input_component</span>
+                    <span class="material-symbols-outlined">inventory_2</span>
+                </div>
+                <div>
+                    <h3>Assembly Readiness</h3>
+                    <p>Use low-stock and shortage components to decide whether purchasing or transfer should happen before production release.</p>
+                </div>
+            </section>
+        </aside>
+    </main>
+
+    <!-- Create BOM Modal -->
+    <div id="createBomModal" class="ims-modal-overlay">
+        <div class="ims-modal-card">
+            <div class="ims-modal-header">
+                <h3>Create Bill of Materials</h3>
+                <button class="close-modal-btn" onclick="closeCreateBomModal()"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                @Html.AntiForgeryToken()
+                <div class="ims-modal-body">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="newBomProduct">Finished Product</label>
+                            <div class="existing-finished-group" id="existingFinishedGroup" style="display: flex; gap: 8px; align-items: center;">
+                                <select id="newBomProduct" class="form-control" asp-for="NewBom.ProductID" required style="flex: 1;">
+                                    <option value="">-- Select Finished Product --</option>
+                                    @foreach (var prod in Model.FinishedGoods)
+                                    {
+                                        <option value="@prod.ProductID">@prod.ProductName (@prod.SKU)</option>
+                                    }
+                                </select>
+                                <button type="button" class="btn-secondary" style="min-height: 40px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;" title="Create New Finished Product" onclick="toggleNewFinishedForm(true)">
+                                    <span class="material-symbols-outlined">add</span>
+                                </button>
+                            </div>
+                            <input type="hidden" id="IsNewFinishedProductHidden" asp-for="NewBom.IsNewFinishedProduct" value="false" />
+                        </div>
+                        <div class="form-group">
+                            <label for="newBomVersion">BOM Version</label>
+                            <input type="text" id="newBomVersion" class="form-control" asp-for="NewBom.BOMVersion" placeholder="e.g., V1.0" required />
+                        </div>
+                        <div class="new-finished-fields" id="newFinishedFields" style="display: none; grid-column: 1 / -1;">
+                            <div class="new-material-form" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 10px;">
+                                <div class="form-group">
+                                    <label>Finished Product SKU *</label>
+                                    <input type="text" class="form-control" id="NewFinishedSKU" name="NewBom.NewFinishedSKU" placeholder="e.g. FG-MTR-015" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Finished Product Name *</label>
+                                    <input type="text" class="form-control" id="NewFinishedName" name="NewBom.NewFinishedName" placeholder="e.g. Electric Motor 1.5HP" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Category *</label>
+                                    <select class="form-control" id="NewFinishedCategoryID" name="NewBom.NewFinishedCategoryID">
+                                        <option value="">-- Category --</option>
+                                        @foreach (var cat in Model.CategoriesList)
+                                        {
+                                            <option value="@cat.ID">@cat.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Unit *</label>
+                                    <select class="form-control" id="NewFinishedUnitID" name="NewBom.NewFinishedUnitID">
+                                        <option value="">-- Unit --</option>
+                                        @foreach (var unit in Model.UnitsList)
+                                        {
+                                            <option value="@unit.ID">@unit.Name (@unit.Code)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Standard Cost (NPR) *</label>
+                                    <input type="number" step="0.01" value="0.00" class="form-control" id="NewFinishedStandardCost" name="NewBom.NewFinishedStandardCost" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Description / Notes</label>
+                                    <input type="text" class="form-control" id="NewFinishedNotes" name="NewBom.NewFinishedNotes" placeholder="e.g. High-torque custom assembly finished good" />
+                                </div>
+                                <div class="form-group full-width text-right" style="grid-column: 1 / -1; margin-top: 4px; margin-bottom: 0;">
+                                    <a href="#" style="font-size: 11px; color: var(--bom-blue); font-weight: bold; text-decoration: none;" onclick="toggleNewFinishedForm(false, event)">← Select Existing Finished Product</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="newBomEffectiveDate">Effective Date</label>
+                            <input type="date" id="newBomEffectiveDate" class="form-control" asp-for="NewBom.EffectiveDate" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="newBomStatus">Status</label>
+                            <select id="newBomStatus" class="form-control" asp-for="NewBom.Status">
+                                <option value="Draft">Draft</option>
+                                <option value="Active">Active</option>
+                                <option value="Under Review">Under Review</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bom-items-section">
+                        <div class="section-title-row">
+                            <h4>Component Raw Materials</h4>
+                            <button type="button" class="btn-secondary" style="min-height: 32px; padding: 0 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px;" onclick="addComponentRow()">
+                                <span class="material-symbols-outlined" style="font-size: 16px;">add</span> Add Component
+                            </button>
+                        </div>
+                        
+                        <table class="modal-table" id="bomItemsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 45%;">Component</th>
+                                    <th style="width: 20%;">Qty Required</th>
+                                    <th style="width: 20%;">Wastage %</th>
+                                    <th style="width: 15%;" class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bomItemsTableBody">
+                                <!-- Rows added dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="ims-modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeCreateBomModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">
+                        <span class="material-symbols-outlined">save</span> Save BOM
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Shortages Modal -->
+    <div id="orderShortagesModal" class="ims-modal-overlay">
+        <div class="ims-modal-card" style="max-width: 650px;">
+            <div class="ims-modal-header" style="background: var(--bom-orange);">
+                <h3>Order Shortage Materials</h3>
+                <button class="close-modal-btn" onclick="closeOrderShortagesModal()"><span class="material-symbols-outlined">close</span></button>
+            </div>
+            <form method="post" asp-page-handler="CreatePO" asp-route-bomId="@Model.Product.BOMID">
+                @Html.AntiForgeryToken()
+                <div class="ims-modal-body">
+                    <div class="form-grid" style="grid-template-columns: 1fr;">
+                        <div class="form-group">
+                            <label for="poSupplier">Select Supplier</label>
+                            <select id="poSupplier" class="form-control" asp-for="POSupplierID" required>
+                                <option value="">-- Select Supplier --</option>
+                                @foreach (var supplier in Model.SuppliersList)
+                                {
+                                    <option value="@supplier.ID">@supplier.Name</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bom-items-section" style="margin-top: 10px; padding-top: 10px; border-top: none;">
+                        <h4>Materials to Order</h4>
+                        <table class="modal-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50%;">Material</th>
+                                    <th style="width: 25%;">Qty to Order</th>
+                                    <th style="width: 25%;">Est. Unit Price (NPR)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Components.Any(c => c.Availability != "In Stock"))
+                                {
+                                    int index = 0;
+                                    var shortages = Model.Components.Where(c => c.Availability != "In Stock").ToList();
+                                    for (int i = 0; i < shortages.Count; i++)
+                                    {
+                                        var comp = shortages[i];
+                                        var rawProd = Model.RawMaterialsList.FirstOrDefault(r => r.SKU == comp.SKU);
+                                        if (rawProd != null)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <strong>@comp.Name</strong><br/>
+                                                    <span style="font-family: monospace; font-size: 11px; color: var(--bom-muted);">@comp.SKU</span>
+                                                    <input type="hidden" name="POShortageProductIDs[@index]" value="@rawProd.ProductID" />
+                                                </td>
+                                                <td>
+                                                    <input type="number" step="0.01" class="form-control" style="min-height: 32px; padding: 4px 8px; font-size: 13px;" name="POShortageQuantities[@index]" value="@comp.Qty" required />
+                                                </td>
+                                                <td>
+                                                    <input type="number" step="0.01" class="form-control" style="min-height: 32px; padding: 4px 8px; font-size: 13px;" name="POShortagePrices[@index]" value="@(rawProd.StandardCost > 0 ? rawProd.StandardCost : 100)" required />
+                                                </td>
+                                            </tr>
+                                            index++;
+                                        }
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="ims-modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeOrderShortagesModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" style="background: var(--bom-orange);">
+                        <span class="material-symbols-outlined">shopping_cart</span> Generate Draft PO
+                    </button>
+                </div>
+            </form>
+    <!-- HTML templates for dynamic dropdowns in JavaScript -->
+    <template id="categoriesOptionsTemplate">
+        @foreach (var cat in Model.CategoriesList)
+        {
+            <option value="@cat.ID">@cat.Name</option>
+        }
+    </template>
+
+    <template id="unitsOptionsTemplate">
+        @foreach (var unit in Model.UnitsList)
+        {
+            <option value="@unit.ID">@unit.Name (@unit.Code)</option>
+        }
+    </template>
+
+    <template id="rawMaterialsOptionsTemplate">
+        @foreach (var mat in Model.RawMaterialsList)
+        {
+            <option value="@mat.ProductID">@mat.ProductName (@mat.SKU)</option>
+        }
+    </template>
+</div>
+
+@section Scripts {
+    <script src="~/js/bom.js" asp-append-version="true"></script>
+}

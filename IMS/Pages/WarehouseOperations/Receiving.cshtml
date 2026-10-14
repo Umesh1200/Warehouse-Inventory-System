@@ -1,0 +1,271 @@
+@page
+@model IMS.Pages.WarehouseOperations.ReceivingModel
+@{
+    ViewData["Title"] = "Goods Receiving";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/receiving.css" asp-append-version="true" />
+}
+
+<div class="receiving-container">
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">Goods Receiving</h2>
+            <div class="page-subtitle">Receive against confirmed purchase orders. Usable stock increases only after QC and putaway.</div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">check_circle</span> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="receiving-stats-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <div class="stat-card">
+                <div class="stat-icon @card.ColorClass">
+                    <span class="material-symbols-outlined">@card.Icon</span>
+                </div>
+                <div>
+                    <div class="stat-label">@card.Title</div>
+                    <div class="stat-value">@card.Value</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="filters-panel">
+        <div class="d-flex align-items-center gap-3">
+            <div class="search-wrap flex-grow-1" style="max-width: 400px; position: relative;">
+                <span class="material-symbols-outlined" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted);">search</span>
+                <input id="receiptSearch" type="text" class="filter-input w-100" style="padding-left: 40px;" placeholder="PO, supplier, SKU..." />
+            </div>
+            <div class="dropdown" title="Filter Receipts">
+                <button class="icon-button border-0 bg-white shadow-sm d-flex align-items-center justify-content-center rounded-circle" style="width: 42px; height: 42px;" type="button" id="receiptFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                    <span class="material-symbols-outlined text-primary">filter_alt</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow-sm border-0" aria-labelledby="receiptFilterDropdown" style="width: 280px; border-radius: 12px;">
+                    <h6 class="dropdown-header px-0 text-dark fw-bold mb-2">Filter Receipts</h6>
+                    <div class="mb-3">
+                        <label for="timeFilter" class="form-label small fw-bold text-muted mb-1">Time</label>
+                        <select id="timeFilter" class="form-select form-select-sm">
+                            <option value="Today" selected>Today</option>
+                            <option value="All Time">All Time</option>
+                        </select>
+                        <div class="form-text" style="font-size: 0.75rem;">Expected items always show.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="statusFilter" class="form-label small fw-bold text-muted mb-1">Status</label>
+                        <select id="statusFilter" class="form-select form-select-sm">
+                            <option value="All Statuses">All Statuses</option>
+                            <option value="Expected" selected>Expected</option>
+                            <option value="Partial">Partial</option>
+                            <option value="QC Required">QC Required</option>
+                            <option value="Accepted">Accepted</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label for="supplierFilter" class="form-label small fw-bold text-muted mb-1">Supplier</label>
+                        <select id="supplierFilter" class="form-select form-select-sm">
+                            @foreach (var supplier in Model.Suppliers)
+                            {
+                                <option value="@supplier">@supplier</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="receiving-table-panel">
+        <div class="table-toolbar">
+            <div>
+                <div class="table-title">Receiving Queue</div>
+                <div class="table-meta">@Model.ReceivingTasks.Count purchase order lines</div>
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th>PO / Supplier</th>
+                        <th>Product</th>
+                        <th class="text-right">Ordered</th>
+                        <th class="text-right">Received</th>
+                        <th class="text-right">Remaining</th>
+                        <th>Progress</th>
+                        <th>Quality Exceptions</th>
+                        <th>Dates</th>
+                        <th>Status</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.ReceivingTasks.Any())
+                    {
+                        <tr>
+                            <td colspan="10" class="empty-cell">No receiving tasks found.</td>
+                        </tr>
+                    }
+                    @foreach (var task in Model.ReceivingTasks)
+                    {
+                        <tr class="receiving-row"
+                            data-supplier="@task.Supplier"
+                            data-status="@task.Status"
+                            data-search="@($"{task.PONumber} {task.Supplier} {task.Product} {task.SKU} {task.BatchNumber}".ToLower())"
+                            data-date="@(task.ReceiptDateTime?.ToString("yyyy-MM-dd") ?? "")">
+                            <td>
+                                <div class="po-cell">@task.PONumber</div>
+                                <div class="muted-cell">@task.Supplier</div>
+                            </td>
+                            <td>
+                                <div class="product-cell">@task.Product</div>
+                                <div class="muted-cell">SKU: @task.SKU</div>
+                                @if (!string.IsNullOrWhiteSpace(task.BatchNumber))
+                                {
+                                    <div class="batch-pill">@task.BatchNumber</div>
+                                }
+                            </td>
+                            <td class="text-right font-mono">@task.OrderedQty.ToString("N0")</td>
+                            <td class="text-right font-mono">@task.ReceivedQty.ToString("N0")</td>
+                            <td class="text-right font-mono @(task.RemainingQty > 0 ? "text-warning" : "")">@task.RemainingQty.ToString("N0")</td>
+                            <td>
+                                <div class="progress-cell">
+                                    <div class="progress-track">
+                                        <div class="progress-fill" style="width: @task.ProgressPercentage%"></div>
+                                    </div>
+                                    <span>@task.ProgressPercentage%</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="exception-grid">
+                                    <span class="@(task.DamagedQty > 0 ? "text-danger" : "")">Damaged: @task.DamagedQty.ToString("N0")</span>
+                                    <span class="@(task.RejectedQty > 0 ? "text-danger" : "")">Rejected: @task.RejectedQty.ToString("N0")</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="muted-cell">Expected: @task.ExpectedDate</div>
+                                <div class="muted-cell">Received: @task.ReceiptDate</div>
+                                <div class="muted-cell">By: @task.ReceivedBy</div>
+                            </td>
+                            <td>
+                                <span class="status-badge status-@task.StatusColor">@task.Status</span>
+                            </td>
+                            <td class="text-center">
+                                @if ((task.Status == "Expected" || task.Status == "Partial") && task.RemainingQty > 0)
+                                {
+                                    <button type="button"
+                                            class="icon-button receive-btn"
+                                            title="Receive Goods"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#receiveModal"
+                                            data-poitemid="@task.POItemID"
+                                            data-po="@task.PONumber"
+                                            data-supplier="@task.Supplier"
+                                            data-sku="@task.SKU"
+                                            data-product="@task.Product"
+                                            data-ordered="@task.OrderedQty"
+                                            data-received="@task.ReceivedQty"
+                                            data-remaining="@task.RemainingQty">
+                                        <span class="material-symbols-outlined">download_done</span>
+                                    </button>
+                                }
+                                else if (task.Status == "QC Required")
+                                {
+                                    <a class="icon-button warning" asp-page="/WarehouseOperations/QCCheck" title="Open QC Check">
+                                        <span class="material-symbols-outlined">fact_check</span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="muted-cell">-</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="receiveModal" tabindex="-1" aria-labelledby="receiveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <h5 class="modal-title" id="receiveModalLabel">Record Goods Receipt</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Receive" onsubmit="return confirm('Record this receipt? The item will move to QC Required and will not become usable stock yet.');">
+                <input type="hidden" id="receive-poitemid" asp-for="NewReceipt.POItemID" />
+                <div class="modal-body">
+                    <div class="receipt-context">
+                        <div>
+                            <span>PO Number</span>
+                            <strong id="disp-po"></strong>
+                        </div>
+                        <div>
+                            <span>Supplier</span>
+                            <strong id="disp-supplier"></strong>
+                        </div>
+                    </div>
+
+                    <div class="product-summary">
+                        <div>
+                            <div id="disp-product" class="product-title"></div>
+                            <div id="disp-sku" class="muted-cell"></div>
+                        </div>
+                        <div class="qty-summary">
+                            <span>Ordered <strong id="disp-ordered">0</strong></span>
+                            <span>Already Received <strong id="disp-received">0</strong></span>
+                            <span>Remaining <strong id="disp-remaining">0</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div>
+                            <label class="form-label">Received Quantity *</label>
+                            <input type="number" step="0.01" id="input-received" asp-for="NewReceipt.ReceivedQty" class="form-control" required min="0.01" />
+                            <div class="field-hint">Cannot exceed the remaining PO quantity.</div>
+                        </div>
+                        <div>
+                            <label class="form-label">Batch Number</label>
+                            <input type="text" asp-for="NewReceipt.BatchNumber" class="form-control" placeholder="Optional" />
+                        </div>
+                        <div>
+                            <label class="form-label">Damaged Quantity</label>
+                            <input type="number" step="0.01" id="input-damaged" asp-for="NewReceipt.DamagedQty" class="form-control" value="0" min="0" />
+                        </div>
+                        <div>
+                            <label class="form-label">Rejected Quantity</label>
+                            <input type="number" step="0.01" id="input-rejected" asp-for="NewReceipt.RejectedQty" class="form-control" value="0" min="0" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Record Receipt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/receiving.js" asp-append-version="true"></script>
+}

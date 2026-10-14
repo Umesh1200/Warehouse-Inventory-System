@@ -1,0 +1,969 @@
+@page
+@model IMS.Pages.Inventory.ProductsModel
+@using System.Text.Encodings.Web
+@{
+    ViewData["Title"] = "Product / SKU Master";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/products.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+}
+
+<div class="products-container">
+    <header class="page-header">
+        <div>
+            <h1>Product / SKU Master</h1>
+            <p>Maintain product definitions, costing, reorder settings, units, and production classification.</p>
+        </div>
+        <div class="header-actions">
+            <a asp-page="/Inventory/Overview" class="btn-ims btn-outline">
+                <span class="material-symbols-outlined">inventory_2</span>
+                Inventory
+            </a>
+            @if (Model.CanManageAttributes)
+            {
+                <div class="dropdown d-inline-block">
+                    <button class="btn-ims btn-outline dropdown-toggle" type="button" id="manageAttributesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="material-symbols-outlined">tune</span>
+                        Manage Master Data
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border" aria-labelledby="manageAttributesDropdown" style="border-radius: 8px; font-size: 0.9rem;">
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center gap-2 py-2" type="button" data-bs-toggle="modal" data-bs-target="#manageCategoriesModal">
+                                <span class="material-symbols-outlined text-primary" style="font-size: 18px;">category</span>
+                                <span>Manage Categories</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button class="dropdown-item d-flex align-items-center gap-2 py-2" type="button" data-bs-toggle="modal" data-bs-target="#manageUnitsModal">
+                                <span class="material-symbols-outlined text-primary" style="font-size: 18px;">straighten</span>
+                                <span>Manage Units</span>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            }
+            @if (Model.CanAddProduct)
+            {
+                <button class="btn-ims btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                    <span class="material-symbols-outlined">add</span>
+                    Product
+                </button>
+            }
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">check_circle</span> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <section class="products-stats-grid" aria-label="Product summary">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <article class="stat-card">
+                <div class="stat-icon @card.ColorClass">
+                    <span class="material-symbols-outlined">@card.Icon</span>
+                </div>
+                <div>
+                    <p class="stat-label">@card.Title</p>
+                    <strong class="stat-value">@card.Value</strong>
+                </div>
+            </article>
+        }
+    </section>
+
+    <section class="filters-panel">
+        <form method="get" class="filters-grid">
+            <div class="result-count">
+                <span>Showing <strong>@Model.FilteredCount</strong> of <strong>@Model.TotalCount</strong> products</span>
+            </div>
+            <div class="filter-group search-group">
+                <label for="searchTerm">Search</label>
+                <div class="search-field">
+                    <span class="material-symbols-outlined">search</span>
+                    <input id="searchTerm" type="search" name="SearchTerm" value="@Model.SearchTerm" class="filter-input" placeholder="SKU or product name" />
+                </div>
+            </div>
+            <div class="filter-group">
+                <label for="category">Category</label>
+                <select id="category" name="Category" class="filter-input" onchange="this.form.submit()">
+                    @foreach (var cat in Model.Categories)
+                    {
+                        <option value="@cat" selected="@(Model.Category == cat || (Model.Category == null && cat == "All Categories"))">@cat</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="productType">Product Type</label>
+                <select id="productType" name="ProductType" class="filter-input" onchange="this.form.submit()">
+                    <option value="All Types" selected="@(Model.ProductType == null || Model.ProductType == "All Types")">All Types</option>
+                    @foreach (var type in Model.ProductTypes)
+                    {
+                        <option value="@type" selected="@(Model.ProductType == type)">@type</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="status">Status</label>
+                <select id="status" name="Status" class="filter-input" onchange="this.form.submit()">
+                    <option value="All Statuses" selected="@(Model.Status == null || Model.Status == "All Statuses")">All Statuses</option>
+                    <option value="Active" selected="@(Model.Status == "Active")">Active</option>
+                    <option value="Inactive" selected="@(Model.Status == "Inactive")">Inactive</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-ims btn-filter">
+                <span class="material-symbols-outlined">filter_list</span>
+                Apply
+            </button>
+            <a asp-page="/Inventory/Products" class="btn-ims btn-outline">Reset</a>
+        </form>
+    </section>
+
+    <section class="products-table-panel">
+        <div class="table-header">
+            <div>
+                <h2>SKU Catalog</h2>
+                <p>Master data used by purchasing, sales, warehouse operations, production, and inventory valuation.</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>SKU</th>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Type</th>
+                        <th class="text-right">Reorder</th>
+                        <th class="text-right">Std. Cost</th>
+                        <th class="text-right">Selling Price</th>
+                        <th>Unit</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Products.Any())
+                    {
+                        <tr>
+                            <td colspan="11">
+                                <div class="empty-state">
+                                    <span class="material-symbols-outlined">inventory_2</span>
+                                    <strong>No products found</strong>
+                                    <p>Try changing filters or create a new product master record.</p>
+                                    <a asp-page="/Inventory/Products" class="btn-ims btn-outline">Reset Filters</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var product in Model.Products)
+                    {
+                        <tr class="@(product.Status == "Inactive" ? "row-inactive" : "") @(product.IsLowStock ? "row-lowstock" : "")">
+                            <td>
+                                @if (!string.IsNullOrEmpty(product.ImageUrl))
+                                {
+                                    <img src="@product.ImageUrl" alt="@product.Name" style="width:40px;height:40px;object-fit:cover;border-radius:4px;" />
+                                }
+                                else
+                                {
+                                    <div style="width:40px;height:40px;background:#e5e7eb;border-radius:4px;display:flex;align-items:center;justify-content:center;">
+                                        <span class="material-symbols-outlined" style="font-size:20px;color:#9ca3af;">image</span>
+                                    </div>
+                                }
+                            </td>
+                            <td class="sku-cell">@product.SKU</td>
+                            <td>
+                                <div class="product-name">@product.Name</div>
+                                <div class="product-meta">
+                                    <span>@product.Weight</span>
+                                    @if (!string.IsNullOrWhiteSpace(product.Dimensions))
+                                    {
+                                        <span>@product.Dimensions</span>
+                                    }
+                                </div>
+                            </td>
+                            <td>@product.Category</td>
+                            <td><span class="type-badge">@product.Type</span></td>
+                            <td class="text-right font-mono @(product.IsLowStock ? "text-danger" : "")">
+                                @product.ReorderLevel.ToString("N0")
+                                @if (product.IsLowStock)
+                                {
+                                    <span class="material-symbols-outlined warning-icon">warning</span>
+                                }
+                            </td>
+                            <td class="text-right font-mono">@product.StandardCost</td>
+                            <td class="text-right font-mono strong-price">@product.SellingPrice</td>
+                            <td class="unit-cell">@product.Unit</td>
+                            <td><span class="status-badge status-@product.Status.ToLower()">@product.Status</span></td>
+                            <td class="text-center">
+                                <div class="row-actions">
+                                    <button type="button"
+                                            class="action-icon-link product-insights-btn"
+                                            title="View product details and insights"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#productInsightsModal"
+                                            data-product-id="@product.ProductID"
+                                            data-product-name="@product.Name"
+                                            data-product-sku="@product.SKU">
+                                        <span class="material-symbols-outlined" style="color: var(--primary);">analytics</span>
+                                    </button>
+                                    <a asp-page="/Warehouses/ProductLocator" asp-route-sku="@product.SKU" class="action-icon-link" title="Locate in Warehouse" style="color: var(--primary);">
+                                        <span class="material-symbols-outlined">explore</span>
+                                    </a>
+                                    <a asp-page="/Inventory/Movements" asp-route-sku="@product.SKU" class="action-icon-link" title="View movements">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                    </a>
+                                    <a asp-page="/Inventory/Adjustments" asp-route-productId="@product.ProductID" class="action-icon-link" title="Adjustment">
+                                        <span class="material-symbols-outlined">edit_square</span>
+                                    </a>
+                                    <button type="button"
+                                            class="action-icon-link product-suppliers-btn"
+                                            title="Approved suppliers"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#productSuppliersModal"
+                                            data-product-id="@product.ProductID"
+                                            data-product-name="@product.Name"
+                                            data-product-sku="@product.SKU">
+                                        <span class="material-symbols-outlined">verified</span>
+                                    </button>
+                                    <button type="button"
+                                            class="action-icon-link product-storage-rules-btn"
+                                            title="Storage rules"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#productStorageRulesModal"
+                                            data-product-id="@product.ProductID"
+                                            data-product-name="@product.Name"
+                                            data-product-sku="@product.SKU">
+                                        <span class="material-symbols-outlined">shelves</span>
+                                    </button>
+                                    @if (Model.IsStaff)
+                                    {
+                                        <span class="action-icon-link disabled-action" title="Only Admin or authorized Manager can edit Product Master data.">
+                                            <span class="material-symbols-outlined">lock</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <a asp-page="/Inventory/Products/Edit" asp-route-id="@product.ProductID" class="action-icon-link" title="@(Model.IsAdmin ? "Edit product" : "View product")">
+                                            <span class="material-symbols-outlined">@(Model.IsAdmin ? "edit" : "info")</span>
+                                        </a>
+                                    }
+                                    @if (Model.CanDeactivate && product.Status != "Inactive")
+                                    {
+                                        <form method="post" asp-page-handler="Deactivate" onsubmit="return confirm('Deactivate this product? Existing stock and history will be preserved.');">
+                                            <input type="hidden" name="DeactivateProductID" value="@product.ProductID" />
+                                            <button type="submit" class="action-icon-link danger-action" title="Deactivate">
+                                                <span class="material-symbols-outlined">block</span>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="productSuppliersModal" tabindex="-1" aria-labelledby="productSuppliersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="productSuppliersModalLabel">Approved Suppliers</h5>
+                    <p id="productSuppliersSubtitle">Product supplier approvals</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="avl-split-container">
+                    <!-- Left Panel: Form Card -->
+                    <div class="avl-form-card">
+                        <form method="post" id="avlMappingForm" asp-page-handler="SaveSupplierProduct">
+                            <h6 id="avlFormTitle">Add Supplier Mapping</h6>
+                            <input type="hidden" id="product-avl-product-id" asp-for="SupplierProduct.ProductID" />
+                            <input type="hidden" id="product-avl-supplier-product-id" asp-for="SupplierProduct.SupplierProductID" value="0" />
+                            <input type="hidden" id="product-avl-status" asp-for="SupplierProduct.Status" value="Approved" />
+                            
+                            <label>
+                                <span>Supplier *</span>
+                                <select id="avlSupplierID" asp-for="SupplierProduct.SupplierID" required>
+                                    <option value="">Select supplier</option>
+                                    @foreach (var supplier in Model.SuppliersList)
+                                    {
+                                        <option value="@supplier.ID">[@supplier.Code] @supplier.Name</option>
+                                    }
+                                </select>
+                            </label>
+                            
+                            <label>
+                                <span>Supplier SKU</span>
+                                <input id="avlSupplierSKU" asp-for="SupplierProduct.SupplierSKU" placeholder="e.g. VEN-SKU-100" />
+                            </label>
+                            
+                            <label>
+                                <span>Quote (NPR) *</span>
+                                <input type="number" id="avlLastQuotedPrice" step="0.01" min="0" asp-for="SupplierProduct.LastQuotedPrice" placeholder="0.00" required />
+                            </label>
+                            
+                            <label>
+                                <span>Lead Days *</span>
+                                <input type="number" id="avlLeadTimeDays" min="0" asp-for="SupplierProduct.LeadTimeDays" placeholder="0" required />
+                            </label>
+                            
+                            <label>
+                                <span>Min Order Qty (MOQ) *</span>
+                                <input type="number" id="avlMinOrderQty" step="0.01" min="1" asp-for="SupplierProduct.MinOrderQty" value="1" required />
+                            </label>
+                            
+                            <label>
+                                <span>Pack Size *</span>
+                                <input type="number" id="avlPackSize" step="0.01" min="1" asp-for="SupplierProduct.PackSize" value="1" required />
+                            </label>
+                            
+                            <label class="check-field">
+                                <input type="checkbox" id="avlIsPreferred" asp-for="SupplierProduct.IsPreferred" />
+                                <span>Preferred Supplier</span>
+                            </label>
+                            
+                            <div class="form-actions">
+                                <button type="submit" id="avlSubmitBtn" class="btn-ims btn-primary">Save Mapping</button>
+                                <button type="button" id="avlResetBtn" class="btn-ims btn-outline" style="display:none;">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Panel: List Table -->
+                    <div class="avl-table-card">
+                        <div class="table-wrap avl-table-wrap">
+                            <table class="ims-table avl-table">
+                                <thead>
+                                    <tr>
+                                        <th>Supplier</th>
+                                        <th>Supplier SKU</th>
+                                        <th class="text-right">Quote</th>
+                                        <th class="text-right">Lead</th>
+                                        <th class="text-right">MOQ</th>
+                                        <th class="text-right">Pack</th>
+                                        <th>Preferred</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var mapping in Model.ProductSuppliers)
+                                    {
+                                        <tr class="product-avl-row" 
+                                            data-supplier-product-id="@mapping.SupplierProductID"
+                                            data-product-id="@mapping.ProductID"
+                                            data-supplier-id="@mapping.SupplierID"
+                                            data-supplier-sku="@mapping.SupplierSKU"
+                                            data-quoted-price="@mapping.LastQuotedPrice"
+                                            data-lead-time="@mapping.LeadTimeDays"
+                                            data-moq="@mapping.MinOrderQty"
+                                            data-pack-size="@mapping.PackSize"
+                                            data-is-preferred="@mapping.IsPreferred.ToString().ToLower()"
+                                            data-status="@mapping.Status">
+                                            <td><strong>@mapping.SupplierName</strong></td>
+                                            <td>@(string.IsNullOrWhiteSpace(mapping.SupplierSKU) ? "-" : mapping.SupplierSKU)</td>
+                                            <td class="text-right font-mono">@(mapping.LastQuotedPrice.HasValue ? $"NPR {mapping.LastQuotedPrice:N2}" : "-")</td>
+                                            <td class="text-right font-mono">@mapping.LeadTimeDays day(s)</td>
+                                            <td class="text-right font-mono">@mapping.MinOrderQty.ToString("N2")</td>
+                                            <td class="text-right font-mono">@mapping.PackSize.ToString("N2")</td>
+                                            <td>
+                                                @if (mapping.IsPreferred)
+                                                {
+                                                    <span class="badge-preferred">
+                                                        <span class="material-symbols-outlined" style="font-size: 14px;">star</span> Preferred
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span>No</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge-status status-@mapping.Status.ToLower()">@mapping.Status</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="row-actions justify-content-center" style="display: flex; gap: 0.25rem; justify-content: center;">
+                                                    <button type="button" class="action-icon-link avl-edit-btn" title="Edit mapping">
+                                                        <span class="material-symbols-outlined">edit</span>
+                                                    </button>
+                                                    @if (mapping.Status == "Approved")
+                                                    {
+                                                        <form method="post" asp-page-handler="BlockSupplierProduct" style="margin:0;" onsubmit="return confirm('Block this product-supplier approval?');">
+                                                            <input type="hidden" name="BlockSupplierProductID" value="@mapping.SupplierProductID" />
+                                                            <button type="submit" class="action-icon-link danger-action" title="Block mapping">
+                                                                <span class="material-symbols-outlined">block</span>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    else
+                                                    {
+                                                        <form method="post" asp-page-handler="SaveSupplierProduct" style="margin:0;" onsubmit="return confirm('Unblock and approve this supplier?');">
+                                                            <input type="hidden" name="SupplierProduct.SupplierProductID" value="@mapping.SupplierProductID" />
+                                                            <input type="hidden" name="SupplierProduct.ProductID" value="@mapping.ProductID" />
+                                                            <input type="hidden" name="SupplierProduct.SupplierID" value="@mapping.SupplierID" />
+                                                            <input type="hidden" name="SupplierProduct.SupplierSKU" value="@mapping.SupplierSKU" />
+                                                            <input type="hidden" name="SupplierProduct.LastQuotedPrice" value="@mapping.LastQuotedPrice" />
+                                                            <input type="hidden" name="SupplierProduct.LeadTimeDays" value="@mapping.LeadTimeDays" />
+                                                            <input type="hidden" name="SupplierProduct.MinOrderQty" value="@mapping.MinOrderQty" />
+                                                            <input type="hidden" name="SupplierProduct.PackSize" value="@mapping.PackSize" />
+                                                            <input type="hidden" name="SupplierProduct.IsPreferred" value="@mapping.IsPreferred.ToString().ToLower()" />
+                                                            <input type="hidden" name="SupplierProduct.Status" value="Approved" />
+                                                            <button type="submit" class="action-icon-link success-action" style="color:var(--success);" title="Approve mapping">
+                                                                <span class="material-symbols-outlined">check_circle</span>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                    <tr class="product-avl-empty-row">
+                                        <td colspan="9">
+                                            <div class="empty-state">
+                                                <span class="material-symbols-outlined">verified</span>
+                                                <strong>No approved suppliers for this product</strong>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="productStorageRulesModal" tabindex="-1" aria-labelledby="productStorageRulesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="productStorageRulesModalLabel">Product Storage Rules</h5>
+                    <p id="productStorageRulesSubtitle">Configure shelf types, capacity limits, and preferred layout locations</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="avl-split-container">
+                    <!-- Left Panel: Form Card -->
+                    <div class="avl-form-card">
+                        <form method="post" id="storageRuleForm" asp-page-handler="SaveStorageRule">
+                            <h6 id="ruleFormTitle">Add Storage Rule</h6>
+                            <input type="hidden" id="rule-product-id" asp-for="StorageRule.ProductID" />
+                            <input type="hidden" id="rule-id" asp-for="StorageRule.RuleID" value="0" />
+                            
+                            <label>
+                                <span>Allowed Shelf Type *</span>
+                                <select id="ruleAllowedShelfType" asp-for="StorageRule.AllowedShelfType" required>
+                                    <option value="">Select shelf type</option>
+                                    <option value="General">General</option>
+                                    <option value="Raw Material">Raw Material</option>
+                                    <option value="Finished Goods">Finished Goods</option>
+                                    <option value="QC Hold">QC Hold</option>
+                                    <option value="Quarantine">Quarantine</option>
+                                </select>
+                            </label>
+                            
+                            <label>
+                                <span>Max Quantity on Shelf</span>
+                                <input type="number" id="ruleMaxStackQty" step="0.01" min="0" asp-for="StorageRule.MaxStackQty" placeholder="e.g. 500 (Optional)" />
+                            </label>
+                            
+                            <div class="mb-3">
+                                <label class="check-field mb-2" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="ruleRequiresQCHold" asp-for="StorageRule.RequiresQCHold" />
+                                    <span>Requires QC Hold Staging</span>
+                                </label>
+                                <label class="check-field mb-2" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="ruleIsFragile" asp-for="StorageRule.IsFragile" />
+                                    <span>Is Fragile (Requires low shelving)</span>
+                                </label>
+                                <label class="check-field mb-2" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="checkbox" id="ruleIsHazardous" asp-for="StorageRule.IsHazardous" />
+                                    <span>Is Hazardous (Chemical/Ventilated)</span>
+                                </label>
+                            </div>
+
+                            <hr class="my-3 text-muted" />
+                            <div class="section-title mb-2 text-primary" style="font-size: 13px; font-weight: 600;">Preferred Warehouse Staging (Optional)</div>
+                            
+                            <label>
+                                <span>Preferred Warehouse</span>
+                                <select id="ruleWarehouse" asp-for="StorageRule.PreferredWarehouseID">
+                                    <option value="">Any Warehouse</option>
+                                    @foreach (var warehouse in Model.WarehousesList)
+                                    {
+                                        <option value="@warehouse.ID">@warehouse.Name</option>
+                                    }
+                                </select>
+                            </label>
+                            
+                            <label>
+                                <span>Preferred Floor</span>
+                                <select id="ruleFloor" disabled>
+                                    <option value="">Any Floor</option>
+                                </select>
+                            </label>
+                            
+                            <label>
+                                <span>Preferred Room</span>
+                                <select id="ruleRoom" disabled>
+                                    <option value="">Any Room</option>
+                                </select>
+                            </label>
+                            
+                            <label>
+                                <span>Preferred Rack</span>
+                                <select id="ruleRack" asp-for="StorageRule.PreferredRackID" disabled>
+                                    <option value="">Any Rack</option>
+                                </select>
+                            </label>
+                            
+                            <label>
+                                <span>Preferred Shelf</span>
+                                <select id="ruleShelf" asp-for="StorageRule.PreferredShelfID" disabled>
+                                    <option value="">Any Shelf</option>
+                                </select>
+                            </label>
+                            
+                            <div class="form-actions mt-3">
+                                <button type="submit" id="ruleSubmitBtn" class="btn-ims btn-primary">Save Rule</button>
+                                <button type="button" id="ruleResetBtn" class="btn-ims btn-outline" style="display:none;">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Panel: List Table -->
+                    <div class="avl-table-card">
+                        <div class="table-wrap avl-table-wrap">
+                            <table class="ims-table avl-table">
+                                <thead>
+                                    <tr>
+                                        <th>Shelf Type</th>
+                                        <th class="text-right">Max Qty</th>
+                                        <th>Flags</th>
+                                        <th>Preferred Path</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="storageRulesTableBody">
+                                    <!-- Populated dynamically via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Management Modal -->
+<div class="modal fade" id="manageCategoriesModal" tabindex="-1" aria-labelledby="manageCategoriesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="manageCategoriesModalLabel">Product Categories Master</h5>
+                    <p class="text-white-50 mb-0" style="font-size: 13px;">Manage item classifications, descriptions, and active status.</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="avl-split-container">
+                    <!-- Left Panel: Add / Edit Form -->
+                    <div class="avl-form-card">
+                        <form method="post" id="categoryForm" asp-page-handler="SaveCategory">
+                            <input type="hidden" asp-for="CategoryForm.CategoryID" id="categoryFormId" value="0" />
+                            <h6 id="categoryFormTitle">Add New Category</h6>
+                            
+                            <label>
+                                <span>Category Name *</span>
+                                <input type="text" asp-for="CategoryForm.CategoryName" id="categoryFormName" placeholder="e.g. Textiles, Hardware, Packaging" required />
+                            </label>
+
+                            <label>
+                                <span>Description</span>
+                                <input type="text" asp-for="CategoryForm.Description" id="categoryFormDesc" placeholder="Optional category details" />
+                            </label>
+
+                            <label class="check-field mt-2">
+                                <input type="checkbox" asp-for="CategoryForm.IsActive" id="categoryFormActive" value="true" checked />
+                                <span>Active Category</span>
+                            </label>
+
+                            <div class="form-actions mt-3">
+                                <button type="submit" id="categorySubmitBtn" class="btn-ims btn-primary">Save Category</button>
+                                <button type="button" id="categoryResetBtn" class="btn-ims btn-outline" style="display:none;" onclick="resetCategoryForm()">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Panel: Category Table -->
+                    <div class="avl-table-card">
+                        <div class="table-wrap avl-table-wrap">
+                            <table class="ims-table avl-table">
+                                <thead>
+                                    <tr>
+                                        <th>Category Name</th>
+                                        <th>Description</th>
+                                        <th class="text-center">Products</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.CategoryDetails.Any())
+                                    {
+                                        @foreach (var cat in Model.CategoryDetails)
+                                        {
+                                            <tr id="cat-row-@cat.CategoryID" class="@(!cat.IsActive ? "text-muted" : "")">
+                                                <td class="fw-bold">@cat.CategoryName</td>
+                                                <td>@(string.IsNullOrEmpty(cat.Description) ? "—" : cat.Description)</td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-light text-dark font-mono">@cat.ProductCount</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge-status @(cat.IsActive ? "status-approved" : "status-inactive")">
+                                                        @(cat.IsActive ? "Active" : "Inactive")
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="row-actions justify-content-center">
+                                                        <button type="button" class="action-icon-link" title="Edit Category"
+                                                                onclick="editCategory(@cat.CategoryID, '@Html.Raw(JavaScriptEncoder.Default.Encode(cat.CategoryName))', '@Html.Raw(JavaScriptEncoder.Default.Encode(cat.Description))', @(cat.IsActive ? "true" : "false"))">
+                                                            <span class="material-symbols-outlined">edit</span>
+                                                        </button>
+                                                        <form method="post" asp-page-handler="ToggleCategoryStatus" style="margin:0; display:inline;" 
+                                                              onsubmit="return confirm('@(cat.IsActive ? $"Deactivate category \'{cat.CategoryName}\'?" : $"Activate category \'{cat.CategoryName}\'?")');">
+                                                            <input type="hidden" name="ToggleCategoryID" value="@cat.CategoryID" />
+                                                            <button type="submit" class="action-icon-link @(cat.IsActive ? "danger-action" : "success-action")" 
+                                                                    title="@(cat.IsActive ? "Deactivate" : "Activate")">
+                                                                <span class="material-symbols-outlined">@(cat.IsActive ? "toggle_on" : "toggle_off")</span>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-3 text-muted">No categories configured yet.</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Unit Management Modal -->
+<div class="modal fade" id="manageUnitsModal" tabindex="-1" aria-labelledby="manageUnitsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="manageUnitsModalLabel">Units of Measurement (UoM) Master</h5>
+                    <p class="text-white-50 mb-0" style="font-size: 13px;">Configure unit names, abbreviations, and active status.</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="avl-split-container">
+                    <!-- Left Panel: Add / Edit Form -->
+                    <div class="avl-form-card">
+                        <form method="post" id="unitForm" asp-page-handler="SaveUnit">
+                            <input type="hidden" asp-for="UnitForm.UnitID" id="unitFormId" value="0" />
+                            <h6 id="unitFormTitle">Add New Unit</h6>
+                            
+                            <label>
+                                <span>Unit Name *</span>
+                                <input type="text" asp-for="UnitForm.UnitName" id="unitFormName" placeholder="e.g. Kilogram, Meter, Pieces" required />
+                            </label>
+
+                            <label>
+                                <span>Unit Code (Abbr) *</span>
+                                <input type="text" asp-for="UnitForm.UnitCode" id="unitFormCode" placeholder="e.g. KG, MTR, PCS, ROLL" maxlength="10" required />
+                            </label>
+
+                            <label class="check-field mt-2">
+                                <input type="checkbox" asp-for="UnitForm.IsActive" id="unitFormActive" value="true" checked />
+                                <span>Active Unit</span>
+                            </label>
+
+                            <div class="form-actions mt-3">
+                                <button type="submit" id="unitSubmitBtn" class="btn-ims btn-primary">Save Unit</button>
+                                <button type="button" id="unitResetBtn" class="btn-ims btn-outline" style="display:none;" onclick="resetUnitForm()">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Panel: Units Table -->
+                    <div class="avl-table-card">
+                        <div class="table-wrap avl-table-wrap">
+                            <table class="ims-table avl-table">
+                                <thead>
+                                    <tr>
+                                        <th>Unit Name</th>
+                                        <th>Code</th>
+                                        <th class="text-center">Products</th>
+                                        <th>Status</th>
+                                        <th class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.UnitDetails.Any())
+                                    {
+                                        @foreach (var unit in Model.UnitDetails)
+                                        {
+                                            <tr id="unit-row-@unit.UnitID" class="@(!unit.IsActive ? "text-muted" : "")">
+                                                <td class="fw-bold">@unit.UnitName</td>
+                                                <td><span class="font-mono bg-light px-2 py-1 rounded">@unit.UnitCode</span></td>
+                                                <td class="text-center">
+                                                    <span class="badge bg-light text-dark font-mono">@unit.ProductCount</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge-status @(unit.IsActive ? "status-approved" : "status-inactive")">
+                                                        @(unit.IsActive ? "Active" : "Inactive")
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="row-actions justify-content-center">
+                                                        <button type="button" class="action-icon-link" title="Edit Unit"
+                                                                onclick="editUnit(@unit.UnitID, '@Html.Raw(JavaScriptEncoder.Default.Encode(unit.UnitName))', '@Html.Raw(JavaScriptEncoder.Default.Encode(unit.UnitCode))', @(unit.IsActive ? "true" : "false"))">
+                                                            <span class="material-symbols-outlined">edit</span>
+                                                        </button>
+                                                        <form method="post" asp-page-handler="ToggleUnitStatus" style="margin:0; display:inline;" 
+                                                              onsubmit="return confirm('@(unit.IsActive ? $"Deactivate unit \'{unit.UnitName}\'?" : $"Activate unit \'{unit.UnitName}\'?")');">
+                                                            <input type="hidden" name="ToggleUnitID" value="@unit.UnitID" />
+                                                            <button type="submit" class="action-icon-link @(unit.IsActive ? "danger-action" : "success-action")" 
+                                                                    title="@(unit.IsActive ? "Deactivate" : "Activate")">
+                                                                <span class="material-symbols-outlined">@(unit.IsActive ? "toggle_on" : "toggle_off")</span>
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="5" class="text-center py-3 text-muted">No units configured yet.</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProductModalLabel">Create Product</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Product SKU *</label>
+                            <input type="text" asp-for="NewProduct.SKU" class="form-control" placeholder="e.g. PRD-1001" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Product Name *</label>
+                            <input type="text" asp-for="NewProduct.ProductName" class="form-control" placeholder="Full product name" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Product Image (File Upload)</label>
+                            <input type="file" asp-for="ImageUpload" class="form-control" accept="image/*" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Or Image URL (Web Link)</label>
+                            <input type="url" asp-for="NewProduct.ImageUrl" class="form-control" placeholder="https://..." />
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0">Category *</label>
+                                @if (Model.CanManageAttributes)
+                                {
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary" data-bs-toggle="modal" data-bs-target="#manageCategoriesModal" style="font-size: 11px; font-weight: 700;">+ Manage</button>
+                                }
+                            </div>
+                            <select asp-for="NewProduct.CategoryID" class="form-select" required>
+                                <option value="">Select category</option>
+                                @foreach (var cat in Model.CategoriesList)
+                                {
+                                    <option value="@cat.ID">@cat.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0">Unit *</label>
+                                @if (Model.CanManageAttributes)
+                                {
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-primary" data-bs-toggle="modal" data-bs-target="#manageUnitsModal" style="font-size: 11px; font-weight: 700;">+ Manage</button>
+                                }
+                            </div>
+                            <select asp-for="NewProduct.UnitID" class="form-select" required>
+                                <option value="">Select unit</option>
+                                @foreach (var unit in Model.UnitsList)
+                                {
+                                    <option value="@unit.ID">@unit.Name (@unit.Code)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Product Type *</label>
+                            <select asp-for="NewProduct.ProductType" class="form-select" required>
+                                @foreach (var type in Model.ProductTypes)
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Standard Cost (NPR)</label>
+                            <input type="number" step="0.01" min="0" asp-for="NewProduct.StandardCost" class="form-control" value="0.00" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Selling Price (NPR)</label>
+                            <input type="number" step="0.01" min="0" asp-for="NewProduct.SellingPrice" class="form-control" value="0.00" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Reorder Level</label>
+                            <input type="number" min="0" asp-for="NewProduct.ReorderLevel" class="form-control" value="0" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Weight (kg)</label>
+                            <input type="number" step="0.001" min="0" asp-for="NewProduct.WeightKg" class="form-control" value="0.000" />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Dimensions / Specs</label>
+                            <input type="text" asp-for="NewProduct.Dimensions" class="form-control" placeholder="e.g. 10x20x5 cm" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="productInsightsModal" tabindex="-1" aria-labelledby="productInsightsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--primary); color: white;">
+                <div>
+                    <h5 class="modal-title" id="productInsightsModalLabel">Product Details & Insights</h5>
+                    <p id="productInsightsSubtitle" style="color: rgba(255,255,255,0.8); margin: 0; font-size: 14px;">Loading SKU data...</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background: var(--bg);">
+                <div id="insightsLoading" class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing product data...</p>
+                </div>
+                <div id="insightsContent" style="display: none;">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted"><span class="material-symbols-outlined align-middle" style="font-size:18px;">trending_up</span> Stock Levels (30 Days)</h6>
+                                    <canvas id="stockTrendsChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted"><span class="material-symbols-outlined align-middle" style="font-size:18px;">sync_alt</span> Movement History (In vs Out)</h6>
+                                    <canvas id="movementsChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted"><span class="material-symbols-outlined align-middle" style="font-size:18px;">point_of_sale</span> Purchase vs Sales Volume (NPR)</h6>
+                                    <canvas id="volumeChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted"><span class="material-symbols-outlined align-middle" style="font-size:18px;">account_balance</span> Inventory Valuation (NPR)</h6>
+                                    <canvas id="valuationChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="~/js/products.js" asp-append-version="true"></script>
+}
+

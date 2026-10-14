@@ -1,0 +1,440 @@
+@page
+@model IMS.Pages.Warehouses.VisualizationModel
+@{
+    ViewData["Title"] = "Warehouse Visualization";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/warehouse-visualization.css" asp-append-version="true" />
+}
+
+<div class="visualization-container">
+    <!-- Top Action Bar -->
+    <div class="page-header">
+        <div>
+            <div class="breadcrumb-trail">
+                <span>Inventory</span>
+                <span class="material-symbols-outlined text-xs">chevron_right</span>
+                <span class="active-crumb">Warehouse Visualization</span>
+            </div>
+            <h1 class="page-title">Warehouse Visualization</h1>
+            <p class="page-subtitle">@Model.CurrentWarehouse.Name (@Model.CurrentWarehouse.Code) &bull; Spatial Storage Hierarchy</p>
+        </div>
+        <div class="header-controls">
+            <!-- Warehouse Selector -->
+            <form method="get" class="d-inline-flex align-items-center gap-2">
+                <select name="warehouseId" class="header-select" onchange="this.form.submit()">
+                    @foreach (var wh in Model.Warehouses)
+                    {
+                        <option value="@wh.Id" selected="@(wh.Id == Model.CurrentWarehouse.Id)">@wh.Name (@wh.Code)</option>
+                    }
+                </select>
+                @if (Model.Floors.Any())
+                {
+                    <select name="floorId" class="header-select" onchange="this.form.submit()">
+                        <option value="">All Floors</option>
+                        @foreach (var fl in Model.Floors)
+                        {
+                            <option value="@fl.Id" selected="@(fl.Id == Model.FloorId)">@fl.Name (@fl.Code)</option>
+                        }
+                    </select>
+                }
+            </form>
+
+            <a class="action-btn" asp-page="/Warehouses/ProductLocator" title="Find where any product is stored">
+                <span class="material-symbols-outlined">explore</span>
+                Product Locator
+            </a>
+            <a class="action-btn" asp-page="/Warehouses/Setup" title="Configure Warehouses, Floors, Rooms, Racks and Shelves">
+                <span class="material-symbols-outlined">settings</span>
+                Setup
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Top Stats Row (Matching Stitch) -->
+    <div class="stats-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            @if (card.IsCapacityCard)
+            {
+                <div class="viz-card stat-card capacity-stat-card">
+                    <div class="stat-top">
+                        <div class="stat-icon @card.ColorClass">
+                            <span class="material-symbols-outlined">@card.Icon</span>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-label">@card.Title</div>
+                            <div class="stat-value text-primary">@card.Value</div>
+                        </div>
+                    </div>
+                    <div class="capacity-stat-bar-wrap">
+                        <div class="capacity-meter">
+                            <div class="capacity-fill" style="width: @card.Percentage%"></div>
+                        </div>
+                        <div class="stat-subtext">@card.Subtext</div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="viz-card stat-card">
+                    <div class="stat-icon @card.ColorClass">
+                        <span class="material-symbols-outlined">@card.Icon</span>
+                    </div>
+                    <div>
+                        <div class="stat-label">@card.Title</div>
+                        <div class="stat-value">@card.Value</div>
+                        <div class="stat-subtext">@card.Subtext</div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Main Visualization 3-Panel Grid (Stitch 4-col / 5-col / 3-col layout) -->
+    <div class="viz-grid">
+        <!-- Panel 1: Warehouse Layout (Floor & Rooms) -->
+        <section class="viz-card layout-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Warehouse Layout</h2>
+                    <span class="panel-subhead">Rooms & Storage Zones</span>
+                </div>
+                <span class="badge-count">@Model.Rooms.Count Rooms</span>
+            </div>
+
+            <div class="layout-schematic-box">
+                <div class="room-cards-grid">
+                    @foreach (var room in Model.Rooms)
+                    {
+                        var isRoomActive = room.RoomId == Model.RoomId;
+                        <div class="room-card @(isRoomActive ? "active" : "")"
+                             data-room-id="@room.RoomId"
+                             data-room-code="@room.RoomCode"
+                             onclick="selectRoom(@room.RoomId)">
+                            <div class="room-card-header">
+                                <span class="room-code-tag">@room.RoomCode</span>
+                                <span class="room-util-badge util-@room.StatusColor">@room.UtilizationPercentage%</span>
+                            </div>
+                            <div class="room-name-label">@room.RoomName</div>
+                            <div class="room-meta">
+                                <span class="material-symbols-outlined text-xs">shelves</span>
+                                <span>@room.UsedShelves / @room.TotalShelves shelves</span>
+                            </div>
+                            <div class="room-type-badges">
+                                @if (room.HasRawMaterial)
+                                {
+                                    <span class="type-tag tag-rm">Raw Material</span>
+                                }
+                                @if (room.HasFinishedGoods)
+                                {
+                                    <span class="type-tag tag-fg">Finished Goods</span>
+                                }
+                                @if (room.HasQCHold)
+                                {
+                                    <span class="type-tag tag-qc">QC Hold</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Dock / Shipping Bay (Matching Stitch) -->
+                <div class="dock-boundary-bar">
+                    <span class="material-symbols-outlined text-sm">local_shipping</span>
+                    <span>प्राप्ति / ढुवानी (Receiving & Shipping Dock)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Panel 2: Rack View (Elevation Graphic with Uprights and Tiers) -->
+        <section class="viz-card rack-view-panel">
+            <div class="panel-header">
+                <div class="rack-breadcrumbs">
+                    <span class="crumb-room" id="rackHeaderRoom">@(string.IsNullOrWhiteSpace(Model.ActiveRackElevation.RoomName) ? "Room" : Model.ActiveRackElevation.RoomName)</span>
+                    <span class="material-symbols-outlined text-xs">chevron_right</span>
+                    <span class="crumb-rack" id="rackHeaderCode">@(string.IsNullOrWhiteSpace(Model.ActiveRackElevation.RackCode) ? "Rack" : Model.ActiveRackElevation.RackCode)</span>
+                </div>
+
+                <!-- Rack Switcher Dropdown -->
+                <div class="rack-select-wrap">
+                    <select id="rackSelector" class="filter-input-sm" onchange="onRackSelectChange(this.value)">
+                        @foreach (var rk in Model.AvailableRacks)
+                        {
+                            <option value="@rk.RackId" selected="@(rk.RackId == Model.ActiveRackElevation.RackId)">
+                                Rack @rk.RackCode (@rk.UtilizationPercentage% util)
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <!-- Abstract Physical Rack Structure (Metal Posts + Shelf Tiers) -->
+            <div class="rack-elevation-container">
+                <div class="rack-metal-frame">
+                    <!-- Left and Right Steel Upright Posts -->
+                    <div class="rack-post-left"></div>
+                    <div class="rack-post-right"></div>
+
+                    <!-- Shelf Tiers (Level 4 down to Level 1) -->
+                    <div class="rack-tiers-list" id="rackTiersContainer">
+                        @if (!Model.ActiveRackElevation.Tiers.Any())
+                        {
+                            <div class="empty-rack-msg">No shelves configured in this rack.</div>
+                        }
+                        else
+                        {
+                            @foreach (var tier in Model.ActiveRackElevation.Tiers)
+                            {
+                                <div class="rack-tier-level" data-level="@tier.LevelNumber">
+                                    <div class="tier-indicator-label">@tier.LevelName</div>
+                                    <div class="tier-slots-row">
+                                        @if (!tier.Slots.Any())
+                                        {
+                                            <div class="empty-tier-slot">Available Tier Space</div>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var slot in tier.Slots)
+                                            {
+                                                var isSlotSelected = slot.ShelfId == Model.SelectedShelf.ShelfId;
+                                                <button type="button"
+                                                        class="shelf-node @slot.StatusKey @(isSlotSelected ? "active" : "")"
+                                                        data-shelf-id="@slot.ShelfId"
+                                                        data-shelf-code="@slot.ShelfCode"
+                                                        title="@slot.ShelfCode - @slot.ProductName (@slot.UtilizationPercentage% utilized)"
+                                                        onclick="selectShelfById(@slot.ShelfId)">
+                                                    <span class="shelf-node-code">@slot.ShelfCode</span>
+                                                    <span class="shelf-node-type">@slot.ShelfType</span>
+                                                    <span class="shelf-node-util">@slot.UtilizationPercentage%</span>
+                                                </button>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legend (Matching Stitch) -->
+            <div class="viz-legend">
+                <div class="legend-item"><span class="legend-dot status-empty"></span> Empty</div>
+                <div class="legend-item"><span class="legend-dot status-low"></span> Low (0-30%)</div>
+                <div class="legend-item"><span class="legend-dot status-medium"></span> Medium (30-70%)</div>
+                <div class="legend-item"><span class="legend-dot status-high"></span> High (70-90%)</div>
+                <div class="legend-item"><span class="legend-dot status-full"></span> Full (90-100%)</div>
+                <div class="legend-item"><span class="legend-dot status-qchold"></span> QC Hold</div>
+            </div>
+        </section>
+
+        <!-- Panel 3: Shelf Details Sidebar -->
+        <aside class="viz-card details-panel">
+            <div class="details-header">
+                <div>
+                    <span class="details-eyebrow">Shelf Details</span>
+                    <h2 id="detailCode" class="shelf-title-code">@Model.SelectedShelf.Code</h2>
+                    <div id="detailPath" class="detail-path">@Model.SelectedShelf.Path</div>
+                </div>
+                <span id="detailStatus" class="status-pill status-pill-@Model.SelectedShelf.StatusKey">@Model.SelectedShelf.Status</span>
+            </div>
+
+            <div class="detail-product-card">
+                <div id="detailProduct" class="product-name">@Model.SelectedShelf.ProductName</div>
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                    <span id="detailSku" class="sku-label font-mono">@Model.SelectedShelf.SKU</span>
+                    <span id="detailType" class="type-badge">@Model.SelectedShelf.ShelfType</span>
+                </div>
+            </div>
+
+            <div class="detail-metric-card">
+                <div class="metric-top">
+                    <span>Capacity Utilization</span>
+                    <strong id="detailUtil">@Model.SelectedShelf.UtilizationPercentage%</strong>
+                </div>
+                <div class="capacity-meter compact">
+                    <div id="detailUtilBar" class="capacity-fill" style="width: @Model.SelectedShelf.UtilizationPercentage%"></div>
+                </div>
+            </div>
+
+            <div class="detail-list">
+                <div class="detail-row">
+                    <span class="detail-label">Current Stock</span>
+                    <strong id="detailCurrentQty" class="detail-val">@Model.SelectedShelf.CurrentQty.ToString("N0") units</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Available Stock</span>
+                    <strong id="detailAvailableQty" class="detail-val text-success">@Model.SelectedShelf.AvailableQty.ToString("N0") units</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Shelf Capacity (Max)</span>
+                    <strong id="detailMaxQty" class="detail-val">@Model.SelectedShelf.MaxQty.ToString("N0") units</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Available Capacity</span>
+                    <strong id="detailAvailCap" class="detail-val">@Model.SelectedShelf.AvailableCapacity.ToString("N0") units</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Current Weight</span>
+                    <strong id="detailCurrentWeight" class="detail-val">@Model.SelectedShelf.CurrentWeight.ToString("N2") kg</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Max Weight Limit</span>
+                    <strong id="detailMaxWeight" class="detail-val">@Model.SelectedShelf.MaxWeight.ToString("N2") kg</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Floor</span>
+                    <strong id="detailFloor" class="detail-val">@Model.SelectedShelf.Floor (@Model.SelectedShelf.FloorCode)</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Room</span>
+                    <strong id="detailRoom" class="detail-val">@Model.SelectedShelf.Room (@Model.SelectedShelf.RoomCode)</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Rack</span>
+                    <strong id="detailRack" class="detail-val">@Model.SelectedShelf.Rack (@Model.SelectedShelf.RackCode)</strong>
+                </div>
+            </div>
+
+            <div class="detail-actions">
+                <a id="btnLocateProduct"
+                   class="btn-detail-action"
+                   asp-page="/Warehouses/ProductLocator"
+                   asp-route-sku="@Model.SelectedShelf.SKU">
+                    <span class="material-symbols-outlined text-sm">explore</span>
+                    Locate in Product Locator
+                </a>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Lower Data Tables Row (3 Cards matching Stitch) -->
+    <div class="lower-grid">
+        <!-- 1. Room Utilization Breakdown (Donut + Stats) -->
+        <section class="viz-card donut-card">
+            <div class="panel-header">
+                <h2>Utilization by Room</h2>
+            </div>
+            <div class="donut-chart-container">
+                <div class="donut-circle" style="background: conic-gradient(var(--secondary) 0% @Model.CurrentWarehouse.UtilizationPercentage%, #E2E8F0 @Model.CurrentWarehouse.UtilizationPercentage% 100%);">
+                    <div class="donut-hole">
+                        <span class="donut-percent">@Model.CurrentWarehouse.UtilizationPercentage%</span>
+                        <span class="donut-label">Overall</span>
+                    </div>
+                </div>
+                <div class="donut-room-legend">
+                    @foreach (var rm in Model.RoomUtilizationSummary)
+                    {
+                        <div class="room-legend-item">
+                            <div class="room-legend-title">
+                                <span class="room-legend-name">@rm.RoomName</span>
+                                <span class="room-legend-val">@rm.UtilizationPercentage%</span>
+                            </div>
+                            <div class="mini-bar">
+                                <div class="mini-fill @rm.StatusColor" style="width: @Math.Min(rm.UtilizationPercentage, 100)%"></div>
+                            </div>
+                            <span class="room-legend-meta">@rm.UsedShelves / @rm.TotalShelves shelves used</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Rack Utilization Table -->
+        <section class="viz-card rack-table-card">
+            <div class="panel-header">
+                <h2>Rack Utilization</h2>
+            </div>
+            <div class="table-scroll">
+                <table class="ims-table">
+                    <thead>
+                        <tr>
+                            <th>Floor</th>
+                            <th>Room</th>
+                            <th>Rack</th>
+                            <th class="text-right">Shelves</th>
+                            <th class="text-right">Used</th>
+                            <th class="text-right">Avail</th>
+                            <th>Utilization</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var rk in Model.RackUtilizationTable)
+                        {
+                            <tr class="table-clickable-row" onclick="onTableRackClick(@rk.RackId)">
+                                <td class="font-mono">@rk.FloorCode</td>
+                                <td class="font-mono">@rk.RoomCode</td>
+                                <td class="font-mono text-primary font-bold">@rk.RackCode</td>
+                                <td class="text-right">@rk.TotalShelves</td>
+                                <td class="text-right">@rk.UsedShelves</td>
+                                <td class="text-right text-muted">@rk.AvailableShelves</td>
+                                <td>
+                                    <div class="table-util">
+                                        <div class="mini-bar">
+                                            <div class="mini-fill @rk.StatusColor" style="width: @Math.Min(rk.UtilizationPercentage, 100)%"></div>
+                                        </div>
+                                        <span>@rk.UtilizationPercentage%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3. Low Stock Shelves Alert List -->
+        <section class="viz-card alert-card">
+            <div class="panel-header">
+                <h2>Low Stock Shelves</h2>
+                <span class="text-xs text-muted">(Below Reorder Point)</span>
+            </div>
+            @if (!Model.LowStockShelves.Any())
+            {
+                <div class="empty-state">No low stock shelf alerts currently recorded.</div>
+            }
+            else
+            {
+                <ul class="alert-list">
+                    @foreach (var item in Model.LowStockShelves)
+                    {
+                        <li class="alert-item">
+                            <div>
+                                <div class="font-mono alert-code">@item.ShelfCode</div>
+                                <div class="alert-name" title="@item.ProductName">@item.ProductName</div>
+                                <div class="alert-sku">@item.SKU</div>
+                            </div>
+                            <div class="text-end">
+                                <span class="alert-qty-badge">@item.Quantity @item.Unit</span>
+                                <div class="alert-reorder-hint">Min: @item.ReorderLevel</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+    </div>
+
+    <div class="footer-status">
+        <span>Hierarchy: Warehouse &rarr; Floor &rarr; Room &rarr; Rack &rarr; Shelf</span>
+        <span>Last refreshed: @Model.LastUpdated.ToString("yyyy-MM-dd HH:mm:ss")</span>
+    </div>
+</div>
+
+<script type="application/json" id="vizDataJson">
+@Html.Raw(Model.VisualizationDataJson)
+</script>
+
+@section Scripts {
+    <script src="~/js/warehouse-visualization.js" asp-append-version="true"></script>
+}

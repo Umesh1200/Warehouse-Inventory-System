@@ -1,0 +1,406 @@
+@page
+@model IMS.Pages.Production.PlanningModel
+@{
+    ViewData["Title"] = "Production Planning";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/production-planning.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+}
+
+<div class="planning-container">
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">check_circle</span> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <header class="page-header">
+        <div>
+            <nav class="crumbs">
+                <a asp-page="/Production/Index">Manufacturing</a>
+                <span>/</span>
+                <span>Production Planning</span>
+            </nav>
+            <h1>Production Planning</h1>
+            <p>Create batches, approve material readiness, start production, and hand off each run to issue or receipt.</p>
+        </div>
+        <div class="header-actions">
+            <a asp-page="/Production/BOM" class="btn-ims btn-outline">
+                <span class="material-symbols-outlined">account_tree</span>
+                BOM Library
+            </a>
+            <button class="btn-ims btn-primary" data-bs-toggle="modal" data-bs-target="#createPlanModal">
+                <span class="material-symbols-outlined">add</span>
+                New Plan
+            </button>
+        </div>
+    </header>
+
+    <section class="planning-stats-grid" aria-label="Production planning summary">
+        @foreach (var stat in Model.SummaryCards)
+        {
+            <article class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon @stat.ColorClass">
+                        <span class="material-symbols-outlined">@stat.Icon</span>
+                    </div>
+                    @if (stat.IsCritical)
+                    {
+                        <span class="critical-badge">Critical</span>
+                    }
+                </div>
+                <p class="stat-label">@stat.Title</p>
+                <h2 class="stat-value">@stat.Value</h2>
+            </article>
+        }
+    </section>
+
+    <section class="workflow-strip" aria-label="Production workflow">
+        <a asp-page="/Production/BOM">
+            <span class="material-symbols-outlined">account_tree</span>
+            <strong>BOM</strong>
+        </a>
+        <span class="material-symbols-outlined">chevron_right</span>
+        <a class="active" asp-page="/Production/Planning">
+            <span class="material-symbols-outlined">event_note</span>
+            <strong>Plan</strong>
+        </a>
+        <span class="material-symbols-outlined">chevron_right</span>
+        <a asp-page="/Production/MaterialIssueReturn">
+            <span class="material-symbols-outlined">output</span>
+            <strong>Issue</strong>
+        </a>
+        <span class="material-symbols-outlined">chevron_right</span>
+        <a asp-page="/Production/FinishedGoodsReceipt">
+            <span class="material-symbols-outlined">move_to_inbox</span>
+            <strong>Receive</strong>
+        </a>
+    </section>
+
+    <section class="ledger-panel">
+        <div class="panel-header">
+            <div>
+                <h2>Production Runs</h2>
+                <p>@Model.ActivePlans.Count batches in the current production ledger</p>
+            </div>
+            <button class="btn-ims btn-primary compact" data-bs-toggle="modal" data-bs-target="#createPlanModal">
+                <span class="material-symbols-outlined">add</span>
+                Plan
+            </button>
+        </div>
+
+        <div class="table-wrap">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th>Batch</th>
+                        <th>Product</th>
+                        <th>Priority</th>
+                        <th>Due</th>
+                        <th class="text-right">Planned Qty</th>
+                        <th>Status</th>
+                        <th class="text-right">Next Step</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.ActivePlans.Any())
+                    {
+                        @foreach (var plan in Model.ActivePlans)
+                        {
+                            var prioClass = plan.Priority == "URGENT" ? "urgent" : (plan.Priority == "HIGH" ? "high" : "normal");
+                            <tr>
+                                <td>
+                                    <div class="batch-cell">
+                                        <strong>@plan.BatchID</strong>
+                                        <span>BOM @plan.Category</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="product-cell">
+                                        <div class="product-icon">
+                                            <span class="material-symbols-outlined">@plan.Icon</span>
+                                        </div>
+                                        <div>
+                                            <strong>@plan.ProductName</strong>
+                                            <span>Supervisor ID: @plan.AssignedSupervisor</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="priority-pill @prioClass">@plan.Priority</span></td>
+                                <td>@plan.CompletionEst</td>
+                                <td class="text-right font-mono">@plan.QtyPlanned.ToString("N2")</td>
+                                <td>
+                                    <span class="status-pill @plan.StatusColor">
+                                        <i></i>
+                                        @plan.Status
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    <div class="row-actions">
+                                        @if (plan.Status == "Draft" || plan.Status == "Material Check")
+                                        {
+                                            <button class="action-link edit-btn" type="button" data-bs-toggle="modal" data-bs-target="#editPlanModal" data-id="@plan.PlanID" data-number="@plan.BatchID" data-bom="@plan.BOMID" data-qty="@plan.QtyPlanned" data-start="@plan.RawStartDate" data-due="@plan.RawDueDate" data-prio="@plan.Priority" data-supervisor="@plan.AssignedSupervisor">
+                                                <span class="material-symbols-outlined">edit</span>
+                                                Edit
+                                            </button>
+                                            <form method="post" asp-page-handler="Approve" onsubmit="return confirm('Approve this production plan? Materials will be checked but not issued yet.');">
+                                                <input type="hidden" name="ApprovePlanID" value="@plan.PlanID" />
+                                                <button type="submit" class="action-link success">
+                                                    <span class="material-symbols-outlined">verified</span>
+                                                    Approve
+                                                </button>
+                                            </form>
+                                        }
+                                        @if (plan.Status == "Approved")
+                                        {
+                                            <form method="post" asp-page-handler="Start" onsubmit="return confirm('Start this production plan? Material issue will be handled separately.');">
+                                                <input type="hidden" name="StartPlanID" value="@plan.PlanID" />
+                                                <button type="submit" class="action-link primary">
+                                                    <span class="material-symbols-outlined">play_circle</span>
+                                                    Start
+                                                </button>
+                                            </form>
+                                            <a asp-page="/Production/MaterialIssueReturn" asp-route-PlanID="@plan.PlanID" class="action-link">
+                                                <span class="material-symbols-outlined">output</span>
+                                                Issue
+                                            </a>
+                                        }
+                                        @if (plan.Status == "In Production")
+                                        {
+                                            <a asp-page="/Production/MaterialIssueReturn" asp-route-PlanID="@plan.PlanID" class="action-link">
+                                                <span class="material-symbols-outlined">output</span>
+                                                Issue
+                                            </a>
+                                            <a asp-page="/Production/FinishedGoodsReceipt" asp-route-PlanID="@plan.PlanID" class="action-link primary">
+                                                <span class="material-symbols-outlined">move_to_inbox</span>
+                                                Receive
+                                            </a>
+                                        }
+                                        @if (plan.Status != "Completed" && plan.Status != "Cancelled")
+                                        {
+                                            <form method="post" asp-page-handler="Cancel" onsubmit="return confirm('Cancel this production plan? Historical records will be preserved.');">
+                                                <input type="hidden" name="CancelPlanID" value="@plan.PlanID" />
+                                                <button type="submit" class="icon-danger" aria-label="Cancel @plan.BatchID" title="Cancel">
+                                                    <span class="material-symbols-outlined">cancel</span>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <span class="material-symbols-outlined">event_note</span>
+                                    <strong>No production plans yet</strong>
+                                    <p>Create a plan from an active BOM to begin production tracking.</p>
+                                    <button class="btn-ims btn-primary" data-bs-toggle="modal" data-bs-target="#createPlanModal">
+                                        <span class="material-symbols-outlined">add</span>
+                                        New Plan
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="ledger-footer">
+            <span>Showing @Model.ActivePlans.Count production runs</span>
+            <span>Use each row's next-step action to continue the batch workflow.</span>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="createPlanModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-0">Create Production Plan</h5>
+                    <span class="text-white-50" style="font-size: 12px;">Auto-generated plan number with live component stock readiness.</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="Create" id="createPlanForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Plan Number (Auto)</label>
+                            <input type="text" asp-for="NewPlan.PlanNumber" id="planNumberInput" class="form-control font-mono" readonly style="background-color: #f8fafc; font-weight: 700;" />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Production BOM (Recipe) *</label>
+                            <select asp-for="NewPlan.BOMID" id="createBomSelect" class="form-select" required>
+                                <option value="">Select active BOM recipe</option>
+                                @foreach(var b in Model.ActiveBomsList) { 
+                                    <option value="@b.ID">[@b.SKU] @b.Name (v @b.Version)</option> 
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Planned Quantity *</label>
+                            <input type="number" step="0.01" min="0.01" asp-for="NewPlan.PlannedQty" id="createPlannedQty" class="form-control" placeholder="e.g. 100" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Start Date *</label>
+                            <input type="date" asp-for="NewPlan.StartDate" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Due Date *</label>
+                            <input type="date" asp-for="NewPlan.DueDate" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Priority</label>
+                            <select asp-for="NewPlan.Priority" class="form-select">
+                                <option value="Normal">Normal</option>
+                                <option value="HIGH">High Priority</option>
+                                <option value="URGENT">Urgent (Express)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Assigned Supervisor *</label>
+                            <select asp-for="NewPlan.AssignedSupervisor" class="form-select" required>
+                                <option value="">Select supervisor</option>
+                                @foreach(var s in Model.SupervisorList) { 
+                                    <option value="@s.ID">@s.Name</option> 
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Live BOM & Stock Readiness Inspection Box -->
+                        <div class="col-12" id="bomInspectionBox" style="display: none;">
+                            <div class="card border border-primary-subtle shadow-none bg-light p-3 rounded">
+                                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                    <div>
+                                        <span class="text-uppercase fw-bold text-muted" style="font-size: 11px;">Finished Output:</span>
+                                        <strong id="inspFinishedName" class="d-block text-dark"></strong>
+                                        <span id="inspFinishedSku" class="text-muted font-mono" style="font-size: 12px;"></span>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="text-uppercase fw-bold text-muted" style="font-size: 11px;">Est. Batch Material Cost:</span>
+                                        <strong id="inspTotalCost" class="d-block text-primary fs-6"></strong>
+                                    </div>
+                                </div>
+
+                                <div id="inspReadinessAlert" class="p-2 mb-2 rounded d-flex align-items-center gap-2" style="font-size: 12px;"></div>
+
+                                <div class="table-responsive bg-white rounded border">
+                                    <table class="table table-sm table-hover mb-0" style="font-size: 12px;">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Component Material</th>
+                                                <th class="text-end">Req/Unit</th>
+                                                <th class="text-end">Batch Req</th>
+                                                <th class="text-end">Live Available</th>
+                                                <th class="text-center">Stock Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="inspComponentsBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Work Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editPlanModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Production Plan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="Update">
+                <input type="hidden" id="edit-id" asp-for="EditPlan.PlanID" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Plan Number *</label>
+                            <input type="text" id="edit-number" asp-for="EditPlan.PlanNumber" class="form-control" required />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Production BOM *</label>
+                            <select id="edit-bom" asp-for="EditPlan.BOMID" class="form-select" required>
+                                @foreach(var b in Model.ActiveBomsList) { <option value="@b.ID">[@b.SKU] @b.Name (v @b.Version)</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Planned Quantity *</label>
+                            <input type="number" step="0.01" id="edit-qty" asp-for="EditPlan.PlannedQty" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" id="edit-start" asp-for="EditPlan.StartDate" class="form-control" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Due Date</label>
+                            <input type="date" id="edit-due" asp-for="EditPlan.DueDate" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Priority</label>
+                            <select id="edit-prio" asp-for="EditPlan.Priority" class="form-select">
+                                <option value="Normal">Normal</option>
+                                <option value="HIGH">High</option>
+                                <option value="URGENT">Urgent</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Assigned Supervisor</label>
+                            <select id="edit-supervisor" asp-for="EditPlan.AssignedSupervisor" class="form-select" required>
+                                @foreach(var s in Model.SupervisorList) { <option value="@s.ID">@s.Name</option> }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/production-planning.js" asp-append-version="true"></script>
+    <script>
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.getElementById('edit-id').value = this.dataset.id;
+                document.getElementById('edit-number').value = this.dataset.number;
+                document.getElementById('edit-bom').value = this.dataset.bom;
+                document.getElementById('edit-qty').value = this.dataset.qty;
+                document.getElementById('edit-start').value = this.dataset.start;
+                document.getElementById('edit-due').value = this.dataset.due;
+                document.getElementById('edit-prio').value = this.dataset.prio;
+                document.getElementById('edit-supervisor').value = this.dataset.supervisor;
+            });
+        });
+    </script>
+}

@@ -1,0 +1,329 @@
+@page
+@model IMS.Pages.Sales.CustomersModel
+@{
+    ViewData["Title"] = "Customers";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/customers.css" asp-append-version="true" />
+}
+
+<div class="customers-page">
+    <header class="page-header">
+        <div>
+            <div class="eyebrow">
+                <span class="material-symbols-outlined">groups</span>
+                Sales
+            </div>
+            <h1>Customers</h1>
+            <p>Maintain customer records, sales exposure, and order activity.</p>
+        </div>
+        <div class="header-actions">
+            <a class="btn btn-light" asp-page="/Sales/Orders">
+                <span class="material-symbols-outlined">receipt_long</span>
+                Sales orders
+            </a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                <span class="material-symbols-outlined">person_add</span>
+                Add Customer
+            </button>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <section class="summary-grid" aria-label="Customer summary">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <article class="summary-card">
+                <div class="summary-top">
+                    <span class="summary-icon summary-@card.ColorClass material-symbols-outlined">@card.Icon</span>
+                    <div>
+                        <p>@card.Title</p>
+                        <strong>@card.Value</strong>
+                    </div>
+                </div>
+                <div class="sparkline-wrap">
+                    <svg class="sparkline" viewBox="0 0 96 42" preserveAspectRatio="none" aria-hidden="true">
+                        <polyline points="@card.TrendPoints"></polyline>
+                    </svg>
+                    <span>@card.TrendLabel</span>
+                </div>
+            </article>
+        }
+    </section>
+
+    <section class="customers-panel">
+        <div class="panel-header">
+            <div>
+                <h2>Customer Directory</h2>
+                <p>@Model.Customers.Count customer(s) in the current list</p>
+            </div>
+        </div>
+
+        <div class="table-tools">
+            <label class="search-wrap" for="customerSearch">
+                <span class="material-symbols-outlined">search</span>
+                <input id="customerSearch" type="search" placeholder="Search name, phone, email, location" autocomplete="off" />
+            </label>
+            <select id="customerTypeFilter" class="form-select" aria-label="Filter customer type">
+                @foreach (var type in Model.CustomerTypes)
+                {
+                    <option value="@(type == "All Types" ? "" : type)">@type</option>
+                }
+            </select>
+            <select id="customerStatusFilter" class="form-select" aria-label="Filter customer status">
+                <option value="">All statuses</option>
+                <option value="Active">Active</option>
+                <option value="Pending Review">Pending Review</option>
+                <option value="Blocked">Blocked</option>
+                <option value="Inactive">Inactive</option>
+            </select>
+        </div>
+
+        <div class="table-wrap">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Customer</th>
+                        <th>Contact</th>
+                        <th>Address</th>
+                        <th>Type</th>
+                        <th class="text-end">Pending</th>
+                        <th class="text-end">Total Sales</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Customers.Any())
+                    {
+                        @foreach (var customer in Model.Customers)
+                        {
+                            <tr class="customer-row @(customer.Status == "Blocked" ? "row-danger" : customer.Status == "Pending Review" ? "row-warning" : customer.Status == "Inactive" ? "row-muted" : "")"
+                                data-type="@customer.Type"
+                                data-status="@customer.Status"
+                                data-search="@($"{customer.Code} {customer.Name} {customer.ContactPerson} {customer.Phone} {customer.Email} {customer.Location}")">
+                                <td class="code-cell">@customer.Code</td>
+                                <td>
+                                    <strong>@customer.Name</strong>
+                                    <span>@customer.ContactPerson</span>
+                                </td>
+                                <td>
+                                    <strong>@(string.IsNullOrWhiteSpace(customer.Phone) ? "-" : customer.Phone)</strong>
+                                    <span>@(string.IsNullOrWhiteSpace(customer.Email) ? "-" : customer.Email)</span>
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(customer.Location) ? "-" : customer.Location)</td>
+                                <td><span class="type-badge">@customer.Type</span></td>
+                                <td class="text-end mono">
+                                    @if (customer.PendingOrders > 0)
+                                    {
+                                        <span class="pending-badge">@customer.PendingOrders</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="muted">0</span>
+                                    }
+                                </td>
+                                <td class="text-end mono total-sales">@customer.TotalSales</td>
+                                <td><span class="status-badge status-@customer.Status.ToLower().Replace(" ", "")">@customer.Status</span></td>
+                                <td class="text-center">
+                                    <div class="action-group">
+                                        <a class="icon-btn" asp-page="/Sales/Orders" title="View sales orders">
+                                            <span class="material-symbols-outlined">receipt_long</span>
+                                        </a>
+                                        <button type="button"
+                                                class="icon-btn edit-btn"
+                                                title="Edit customer"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editCustomerModal"
+                                                data-id="@customer.CustomerID"
+                                                data-code="@customer.Code"
+                                                data-name="@customer.Name"
+                                                data-contact="@customer.ContactPerson"
+                                                data-phone="@customer.Phone"
+                                                data-email="@customer.Email"
+                                                data-address="@customer.Location"
+                                                data-type="@customer.Type"
+                                                data-status="@customer.Status">
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </button>
+                                        @if (customer.Status != "Inactive")
+                                        {
+                                            <form method="post" asp-page-handler="Deactivate" data-confirm-message="Deactivate this customer? Historical sales orders will be preserved.">
+                                                <input type="hidden" name="DeactivateCustomerID" value="@customer.CustomerID" />
+                                                <button type="submit" class="icon-btn danger" title="Deactivate customer">
+                                                    <span class="material-symbols-outlined">block</span>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9">
+                                <div class="empty-state table-empty">
+                                    <span class="material-symbols-outlined">groups</span>
+                                    <strong>No customers</strong>
+                                    <p>Create a customer record to begin sales order management.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<div class="modal fade" id="addCustomerModal" tabindex="-1" aria-labelledby="addCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <h5 class="modal-title" id="addCustomerModalLabel">Create Customer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Customer Code</label>
+                            <input type="text" asp-for="NewCustomer.CustomerCode" class="form-control" placeholder="CUST-001" required />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Customer Name</label>
+                            <input type="text" asp-for="NewCustomer.CustomerName" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" asp-for="NewCustomer.ContactPerson" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <input type="text" asp-for="NewCustomer.Phone" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" asp-for="NewCustomer.Email" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Customer Type</label>
+                            <select asp-for="NewCustomer.CustomerType" class="form-select">
+                                <option value="">Select type</option>
+                                @foreach (var type in Model.CustomerTypes.Skip(1))
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Address</label>
+                            <input type="text" asp-for="NewCustomer.Address" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <select asp-for="NewCustomer.Status" class="form-select">
+                                <option value="Active">Active</option>
+                                <option value="Pending Review">Pending Review</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-labelledby="editCustomerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content ims-modal">
+            <div class="modal-header ims-modal-header">
+                <h5 class="modal-title" id="editCustomerModalLabel">Edit Customer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Update">
+                <input type="hidden" id="edit-id" asp-for="EditCustomer.CustomerID" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Customer Code</label>
+                            <input type="text" id="edit-code" asp-for="EditCustomer.CustomerCode" class="form-control" required />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Customer Name</label>
+                            <input type="text" id="edit-name" asp-for="EditCustomer.CustomerName" class="form-control" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Contact Person</label>
+                            <input type="text" id="edit-contact" asp-for="EditCustomer.ContactPerson" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phone</label>
+                            <input type="text" id="edit-phone" asp-for="EditCustomer.Phone" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" id="edit-email" asp-for="EditCustomer.Email" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Customer Type</label>
+                            <select id="edit-type" asp-for="EditCustomer.CustomerType" class="form-select">
+                                <option value="">Select type</option>
+                                @foreach (var type in Model.CustomerTypes.Skip(1))
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Address</label>
+                            <input type="text" id="edit-address" asp-for="EditCustomer.Address" class="form-control" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Status</label>
+                            <select id="edit-status" asp-for="EditCustomer.Status" class="form-select">
+                                <option value="Active">Active</option>
+                                <option value="Pending Review">Pending Review</option>
+                                <option value="Blocked">Blocked</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ims-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/customers.js" asp-append-version="true"></script>
+}

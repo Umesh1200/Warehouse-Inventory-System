@@ -1,0 +1,375 @@
+@page
+@model IMS.Pages.Inventory.AdjustmentsModel
+@{
+    ViewData["Title"] = "Inventory Adjustments";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/adjustments.css" asp-append-version="true" />
+}
+
+<div class="adjustments-container">
+    <!-- Header -->
+    <div class="page-header">
+        <h2 class="page-title">Inventory Adjustments</h2>
+        <div style="display: flex; gap: 0.75rem;">
+            <button class="btn-ims btn-primary" data-bs-toggle="modal" data-bs-target="#addAdjustmentModal">
+                <span class="material-symbols-outlined">add_box</span>
+                Request Adjustment
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">check_circle</span> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="adjustments-stats-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <div class="stat-card">
+                <div class="stat-icon @card.ColorClass">
+                    <span class="material-symbols-outlined">@card.Icon</span>
+                </div>
+                <div>
+                    <div class="stat-label">@card.Title</div>
+                    <div class="stat-value">@card.Value</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-panel">
+        <div class="filters-header">
+            <div>
+                <strong>Filter adjustments</strong>
+                <span id="adjustmentResultCount">@Model.Adjustments.Count adjustment@(Model.Adjustments.Count == 1 ? "" : "s") shown</span>
+            </div>
+            <button type="button" class="btn-ims btn-outline compact" id="resetAdjustmentFilters">Reset</button>
+        </div>
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label>Search Adjustments</label>
+                <div style="position: relative;">
+                    <span class="material-symbols-outlined" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-muted);">search</span>
+                    <input type="text" id="adjustmentSearch" class="filter-input" placeholder="No, SKU, Product, Staff..." style="padding-left: 2.5rem;" />
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Warehouse</label>
+                <select class="filter-input" id="adjustmentWarehouseFilter">
+                    <option>All Warehouses</option>
+                    @foreach (var wh in Model.WarehousesList)
+                    {
+                        <option>@wh</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select class="filter-input" id="adjustmentStatusFilter">
+                    <option>All Statuses</option>
+                    <option>Pending</option>
+                    <option>Awaiting Approval</option>
+                    <option>Approved</option>
+                    <option>Posted</option>
+                    <option>Rejected</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Adjustment Type</label>
+                <select class="filter-input" id="adjustmentTypeFilter">
+                    @foreach (var type in Model.AdjustmentTypes)
+                    {
+                        <option>@type</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Adjustments Table -->
+    <div class="adjustments-table-panel">
+        <div style="overflow-x: auto;">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th style="width: 120px;">Adj. No</th>
+                        <th>Product / SKU</th>
+                        <th>Location (Shelf)</th>
+                        <th class="text-right">System Qty</th>
+                        <th class="text-right">Counted Qty</th>
+                        <th class="text-right">Difference</th>
+                        <th>Type / Reason</th>
+                        <th>By / Approval</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var adj in Model.Adjustments)
+                    {
+                        <tr class="adjustment-row @(adj.Difference > 50 || adj.Difference < -50 ? "high-variance" : "")"
+                            data-adjustment-id="@adj.AdjustmentID"
+                            data-search="@($"{adj.No} {adj.Product} {adj.SKU} {adj.Warehouse} {adj.Shelf} {adj.Type} {adj.Reason} {adj.RequestedBy} {adj.ApprovedBy} {adj.Status}")"
+                            data-warehouse="@adj.Warehouse"
+                            data-status="@adj.Status"
+                            data-type="@adj.Type"
+                            data-system="@adj.SystemQty"
+                            data-counted="@adj.CountedQty"
+                            data-difference="@adj.Difference"
+                            data-product="@adj.Product"
+                            data-sku="@adj.SKU"
+                            data-shelf="@adj.Shelf"
+                            data-reason="@adj.Reason"
+                            data-requested="@adj.RequestedBy"
+                            data-approved="@adj.ApprovedBy">
+                            <td class="id-cell">@adj.No</td>
+                            <td>
+                                <div class="product-cell">@adj.Product</div>
+                                <div class="font-mono" style="font-size: 11px; color: var(--text-muted);">@adj.SKU</div>
+                            </td>
+                            <td class="location-cell">
+                                <div>@adj.Shelf</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">@adj.Warehouse</div>
+                            </td>
+                            <td class="text-right font-mono">@adj.SystemQty</td>
+                            <td class="text-right font-mono" style="font-weight: 600;">@adj.CountedQty</td>
+                            <td class="text-right font-mono">
+                                @if (adj.Difference > 0)
+                                {
+                                    <span class="diff-positive">+@adj.Difference</span>
+                                }
+                                else if (adj.Difference < 0)
+                                {
+                                    <span class="diff-negative">@adj.Difference</span>
+                                }
+                                else
+                                {
+                                    <span class="diff-zero">0</span>
+                                }
+                            </td>
+                            <td>
+                                <div style="font-size: 12px; font-weight: 600; color: var(--primary);">@adj.Type</div>
+                                <div style="font-size: 11px; color: var(--text-muted);">@adj.Reason</div>
+                            </td>
+                            <td>
+                                <div style="font-size: 13px;">Req: @adj.RequestedBy</div>
+                                <div style="font-size: 11px; color: var(--secondary); font-weight: 600;">App: @adj.ApprovedBy</div>
+                            </td>
+                            <td>
+                                <span class="status-badge status-@adj.StatusColor">@adj.Status</span>
+                            </td>
+                            <td class="text-center">
+                                <div style="display: flex; justify-content: center; gap: 0.25rem;">
+                                    <button type="button"
+                                            class="action-icon-button js-view-adjustment"
+                                            data-adjustment-id="@adj.AdjustmentID"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#adjustmentDetailModal"
+                                            title="View Detail"
+                                            aria-label="View adjustment detail for @adj.No">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                    </button>
+                                    @if (Model.IsAdminOrManager)
+                                    {
+                                        @if (adj.Status == "Pending" || adj.Status == "Awaiting Approval")
+                                        {
+                                            <form method="post" asp-page-handler="Approve" style="display:inline;">
+                                                <input type="hidden" name="ApproveAdjustmentID" value="@adj.AdjustmentID" />
+                                                <button type="submit" class="action-icon-button success-action" title="Approve" aria-label="Approve @adj.No">
+                                                    <span class="material-symbols-outlined">how_to_reg</span>
+                                                </button>
+                                            </form>
+                                        }
+                                        @if (adj.Status == "Approved")
+                                        {
+                                            <form method="post" asp-page-handler="PostAdjustment" onsubmit="return confirm('Post this adjustment? This will update stock and create stock movement records.');" style="display:inline;">
+                                                <input type="hidden" name="PostAdjustmentID" value="@adj.AdjustmentID" />
+                                                <button type="submit" class="action-icon-button info-action" title="Post Adjustment" aria-label="Post @adj.No">
+                                                    <span class="material-symbols-outlined">publish</span>
+                                                </button>
+                                            </form>
+                                        }
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Adjustments.Any())
+                    {
+                        <tr id="noAdjustmentsInitialRow">
+                            <td colspan="10" class="text-center py-5">
+                                <div class="empty-filter-state" style="padding: 2.5rem 1rem;">
+                                    <span class="material-symbols-outlined" style="font-size: 44px; color: var(--text-muted); opacity: 0.6;">tune</span>
+                                    <h6 class="mt-3 mb-1" style="font-weight: 600;">No Inventory Adjustments Yet</h6>
+                                    <p class="text-muted mb-0" style="font-size: 13px;">Create a new adjustment request or submit an audit variance from Cycle Counts.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    <tr id="adjustmentEmptyRow" style="display: none;">
+                        <td colspan="10">
+                            <div class="empty-filter-state">
+                                <span class="material-symbols-outlined">filter_alt_off</span>
+                                <strong>No adjustments match these filters</strong>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Adjustment Detail Modal -->
+<div class="modal fade" id="adjustmentDetailModal" tabindex="-1" aria-labelledby="adjustmentDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content ims-modal adjustment-detail-modal">
+            <div class="modal-header ims-modal-header">
+                <div>
+                    <h5 class="modal-title" id="adjustmentDetailModalLabel">Adjustment Details</h5>
+                    <p id="adjustmentDetailSubtitle">Inventory variance review</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-summary">
+                    <div><span>Adjustment No</span><strong id="detailAdjustmentNo">-</strong></div>
+                    <div><span>Status</span><strong id="detailAdjustmentStatus">-</strong></div>
+                    <div><span>Type</span><strong id="detailAdjustmentType">-</strong></div>
+                    <div><span>Difference</span><strong id="detailAdjustmentDifference">-</strong></div>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-field"><span>Requested By</span><strong id="detailAdjustmentRequested">-</strong></div>
+                    <div class="detail-field"><span>Approved By</span><strong id="detailAdjustmentApproved">-</strong></div>
+                    <div class="detail-field"><span>Warehouse</span><strong id="detailAdjustmentWarehouse">-</strong></div>
+                    <div class="detail-field"><span>Shelf</span><strong id="detailAdjustmentShelf">-</strong></div>
+                </div>
+                <div class="detail-remarks mb-3">
+                    <span>Reason</span>
+                    <p id="detailAdjustmentReason" class="mb-0">-</p>
+                </div>
+                
+                <h6 style="color: var(--primary); font-weight: 700; font-size: 13px; margin-bottom: 0.5rem;">Adjustment Items</h6>
+                <div id="detailItemsTableContainer" class="table-responsive border rounded">
+                    <table class="ims-table mb-0" style="font-size: 13px;">
+                        <thead>
+                            <tr>
+                                <th>Product / SKU</th>
+                                <th>Location (Shelf)</th>
+                                <th class="text-right">System Qty</th>
+                                <th class="text-right">Physical Count</th>
+                                <th class="text-right">Difference</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailItemsTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-3 text-muted">Loading items...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer ims-modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Adjustment Modal -->
+<div class="modal fade" id="addAdjustmentModal" tabindex="-1" aria-labelledby="addAdjustmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 0.75rem; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background-color: var(--primary); color: white; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem;">
+                <div>
+                    <h5 class="modal-title" id="addAdjustmentModalLabel">Request Inventory Adjustment</h5>
+                    <p style="font-size: 12px; margin: 2px 0 0 0; opacity: 0.85;">Adjust physical inventory and document variance reasons</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create" id="createAdjustmentForm">
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label modal-field-label">Adjustment Type <span class="text-danger">*</span></label>
+                            <select asp-for="NewAdjustment.AdjustmentType" id="NewAdjustment_AdjustmentType" class="form-select" required>
+                                <option value="">Select Type</option>
+                                <option value="AdjustmentIn">Adjustment In (Increase Stock)</option>
+                                <option value="AdjustmentOut">Adjustment Out (Decrease Stock)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label modal-field-label">Reason <span class="text-danger">*</span></label>
+                            <select asp-for="NewAdjustment.Reason" id="NewAdjustment_Reason" class="form-select" required>
+                                <option value="">Select Reason</option>
+                                @foreach(var r in Model.Reasons.Skip(1)) { <option value="@r">@r</option> }
+                            </select>
+                        </div>
+                        
+                        <div class="col-12"><hr class="my-1" /></div>
+                        <h6 style="color: var(--primary); font-weight: 700; font-size: 14px; margin-bottom: 0;">Item Details</h6>
+
+                        <div class="col-md-12">
+                            <label class="form-label modal-field-label">Product <span class="text-danger">*</span></label>
+                            <select asp-for="NewItemProductID" id="NewItemProductID" class="form-select" required>
+                                <option value="">Select Product</option>
+                                @foreach(var p in Model.ProductsList) { <option value="@p.ID">[@p.SKU] @p.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label modal-field-label">Location (Shelf) <span class="text-danger">*</span></label>
+                            <select asp-for="NewItemShelfID" id="NewItemShelfID" class="form-select" required>
+                                <option value="">Select Shelf</option>
+                                @foreach(var s in Model.ShelvesList) { <option value="@s.ID">@s.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label modal-field-label">System Stock (Current)</label>
+                            <div class="input-group">
+                                <input type="text" id="systemStockDisplay" class="form-control font-mono" readonly value="-" placeholder="Select product & shelf" style="background-color: #f8fafc;" />
+                                <span class="input-group-text" style="font-size: 12px;">Units</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label modal-field-label">Counted Qty (Physical Stock) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="0" asp-for="NewItemCountedQty" id="NewItemCountedQty" class="form-control font-mono" required placeholder="0.00" />
+                        </div>
+                        <div class="col-12">
+                            <div id="variancePreviewBox" class="alert alert-info py-2 px-3 mb-0" style="font-size: 13px;">
+                                <span class="material-symbols-outlined align-middle me-1" style="font-size: 18px;">info</span>
+                                <span id="variancePreviewText">Select product and shelf to view current system stock and live variance preview.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer ims-modal-footer" style="background-color: #F8FAFC; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem;">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-ims btn-primary">
+                        <span class="material-symbols-outlined">send</span>
+                        Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/adjustments.js" asp-append-version="true"></script>
+}

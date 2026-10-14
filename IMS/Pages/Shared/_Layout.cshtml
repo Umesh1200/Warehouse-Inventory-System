@@ -1,0 +1,390 @@
+@inject IMS.Services.IUserContext UserContext
+@inject IMS.Services.ISystemSettingService SettingService
+@{
+    var settings = await SettingService.GetSettingsAsync();
+    var brandName = settings.FirstOrDefault(s => s.SettingKey == "Company.Name")?.SettingValue;
+    if (string.IsNullOrWhiteSpace(brandName)) brandName = "InventoryPro";
+
+    var brandTagline = settings.FirstOrDefault(s => s.SettingKey == "Company.Tagline" || s.SettingKey == "Company.Subtitle")?.SettingValue;
+    if (string.IsNullOrWhiteSpace(brandTagline)) brandTagline = "Enterprise Logistics";
+
+    var productionSetting = settings.FirstOrDefault(s => s.SettingKey == "Production.ProductionPagesEnabled");
+    bool isProductionEnabled = productionSetting?.SettingValue?.ToLower() == "true";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - @brandName</title>
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="~/css/ims-common.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    @{
+        var currentPath = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+        bool IsActive(string page) => currentPath.Equals(page, StringComparison.OrdinalIgnoreCase);
+        
+        bool isAdmin = UserContext.Role == "Admin";
+        bool isManager = UserContext.Role == "Manager" || isAdmin;
+        bool isStaff = UserContext.Role == "Warehouse Staff" || isAdmin;
+    }
+
+    <div class="ims-wrapper">
+        <!-- Sidebar -->
+        <aside class="ims-sidebar" id="sidebar">
+            <div class="ims-sidebar-header">
+                <h1 class="ims-logo">@brandName</h1>
+                <p class="ims-logo-sub">@brandTagline</p>
+            </div>
+            
+            <nav class="ims-nav custom-scrollbar">
+                @if (UserContext.Role == "Supplier")
+                {
+                    <!-- Supplier Portal -->
+                    <div class="ims-nav-group">
+                        <p class="ims-nav-label">Supplier Portal</p>
+                        <a asp-page="/SupplierPortal/Dashboard" class="ims-nav-item @(IsActive("/SupplierPortal/Dashboard") ? "active" : "")">
+                            <span class="material-symbols-outlined">dashboard</span>
+                            <span>Dashboard</span>
+                        </a>
+                        <a asp-page="/SupplierPortal/PurchaseOrders" class="ims-nav-item @(IsActive("/SupplierPortal/PurchaseOrders") ? "active" : "")">
+                            <span class="material-symbols-outlined">shopping_cart</span>
+                            <span>Purchase Orders</span>
+                        </a>
+                        <a asp-page="/SupplierPortal/Returns" class="ims-nav-item @(IsActive("/SupplierPortal/Returns") ? "active" : "")">
+                            <span class="material-symbols-outlined">keyboard_return</span>
+                            <span>Returns / RTV</span>
+                        </a>
+                        <a asp-page="/SupplierPortal/Profile" class="ims-nav-item @(IsActive("/SupplierPortal/Profile") ? "active" : "")">
+                            <span class="material-symbols-outlined">factory</span>
+                            <span>My Profile</span>
+                        </a>
+                    </div>
+                }
+
+                @if (isManager || isStaff)
+                {
+                    <!-- Core -->
+                    <div class="ims-nav-group">
+                        <p class="ims-nav-label">Core</p>
+                        @if (isManager)
+                        {
+                            <a asp-page="/Dashboard/Admin" class="ims-nav-item @(IsActive("/Dashboard/Admin") ? "active" : "")">
+                                <span class="material-symbols-outlined">dashboard</span>
+                                <span>Dashboard</span>
+                            </a>
+                        }
+                        else if (isStaff)
+                        {
+                            <a asp-page="/Dashboard/Staff" class="ims-nav-item @(IsActive("/Dashboard/Staff") ? "active" : "")">
+                                <span class="material-symbols-outlined">dashboard</span>
+                                <span>Dashboard</span>
+                            </a>
+                        }
+
+                        @if (isManager)
+                        {
+                            <a asp-page="/Inventory/Products" class="ims-nav-item @(IsActive("/Inventory/Products") ? "active" : "")">
+                                <span class="material-symbols-outlined">inventory_2</span>
+                                <span>Product Master</span>
+                            </a>
+                            <a asp-page="/Inventory/Overview" class="ims-nav-item @(IsActive("/Inventory/Overview") ? "active" : "")">
+                                <span class="material-symbols-outlined">warehouse</span>
+                                <span>Inventory Overview</span>
+                            </a>
+                            <a asp-page="/Inventory/Movements" class="ims-nav-item @(IsActive("/Inventory/Movements") ? "active" : "")">
+                                <span class="material-symbols-outlined">history</span>
+                                <span>Stock Movements</span>
+                            </a>
+                            <a asp-page="/Inventory/Transfers" class="ims-nav-item @(IsActive("/Inventory/Transfers") ? "active" : "")">
+                                <span class="material-symbols-outlined">swap_horiz</span>
+                                <span>Stock Transfers</span>
+                            </a>
+                            <a asp-page="/Inventory/Adjustments" class="ims-nav-item @(IsActive("/Inventory/Adjustments") ? "active" : "")">
+                                <span class="material-symbols-outlined">edit_square</span>
+                                <span>Adjustments</span>
+                            </a>
+                            <a asp-page="/Inventory/CycleCounts" class="ims-nav-item @(IsActive("/Inventory/CycleCounts") ? "active" : "")">
+                                <span class="material-symbols-outlined">published_with_changes</span>
+                                <span>Cycle Counts</span>
+                            </a>
+                            <a asp-page="/Warehouses/ProductLocator" class="ims-nav-item @(IsActive("/Warehouses/ProductLocator") ? "active" : "")">
+                                <span class="material-symbols-outlined">explore</span>
+                                <span>Product Locator</span>
+                            </a>
+                        }
+                    </div>
+                }
+
+                @if (isManager)
+                {
+
+                    <!-- Procurement -->
+                    <div class="ims-nav-group">
+                        <p class="ims-nav-label">Procurement</p>
+                        <a asp-page="/Purchasing/Suppliers" class="ims-nav-item @(IsActive("/Purchasing/Suppliers") ? "active" : "")">
+                            <span class="material-symbols-outlined">group</span>
+                            <span>Supplier Master</span>
+                        </a>
+                        <a asp-page="/Purchasing/PurchaseOrders" class="ims-nav-item @(IsActive("/Purchasing/PurchaseOrders") ? "active" : "")">
+                            <span class="material-symbols-outlined">shopping_cart</span>
+                            <span>Purchase Orders</span>
+                        </a>
+                        <a asp-page="/Purchasing/ProcurementWorkflow" class="ims-nav-item @(IsActive("/Purchasing/ProcurementWorkflow") ? "active" : "")">
+                            <span class="material-symbols-outlined">contact_phone</span>
+                            <span>Supplier Coordination</span>
+                        </a>
+                        <a asp-page="/Purchasing/Returns" class="ims-nav-item @(IsActive("/Purchasing/Returns") ? "active" : "")">
+                            <span class="material-symbols-outlined">keyboard_return</span>
+                            <span>Returns / RTV</span>
+                        </a>
+                    </div>
+
+                    <div class="ims-nav-group">
+                        <p class="ims-nav-label">Accounts</p>
+                        <a asp-page="/Accounts/Invoices" class="ims-nav-item @(IsActive("/Accounts/Invoices") ? "active" : "")">
+                            <span class="material-symbols-outlined">payments</span>
+                            <span>Invoices & Payments</span>
+                        </a>
+                    </div>
+
+                    <!-- Sales -->
+                    <div class="ims-nav-group">
+                        <p class="ims-nav-label">Sales</p>
+                        <a asp-page="/Sales/Customers" class="ims-nav-item @(IsActive("/Sales/Customers") ? "active" : "")">
+                            <span class="material-symbols-outlined">person</span>
+                            <span>Customer Master</span>
+                        </a>
+                        <a asp-page="/Sales/Orders" class="ims-nav-item @(IsActive("/Sales/Orders") ? "active" : "")">
+                            <span class="material-symbols-outlined">receipt_long</span>
+                            <span>Sales Orders</span>
+                        </a>
+                    </div>
+                }
+
+                <!-- Warehouse -->
+                @if (isAdmin || isManager || isStaff)
+                {
+                    <div class="ims-nav-group">
+                        <p class="ims-nav-label">Warehouse</p>
+                        @if (isAdmin)
+                        {
+                            <a asp-page="/Warehouses/Setup" class="ims-nav-item @(IsActive("/Warehouses/Setup") ? "active" : "")">
+                                <span class="material-symbols-outlined">settings_suggest</span>
+                                <span>Warehouse Setup</span>
+                            </a>
+                        }
+                        @if (isManager)
+                        {
+                            <a asp-page="/Warehouses/Visualization" class="ims-nav-item @(IsActive("/Warehouses/Visualization") ? "active" : "")">
+                                <span class="material-symbols-outlined">warehouse</span>
+                                <span>Visualization</span>
+                            </a>
+                        }
+                        @if (isManager || isStaff)
+                        {
+                            <a asp-page="/Warehouses/ProductLocator" class="ims-nav-item @(IsActive("/Warehouses/ProductLocator") ? "active" : "")">
+                                <span class="material-symbols-outlined">explore</span>
+                                <span>Product Locator</span>
+                            </a>
+                        }
+                        @if (isStaff)
+                        {
+                            <a asp-page="/WarehouseOperations/Receiving" class="ims-nav-item @(IsActive("/WarehouseOperations/Receiving") ? "active" : "")">
+                                <span class="material-symbols-outlined">download_done</span>
+                                <span>Goods Receiving</span>
+                            </a>
+                            <a asp-page="/WarehouseOperations/QCCheck" class="ims-nav-item @(IsActive("/WarehouseOperations/QCCheck") ? "active" : "")">
+                                <span class="material-symbols-outlined">fact_check</span>
+                                <span>QC Check</span>
+                            </a>
+                            <a asp-page="/WarehouseOperations/Putaway" class="ims-nav-item @(IsActive("/WarehouseOperations/Putaway") ? "active" : "")">
+                                <span class="material-symbols-outlined">input</span>
+                                <span>Putaway Tasks</span>
+                            </a>
+                            <a asp-page="/WarehouseOperations/PickingPacking" class="ims-nav-item @(IsActive("/WarehouseOperations/PickingPacking") ? "active" : "")">
+                                <span class="material-symbols-outlined">inventory</span>
+                                <span>Picking & Packing</span>
+                            </a>
+                            <a asp-page="/WarehouseOperations/DispatchTracking" class="ims-nav-item @(IsActive("/WarehouseOperations/DispatchTracking") ? "active" : "")">
+                                <span class="material-symbols-outlined">local_shipping</span>
+                                <span>Dispatch Tracking</span>
+                            </a>
+                            <a asp-page="/Inventory/CycleCounts" class="ims-nav-item @(IsActive("/Inventory/CycleCounts") ? "active" : "")">
+                                <span class="material-symbols-outlined">published_with_changes</span>
+                                <span>Cycle Count Tasks</span>
+                            </a>
+                            <a asp-page="/Inventory/Adjustments" class="ims-nav-item @(IsActive("/Inventory/Adjustments") ? "active" : "")">
+                                <span class="material-symbols-outlined">edit_square</span>
+                                <span>Adjustments</span>
+                            </a>
+                        }
+                    </div>
+                }
+
+                <!-- Manufacturing -->
+                @if (isProductionEnabled && (isManager || isStaff))
+                {
+                    <div class="ims-nav-group">
+                        <p class="ims-nav-label">Manufacturing</p>
+                        <a asp-page="/Production/Index" class="ims-nav-item @(IsActive("/Production") && !IsActive("/Production/BOM") && !IsActive("/Production/Planning") && !IsActive("/Production/MaterialIssueReturn") && !IsActive("/Production/FinishedGoodsReceipt") ? "active" : "")">
+                            <span class="material-symbols-outlined">precision_manufacturing</span>
+                            <span>Production Overview</span>
+                        </a>
+                        @if (isManager)
+                        {
+                            <a asp-page="/Production/BOM" class="ims-nav-item @(IsActive("/Production/BOM") ? "active" : "")">
+                                <span class="material-symbols-outlined">account_tree</span>
+                                <span>Bill of Materials</span>
+                            </a>
+                            <a asp-page="/Production/Planning" class="ims-nav-item @(IsActive("/Production/Planning") ? "active" : "")">
+                                <span class="material-symbols-outlined">event_note</span>
+                                <span>Production Planning</span>
+                            </a>
+                        }
+                        @if (isStaff)
+                        {
+                            <a asp-page="/Production/MaterialIssueReturn" class="ims-nav-item @(IsActive("/Production/MaterialIssueReturn") ? "active" : "")">
+                                <span class="material-symbols-outlined">output</span>
+                                <span>Issue & Return</span>
+                            </a>
+                            <a asp-page="/Production/FinishedGoodsReceipt" class="ims-nav-item @(IsActive("/Production/FinishedGoodsReceipt") ? "active" : "")">
+                                <span class="material-symbols-outlined">move_to_inbox</span>
+                                <span>FG Receipt</span>
+                            </a>
+                        }
+                    </div>
+                }
+
+                <!-- Admin -->
+                @if (isAdmin || isManager)
+                {
+                    <div class="ims-nav-group">
+                        <p class="ims-nav-label">Admin</p>
+                        @if (isAdmin)
+                        {
+                            <a asp-page="/Users/Manage" class="ims-nav-item @(IsActive("/Users/Manage") ? "active" : "")">
+                                <span class="material-symbols-outlined">person_add</span>
+                                <span>Users & Roles</span>
+                            </a>
+                        }
+                        @if (isManager)
+                        {
+                            <a asp-page="/Reports/Index" class="ims-nav-item @(IsActive("/Reports/Index") ? "active" : "")">
+                                <span class="material-symbols-outlined">analytics</span>
+                                <span>Reports</span>
+                            </a>
+                            @if (isAdmin)
+                            {
+                                <a asp-page="/Reports/AuditLogs" class="ims-nav-item @(IsActive("/Reports/AuditLogs") ? "active" : "")">
+                                    <span class="material-symbols-outlined">history</span>
+                                    <span>Audit Trail</span>
+                                </a>
+                            }
+                        }
+                        @if (isAdmin)
+                        {
+                            <a asp-page="/Admin/Settings" class="ims-nav-item @(IsActive("/Admin/Settings") ? "active" : "")">
+                                <span class="material-symbols-outlined">settings</span>
+                                <span>System Settings</span>
+                            </a>
+                        }
+                    </div>
+                }
+            </nav>
+        </aside>
+
+        <!-- Main -->
+        <div class="ims-main">
+            <header class="ims-topbar">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button class="btn d-lg-none" id="sidebar-toggle" style="padding: 0;">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                    <h2 style="font-size: 18px; font-weight: 600; margin: 0; color: var(--primary);">@ViewData["Title"]</h2>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1.5rem;">
+                    <!-- Search -->
+                    <div class="position-relative">
+                        <button type="button" class="btn btn-link p-0 text-muted" id="searchToggle" aria-label="Search" aria-expanded="false" aria-controls="searchPanel">
+                            <span class="material-symbols-outlined">search</span>
+                        </button>
+                        <div id="searchPanel" class="ims-dropdown-panel p-3 shadow-sm border-0 bg-white" style="display: none; position: absolute; right: 0; top: 100%; width: 300px; z-index: 1050; border-radius: 0.5rem;">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Search pages..." />
+                            <div id="searchResults" class="mt-2" style="max-height: 200px; overflow-y: auto;">
+                                <div class="p-2 text-muted">Type to search...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="position-relative">
+                        <button type="button" class="btn btn-link p-0 text-muted" id="notificationToggle" aria-label="Notifications" aria-expanded="false" aria-controls="notificationPanel">
+                            <span class="material-symbols-outlined">notifications</span>
+                        </button>
+                        <div id="notificationPanel" class="ims-dropdown-panel p-3 shadow-sm border-0 bg-white" style="display: none; position: absolute; right: 0; top: 100%; width: 250px; z-index: 1050; border-radius: 0.5rem;">
+                            <p class="text-muted mb-0">No new notifications</p>
+                        </div>
+                    </div>
+
+                    <div class="dropdown">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; border-left: 1px solid var(--border-color); padding-left: 1rem; cursor: pointer;" 
+                             id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false" class="dropdown-toggle" role="button">
+                            <style>
+                                #userDropdown::after { display: none; }
+                            </style>
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background-color: var(--secondary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+                                @(UserContext.FullName.Substring(0, Math.Min(2, UserContext.FullName.Length)).ToUpper())
+                            </div>
+                            <div class="d-none d-sm-flex flex-column">
+                                <span style="font-size: 14px; font-weight: 600; color: var(--text-primary); line-height: 1.2;">@UserContext.FullName</span>
+                                <span style="font-size: 11px; color: var(--text-muted);">@UserContext.Role</span>
+                            </div>
+                            <span class="material-symbols-outlined" style="font-size: 18px; color: var(--text-muted);">expand_more</span>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item d-flex align-items-center gap-2" asp-page="/Account/Profile"><span class="material-symbols-outlined" style="font-size: 18px;">person</span> Profile</a></li>
+                            @if (isAdmin)
+                            {
+                                <li><a class="dropdown-item d-flex align-items-center gap-2" asp-page="/Admin/Settings"><span class="material-symbols-outlined" style="font-size: 18px;">settings</span> System Settings</a></li>
+                            }
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" asp-page="/Account/Logout">
+                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 text-danger">
+                                        <span class="material-symbols-outlined" style="font-size: 18px;">logout</span> Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </header>
+
+            <main role="main" class="ims-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/header.js" asp-append-version="true"></script>
+
+    <script>
+        document.getElementById('sidebar-toggle')?.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,334 @@
+@page
+@model IMS.Pages.Users.ManageModel
+@{
+    ViewData["Title"] = "Users & Roles";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/users-manage.css" asp-append-version="true" />
+}
+
+<div class="users-container">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            <span class="material-symbols-outlined">check_circle</span> @Model.SuccessMessage
+        </div>
+    }
+
+    <!-- Header -->
+    <div class="page-header">
+        <h2 class="page-title">Users & Access Management</h2>
+        <div style="display: flex; gap: 0.75rem;">
+            <button class="btn-ims btn-primary" onclick="openAddUserModal()">
+                <span class="material-symbols-outlined">person_add</span>
+                Add User
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="users-stats-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <div class="stat-card">
+                <div class="stat-icon @card.ColorClass">
+                    <span class="material-symbols-outlined">@card.Icon</span>
+                </div>
+                <div>
+                    <div class="stat-label">@card.Title</div>
+                    <div class="stat-value">@card.Value</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-panel">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label>Search Users</label>
+                <div style="position: relative;">
+                    <span class="material-symbols-outlined" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-muted);">search</span>
+                    <input type="text" id="userSearch" class="filter-input" placeholder="Name, Email, Role..." style="padding-left: 2.5rem;" onkeyup="filterUsers()" />
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Role</label>
+                <select id="roleFilter" class="filter-input" onchange="filterUsers()">
+                    @foreach (var role in Model.Roles)
+                    {
+                        <option value="@(role == "All Roles" ? "" : role)">@role</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Warehouse Access</label>
+                <select class="filter-input">
+                    @foreach (var wh in Model.Warehouses)
+                    {
+                        <option>@wh</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select id="statusFilter" class="filter-input" onchange="filterUsers()">
+                    <option value="">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="users-table-panel">
+        <div style="overflow-x: auto;">
+            <table class="ims-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th style="width: 110px;">User Code</th>
+                        <th>Full Name</th>
+                        <th>Email Address</th>
+                        <th>Role</th>
+                        <th>Warehouse Access</th>
+                        <th>Assigned Task Types</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr class="user-row @(user.Status == "Inactive" ? "row-inactive" : "")" 
+                            data-role="@user.Role" data-status="@user.Status">
+                            <td class="id-cell">@user.Code</td>
+                            <td>
+                                <div class="name-cell">@user.Name</div>
+                            </td>
+                            <td style="color: var(--text-muted); font-size: 13px;">@user.Email</td>
+                            <td>
+                                @{
+                                    var roleClass = user.Role.ToLower() switch {
+                                        "admin" => "role-admin",
+                                        "manager" => "role-manager",
+                                        _ => "role-staff"
+                                    };
+                                }
+                                <span class="role-badge @roleClass">@user.Role</span>
+                            </td>
+                            <td>
+                                <div style="font-size: 13px; font-weight: 500;">@user.WarehouseAccess</div>
+                            </td>
+                            <td>
+                                <div style="font-size: 11px; color: var(--text-muted);">@user.TaskType</div>
+                            </td>
+                            <td>
+                                <span class="status-badge status-@user.StatusColor">@user.Status</span>
+                            </td>
+                            <td class="text-center">
+                                <div style="display: flex; justify-content: center; gap: 0.5rem;">
+                                    <button type="button" class="btn-icon" title="Edit Profile" 
+                                            onclick="openEditUserModal(@user.UserID, '@user.Name', '@user.Email', '@user.Phone', @user.RoleID, @(user.Status == "Active" ? "true" : "false"))">
+                                        <span class="material-symbols-outlined">edit</span>
+                                    </button>
+                                    @if (user.Status == "Active")
+                                    {
+                                        <button type="button" class="btn-icon text-danger" title="Deactivate" onclick="openDeactivateModal(@user.UserID, '@user.Name')">
+                                            <span class="material-symbols-outlined">person_off</span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn-icon text-success" title="Reactivate" onclick="openReactivateModal(@user.UserID, '@user.Name')">
+                                            <span class="material-symbols-outlined">person_check</span>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Roles & Permissions Preview -->
+    <div class="permissions-panel">
+        <h3 style="font-size: 18px; font-weight: 700; color: var(--primary); margin: 0 0 1.5rem 0;">Role Definitions</h3>
+        <div class="permission-grid">
+            <div class="permission-card" style="border-top: 4px solid #B91C1C;">
+                <div class="perm-title">
+                    <span class="material-symbols-outlined" style="color: #B91C1C;">admin_panel_settings</span>
+                    Admin
+                </div>
+                <p class="perm-desc">Full system access. Manage users, roles, system settings, and global master data. Override any operational block.</p>
+            </div>
+            <div class="permission-card" style="border-top: 4px solid var(--secondary);">
+                <div class="perm-title">
+                    <span class="material-symbols-outlined" style="color: var(--secondary);">manage_accounts</span>
+                    Manager
+                </div>
+                <p class="perm-desc">Operational control. Approve adjustments, transfers, and purchase requests. Access all reports and monitoring tools.</p>
+            </div>
+            <div class="permission-card" style="border-top: 4px solid #64748B;">
+                <div class="perm-title">
+                    <span class="material-symbols-outlined" style="color: #64748B;">engineering</span>
+                    Warehouse Staff
+                </div>
+                <p class="perm-desc">Task-based access. Perform receiving, picking, packing, and dispatch. Limited to assigned warehouses and specific operations.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add New User</h3>
+            <span class="close-modal" onclick="closeModal('addUserModal')">&times;</span>
+        </div>
+        <form method="post" asp-page-handler="Create">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" asp-for="NewUser.Username" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" asp-for="NewUser.FullName" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" asp-for="NewUser.Email" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" asp-for="NewUser.Phone" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label>Assign Role</label>
+                    <select asp-for="NewUser.RoleID" class="form-control" required>
+                        <option value="">Select Role</option>
+                        @foreach (var role in Model.RolesList)
+                        {
+                            <option value="@role.RoleID">@role.RoleName</option>
+                        }
+                    </select>
+                </div>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 1rem;">
+                    Note: Default password 'IMS@@123' will be assigned. User should change it upon first login.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-ims btn-secondary" onclick="closeModal('addUserModal')">Cancel</button>
+                <button type="submit" class="btn-ims btn-primary">Create User</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="editUserModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit User Profile</h3>
+            <span class="close-modal" onclick="closeModal('editUserModal')">&times;</span>
+        </div>
+        <form method="post" asp-page-handler="Update">
+            <input type="hidden" asp-for="EditUser.UserID" id="editUserID" />
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" asp-for="EditUser.FullName" id="editFullName" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" asp-for="EditUser.Email" id="editEmail" class="form-control" required />
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" asp-for="EditUser.Phone" id="editPhone" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select asp-for="EditUser.RoleID" id="editRoleID" class="form-control" required>
+                        @foreach (var role in Model.RolesList)
+                        {
+                            <option value="@role.RoleID">@role.RoleName</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select asp-for="EditUser.IsActive" id="editIsActive" class="form-control">
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-ims btn-secondary" onclick="closeModal('editUserModal')">Cancel</button>
+                <button type="submit" class="btn-ims btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Deactivate Modal -->
+<div id="deactivateModal" class="modal">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h3>Confirm Deactivation</h3>
+            <span class="close-modal" onclick="closeModal('deactivateModal')">&times;</span>
+        </div>
+        <form method="post" asp-page-handler="Deactivate">
+            <input type="hidden" asp-for="DeactivateUserID" id="deactivateUserID" />
+            <div class="modal-body text-center">
+                <span class="material-symbols-outlined" style="font-size: 48px; color: var(--danger); margin-bottom: 1rem;">person_off</span>
+                <p>Are you sure you want to deactivate <strong id="deactivateUserName"></strong>?</p>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 0.5rem;">
+                    Historical records (approvals, movements, etc.) will remain linked to this user.
+                </p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button type="button" class="btn-ims btn-secondary" onclick="closeModal('deactivateModal')">Cancel</button>
+                <button type="submit" class="btn-ims btn-danger">Deactivate</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Reactivate Modal -->
+<div id="reactivateModal" class="modal">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h3>Confirm Reactivation</h3>
+            <span class="close-modal" onclick="closeModal('reactivateModal')">&times;</span>
+        </div>
+        <form method="post" asp-page-handler="Reactivate">
+            <input type="hidden" asp-for="ReactivateUserID" id="reactivateUserID" />
+            <div class="modal-body text-center">
+                <span class="material-symbols-outlined" style="font-size: 48px; color: var(--success); margin-bottom: 1rem;">person_check</span>
+                <p>Are you sure you want to reactivate <strong id="reactivateUserName"></strong>?</p>
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button type="button" class="btn-ims btn-secondary" onclick="closeModal('reactivateModal')">Cancel</button>
+                <button type="submit" class="btn-ims btn-success">Reactivate</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/users-manage.js" asp-append-version="true"></script>
+}

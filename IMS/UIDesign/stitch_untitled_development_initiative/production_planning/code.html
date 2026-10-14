@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Production Planning | InventoryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#191c1e",
+                        "outline-variant": "#c5c6cf",
+                        "on-surface-variant": "#44474e",
+                        "on-primary-container": "#8293b8",
+                        "on-secondary-container": "#fefcff",
+                        "on-primary-fixed": "#081b3a",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "inverse-primary": "#b6c6ef",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#303033",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-surface": "#1b1b1e",
+                        "on-error": "#ffffff",
+                        "primary-container": "#1a2b4b",
+                        "surface-tint": "#4e5e81",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "secondary-fixed": "#d8e2ff",
+                        "secondary": "#0058be",
+                        "status-success": "#10B981",
+                        "background": "#fbf8fc",
+                        "sidebar-bg": "#0F172A",
+                        "on-tertiary-container": "#909395",
+                        "on-background": "#1b1b1e",
+                        "surface-container-highest": "#e4e2e5",
+                        "surface-border": "#E2E8F0",
+                        "on-secondary": "#ffffff",
+                        "secondary-container": "#2170e4",
+                        "on-secondary-fixed-variant": "#004395",
+                        "status-warning": "#F59E0B",
+                        "surface-container-low": "#f5f3f6",
+                        "tertiary-container": "#292c2e",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-container": "#efedf0",
+                        "on-primary-fixed-variant": "#364768",
+                        "on-tertiary": "#ffffff",
+                        "data-fill": "#DBEAFE",
+                        "surface-container-high": "#e9e7eb",
+                        "on-secondary-fixed": "#001a42",
+                        "surface": "#fbf8fc",
+                        "status-info": "#6366F1",
+                        "status-error": "#EF4444",
+                        "surface-bright": "#fbf8fc",
+                        "on-primary": "#ffffff",
+                        "primary": "#031635",
+                        "surface-variant": "#e4e2e5",
+                        "tertiary-fixed": "#e0e3e5",
+                        "inverse-on-surface": "#f2f0f3",
+                        "surface-dim": "#dbd9dc",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary": "#141819",
+                        "outline": "#75777f",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "0.5rem",
+                        "gutter": "1.5rem",
+                        "container-padding": "2rem",
+                        "table-cell-padding": "0.75rem 1rem",
+                        "stack-md": "1rem",
+                        "sidebar-width": "260px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "table-header": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "table-header": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .sidebar-active { background-color: #2170e4; color: #fefcff; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .timeline-grid { display: grid; grid-template-columns: 120px repeat(24, 1fr); }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-full w-[260px] bg-sidebar-bg flex flex-col py-4 border-r border-outline-variant z-50">
+<div class="px-6 mb-8">
+<h1 class="text-headline-lg font-headline-lg font-black text-on-primary">InventoryPro</h1>
+<p class="text-body-sm font-body-sm text-on-primary-container opacity-80">Enterprise Logistics</p>
+</div>
+<nav class="flex-1 space-y-1 px-2">
+<a class="flex items-center gap-3 px-4 py-2.5 bg-secondary-container text-on-secondary-container rounded-lg mx-2 transition-transform scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-sm text-body-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-body-sm text-body-sm">Items</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-body-sm text-body-sm">Purchase</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">warehouse</span>
+<span class="font-body-sm text-body-sm">Inventory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-body-sm text-body-sm">Sales</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="font-body-sm text-body-sm">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-body-sm text-body-sm">Alerts</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2.5 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1">
+<button class="w-full mb-4 py-2.5 px-4 bg-secondary text-white font-semibold rounded-lg shadow-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined">add</span>
+<span class="text-body-md font-body-md">New Transaction</span>
+</button>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">location_on</span>
+<span class="text-body-sm font-body-sm">Warehouse Selector</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-primary-container hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="text-body-sm font-body-sm">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[260px] min-h-screen">
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 w-[calc(100%-260px)] h-16 bg-surface-bright border-b border-surface-border z-40 flex justify-between items-center px-gutter">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer active:opacity-70">menu</span>
+<h2 class="text-headline-lg font-headline-lg text-primary">Warehouse Visualization</h2>
+<div class="ml-8 flex items-center gap-6">
+<a class="text-on-surface-variant font-medium hover:text-secondary transition-colors" href="#">Inventory</a>
+<a class="text-primary font-bold border-b-2 border-secondary py-4" href="#">Production Planning</a>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border border-surface-border rounded-lg text-body-md focus:outline-none focus:ring-2 focus:ring-secondary/20" placeholder="Search orders, batches..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-secondary">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-secondary">help</span>
+<div class="flex items-center gap-2 cursor-pointer border-l border-surface-border pl-4">
+<img alt="Admin User" class="w-8 h-8 rounded-full bg-surface-container-highest" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxGS163wBar-jBBqM3mlsxlRKIw-tEBPWlRfyTXIFLOJ-n-MW7ow1bL8VBmu7vRAnePmmPgKxvJlFWsurAgGSsBCTCGJj-dB7JdNgt2aapyHBqeCle8jTvpfd8jakEOd6lVrdRwEbw_lOw-Dvf2xQTSyzlDqrkomyZEhr_hoB67PWxhmMqj424Rfd4FnoTvtV5QEbj1shKqKaFOt-kxRAvVpW_CexsUst04w51i4qr68ZYfNEtFflhUPw9KRcSutEz47NK6z9zsFoS"/>
+<div class="hidden lg:block text-left">
+<p class="text-body-sm font-semibold text-on-surface">Kathmandu Whse.</p>
+<p class="text-[10px] text-on-surface-variant uppercase">Operator ID: #992</p>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="mt-16 p-gutter space-y-6">
+<!-- Welcome & Primary Actions -->
+<div class="flex justify-between items-end">
+<div>
+<nav aria-label="Breadcrumb" class="flex text-body-sm text-on-surface-variant mb-1">
+<ol class="inline-flex items-center space-x-1">
+<li>Operations</li>
+<li><span class="material-symbols-outlined text-[14px]">chevron_right</span></li>
+<li class="font-semibold text-primary">Production Planning</li>
+</ol>
+</nav>
+<h3 class="text-headline-lg font-headline-lg text-primary">Production Dashboard</h3>
+</div>
+<button class="bg-secondary text-on-secondary px-6 py-2.5 rounded-lg flex items-center gap-2 font-semibold shadow-sm hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined">event_note</span>
+                    Create New Plan
+                </button>
+</div>
+<!-- Bento Grid: Stats and Resource Availability -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Live Stats Cards -->
+<div class="col-span-12 lg:col-span-8 grid grid-cols-3 gap-4">
+<div class="bg-white p-6 rounded-xl border border-surface-border">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-blue-50 text-blue-600 rounded-lg material-symbols-outlined">conveyor_belt</span>
+<span class="text-status-success text-body-sm font-bold">+12% vs LW</span>
+</div>
+<p class="text-on-surface-variant text-body-md">Active Runs</p>
+<h4 class="text-headline-lg font-black mt-1">24</h4>
+</div>
+<div class="bg-white p-6 rounded-xl border border-surface-border">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-orange-50 text-orange-600 rounded-lg material-symbols-outlined">schedule</span>
+</div>
+<p class="text-on-surface-variant text-body-md">Scheduled Batches</p>
+<h4 class="text-headline-lg font-black mt-1">142</h4>
+</div>
+<div class="bg-white p-6 rounded-xl border border-surface-border">
+<div class="flex justify-between items-start mb-4">
+<span class="p-2 bg-red-50 text-red-600 rounded-lg material-symbols-outlined">warning</span>
+<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Critical</span>
+</div>
+<p class="text-on-surface-variant text-body-md">Resource Bottlenecks</p>
+<h4 class="text-headline-lg font-black mt-1">3</h4>
+</div>
+</div>
+<!-- Resource Availability Overview -->
+<div class="col-span-12 lg:col-span-4 bg-white p-6 rounded-xl border border-surface-border">
+<div class="flex justify-between items-center mb-4">
+<h5 class="text-headline-md font-headline-md text-primary">Resource Load</h5>
+<button class="text-secondary text-body-sm font-semibold">View Detail</button>
+</div>
+<div class="space-y-4">
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm">
+<span>Line A (Beverage)</span>
+<span class="font-bold">92%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-status-error h-full" style="width: 92%"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm">
+<span>Line B (Packaging)</span>
+<span class="font-bold">45%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-status-success h-full" style="width: 45%"></div>
+</div>
+</div>
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm">
+<span>Labor (Warehouse Crew)</span>
+<span class="font-bold">78%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-status-warning h-full" style="width: 78%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Timeline View (Visual Planning) -->
+<section class="bg-white rounded-xl border border-surface-border overflow-hidden">
+<div class="px-6 py-4 border-b border-surface-border flex justify-between items-center bg-surface-container-lowest">
+<h5 class="text-headline-md font-headline-md text-primary">Production Timeline - Kathmandu North</h5>
+<div class="flex items-center gap-2">
+<div class="flex bg-surface-container rounded-lg p-1">
+<button class="px-3 py-1 text-body-sm bg-white rounded shadow-sm font-semibold">Day</button>
+<button class="px-3 py-1 text-body-sm hover:bg-white/50 rounded transition-all">Week</button>
+<button class="px-3 py-1 text-body-sm hover:bg-white/50 rounded transition-all">Month</button>
+</div>
+<div class="flex items-center gap-1 ml-4 border-l pl-4 border-surface-border">
+<button class="material-symbols-outlined p-1 hover:bg-surface-container rounded">chevron_left</button>
+<span class="text-body-md font-semibold">Today, Oct 24</span>
+<button class="material-symbols-outlined p-1 hover:bg-surface-container rounded">chevron_right</button>
+</div>
+</div>
+</div>
+<div class="overflow-x-auto custom-scrollbar">
+<div class="min-w-[1200px]">
+<!-- Timeline Header -->
+<div class="timeline-grid border-b border-surface-border">
+<div class="p-4 border-r border-surface-border bg-surface-container-lowest font-semibold text-body-sm">Resource</div>
+<!-- Hourly markers -->
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">06:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">07:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">08:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50 bg-blue-50/30">09:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">10:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">11:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">12:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">13:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">14:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">15:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">16:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">17:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">18:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">19:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">20:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">21:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">22:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">23:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">00:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">01:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">02:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">03:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">04:00</div>
+<div class="flex justify-center py-2 text-[10px] font-bold text-on-surface-variant border-r border-surface-border/50">05:00</div>
+</div>
+<!-- Timeline Rows -->
+<div class="timeline-grid border-b border-surface-border group hover:bg-surface-container-lowest/50 transition-colors">
+<div class="p-4 border-r border-surface-border bg-surface-container-lowest font-medium text-body-sm flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-success"></span> Line 01
+                            </div>
+<div class="col-span-24 relative h-16 bg-white flex items-center">
+<div class="absolute left-[8%] w-[25%] h-10 bg-secondary/10 border border-secondary/30 rounded-lg flex items-center px-3 gap-2 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+<div class="w-1.5 h-full bg-secondary rounded-full"></div>
+<div class="min-w-0">
+<p class="text-[11px] font-bold truncate text-secondary uppercase">Batch #9042</p>
+<p class="text-[10px] text-on-surface-variant truncate">Organic Tea Pack</p>
+</div>
+</div>
+<div class="absolute left-[40%] w-[15%] h-10 bg-status-success/10 border border-status-success/30 rounded-lg flex items-center px-3 gap-2 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+<div class="w-1.5 h-full bg-status-success rounded-full"></div>
+<div class="min-w-0">
+<p class="text-[11px] font-bold truncate text-status-success uppercase">Batch #9088</p>
+<p class="text-[10px] text-on-surface-variant truncate">Mineral Water</p>
+</div>
+</div>
+</div>
+</div>
+<div class="timeline-grid border-b border-surface-border group hover:bg-surface-container-lowest/50 transition-colors">
+<div class="p-4 border-r border-surface-border bg-surface-container-lowest font-medium text-body-sm flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-warning"></span> Line 02
+                            </div>
+<div class="col-span-24 relative h-16 bg-white flex items-center">
+<div class="absolute left-[5%] w-[40%] h-10 bg-status-warning/10 border border-status-warning/30 rounded-lg flex items-center px-3 gap-2 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+<div class="w-1.5 h-full bg-status-warning rounded-full"></div>
+<div class="min-w-0">
+<p class="text-[11px] font-bold truncate text-status-warning uppercase">Batch #8921</p>
+<p class="text-[10px] text-on-surface-variant truncate">Industrial Solvent Prep</p>
+</div>
+<span class="material-symbols-outlined text-status-warning ml-auto text-[16px]">warning</span>
+</div>
+</div>
+</div>
+<div class="timeline-grid border-b border-surface-border group hover:bg-surface-container-lowest/50 transition-colors">
+<div class="p-4 border-r border-surface-border bg-surface-container-lowest font-medium text-body-sm flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-info"></span> Line 03
+                            </div>
+<div class="col-span-24 relative h-16 bg-white flex items-center">
+<div class="absolute left-[45%] w-[20%] h-10 bg-status-info/10 border border-status-info/30 rounded-lg flex items-center px-3 gap-2 overflow-hidden cursor-pointer hover:shadow-md transition-shadow">
+<div class="w-1.5 h-full bg-status-info rounded-full"></div>
+<div class="min-w-0">
+<p class="text-[11px] font-bold truncate text-status-info uppercase">Batch #9102</p>
+<p class="text-[10px] text-on-surface-variant truncate">Standard Packaging</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Table: Detailed Production Ledger -->
+<div class="bg-white rounded-xl border border-surface-border overflow-hidden">
+<div class="px-6 py-4 border-b border-surface-border flex justify-between items-center">
+<h5 class="text-headline-md font-headline-md text-primary">Active Run Ledger</h5>
+<div class="flex gap-2">
+<button class="p-2 border border-surface-border rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+</button>
+<button class="p-2 border border-surface-border rounded-lg hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+</div>
+<table class="w-full text-left">
+<thead class="bg-surface-container-low text-table-header uppercase">
+<tr>
+<th class="p-table-cell-padding">Batch ID</th>
+<th class="p-table-cell-padding">Product Entity</th>
+<th class="p-table-cell-padding">Priority</th>
+<th class="p-table-cell-padding">Completion Est.</th>
+<th class="p-table-cell-padding">Qty Planned</th>
+<th class="p-table-cell-padding">Status</th>
+<th class="p-table-cell-padding text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="text-body-md divide-y divide-surface-border">
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="p-table-cell-padding font-bold text-secondary">#B-2023-9042</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">inventory</span>
+</div>
+<div>
+<p class="font-semibold">Himalayan Organic Black Tea</p>
+<p class="text-body-sm text-on-surface-variant">Cat: Dry Goods</p>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding">
+<span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-[11px] font-bold">HIGH</span>
+</td>
+<td class="p-table-cell-padding">Today, 14:30</td>
+<td class="p-table-cell-padding text-right tabular-nums">12,500 units</td>
+<td class="p-table-cell-padding">
+<span class="flex items-center gap-1.5 text-status-success font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse"></span>
+                                    In Progress
+                                </span>
+</td>
+<td class="p-table-cell-padding text-right">
+<button class="p-2 text-on-surface-variant hover:text-secondary hover:bg-secondary/5 rounded-lg">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="p-table-cell-padding font-bold text-secondary">#B-2023-8921</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">science</span>
+</div>
+<div>
+<p class="font-semibold">Pure-Stream Solvent Prep</p>
+<p class="text-body-sm text-on-surface-variant">Cat: Chemical</p>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding">
+<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[11px] font-bold">URGENT</span>
+</td>
+<td class="p-table-cell-padding">Pending Resolution</td>
+<td class="p-table-cell-padding text-right tabular-nums">4,000 L</td>
+<td class="p-table-cell-padding">
+<span class="flex items-center gap-1.5 text-status-error font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-status-error"></span>
+                                    Delayed
+                                </span>
+</td>
+<td class="p-table-cell-padding text-right">
+<button class="p-2 text-on-surface-variant hover:text-secondary hover:bg-secondary/5 rounded-lg">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors">
+<td class="p-table-cell-padding font-bold text-secondary">#B-2023-9088</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">liquor</span>
+</div>
+<div>
+<p class="font-semibold">Kathmandu Spring Water 500ml</p>
+<p class="text-body-sm text-on-surface-variant">Cat: Beverage</p>
+</div>
+</div>
+</td>
+<td class="p-table-cell-padding">
+<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[11px] font-bold">MEDIUM</span>
+</td>
+<td class="p-table-cell-padding">Oct 25, 09:00</td>
+<td class="p-table-cell-padding text-right tabular-nums">50,000 units</td>
+<td class="p-table-cell-padding">
+<span class="flex items-center gap-1.5 text-on-surface-variant font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-on-surface-variant opacity-40"></span>
+                                    Planned
+                                </span>
+</td>
+<td class="p-table-cell-padding text-right">
+<button class="p-2 text-on-surface-variant hover:text-secondary hover:bg-secondary/5 rounded-lg">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="px-6 py-4 bg-surface-container-low border-t border-surface-border flex justify-between items-center">
+<p class="text-body-sm text-on-surface-variant">Showing 3 of 24 active production runs</p>
+<div class="flex gap-2">
+<button class="px-3 py-1 border border-surface-border rounded-lg bg-white hover:bg-surface-container transition-all text-body-sm font-semibold">Previous</button>
+<button class="px-3 py-1 border border-surface-border rounded-lg bg-white hover:bg-surface-container transition-all text-body-sm font-semibold">Next</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Barcode Scanner Floating Overlay (Indication of field) -->
+<div class="fixed bottom-8 right-8 z-[100]">
+<div class="flex items-center bg-white rounded-full shadow-xl border border-surface-border p-2 pr-6 gap-3 group hover:scale-105 transition-transform cursor-pointer">
+<div class="w-12 h-12 bg-secondary rounded-full flex items-center justify-center text-white">
+<span class="material-symbols-outlined">barcode_scanner</span>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase leading-tight">Ready to Scan</p>
+<p class="text-body-sm font-semibold text-primary">Scan Batch Label</p>
+</div>
+</div>
+</div>
+<!-- Notification Toast (Micro-interaction) -->
+<div class="fixed top-20 right-8 translate-x-[200%] transition-transform duration-500 z-[110]" id="toast">
+<div class="bg-secondary-container text-on-secondary-container px-6 py-3 rounded-lg shadow-lg flex items-center gap-3 border border-secondary/20">
+<span class="material-symbols-outlined">info</span>
+<span class="text-body-md font-medium">Batch #9042 updated successfully.</span>
+</div>
+</div>
+<script>
+        // Simple micro-interaction for showing/hiding a toast notification
+        function showNotification() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-x-[200%]');
+            setTimeout(() => {
+                toast.classList.add('translate-x-[200%]');
+            }, 3000);
+        }
+
+        // Trigger on certain interactions
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (btn.innerText.includes('New Plan') || btn.innerText.includes('More')) {
+                   // Logic placeholder
+                }
+            });
+        });
+    </script>
+</body></html>

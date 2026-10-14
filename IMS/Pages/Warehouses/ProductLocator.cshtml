@@ -1,0 +1,730 @@
+@page
+@model IMS.Pages.Warehouses.ProductLocatorModel
+@{
+    ViewData["Title"] = "Warehouse Product Locator";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/product-locator.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+}
+
+<div class="locator-container">
+    <!-- Header with Live Search -->
+    <header class="locator-header">
+        <div class="header-titles">
+            <div class="header-badge">
+                <span class="material-symbols-outlined">explore</span>
+                <span>Spatial Warehouse Wayfinding</span>
+            </div>
+            <h1>Warehouse Product Locator</h1>
+            <p>Find exactly which warehouse, floor, room, rack, and shelf tier any product is stored in with live stock breakdown and visual floor navigation.</p>
+        </div>
+
+        <div class="header-search-wrap">
+            <div class="search-box-container position-relative">
+                <div class="search-input-group">
+                    <span class="material-symbols-outlined search-icon">search</span>
+                    <input type="text" 
+                           id="locatorSearchInput" 
+                           class="locator-search-input" 
+                           placeholder="Search by SKU, Barcode, or Product Name..." 
+                           value="@(Model.ProductDetail?.SKU ?? Model.SearchQuery ?? "")" 
+                           autocomplete="off" 
+                           spellcheck="false" />
+                    <button type="button" id="clearSearchBtn" class="clear-search-btn" title="Clear search">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                    <button type="button" class="btn-scanner" id="scanBarcodeBtn" title="Simulate Barcode / QR Scan">
+                        <span class="material-symbols-outlined">qr_code_scanner</span>
+                        <span>Scan</span>
+                    </button>
+                </div>
+                <!-- Autocomplete Dropdown -->
+                <div id="locatorSuggestions" class="locator-suggestions-dropdown" style="display: none;">
+                    <!-- Filled dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Quick Pick Chips -->
+            @if (Model.QuickPickProducts.Any())
+            {
+                <div class="quick-pick-bar">
+                    <span class="quick-pick-label">Quick Pick:</span>
+                    <div class="quick-pick-chips">
+                        @foreach (var p in Model.QuickPickProducts)
+                        {
+                            <a asp-page="/Warehouses/ProductLocator" 
+                               asp-route-sku="@p.SKU" 
+                               class="quick-chip @(Model.ProductDetail?.SKU == p.SKU ? "active" : "")">
+                                <span class="chip-sku">@p.SKU</span>
+                                <span class="chip-name">@p.ProductName</span>
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-warning locator-alert" role="alert">
+            <span class="material-symbols-outlined">info</span>
+            <div>
+                <strong>Notice:</strong> @Model.ErrorMessage
+            </div>
+        </div>
+    }
+
+    @if (Model.ProductDetail != null)
+    {
+        var prod = Model.ProductDetail;
+        var statusBadgeClass = prod.OverallStockStatus switch
+        {
+            "In Stock" => "badge-instock",
+            "Low Stock" => "badge-lowstock",
+            "Out of Stock" => "badge-outofstock",
+            _ => "badge-neutral"
+        };
+
+        <!-- Product Identity & Stock Breakdown Card -->
+        <section class="product-identity-card">
+            <div class="identity-header">
+                <div class="product-titles">
+                    <div class="sku-badge-row">
+                        <span class="product-sku-pill">
+                            <span class="material-symbols-outlined">barcode</span>
+                            @prod.SKU
+                        </span>
+                        <span class="badge-category">@prod.CategoryName</span>
+                        <span class="badge-type">@prod.ProductType</span>
+                        <span class="badge-status @statusBadgeClass">
+                            <span class="status-dot"></span>
+                            @prod.OverallStockStatus
+                        </span>
+                    </div>
+                    <h2 class="product-title-text">@prod.ProductName</h2>
+                    <div class="product-specs-line">
+                        <span><strong class="spec-label">Unit:</strong> @(string.IsNullOrEmpty(prod.UnitName) ? "Pcs" : prod.UnitName)</span>
+                        <span class="spec-sep">•</span>
+                        <span><strong class="spec-label">Standard Cost:</strong> NPR @prod.StandardCost.ToString("N2")</span>
+                        <span class="spec-sep">•</span>
+                        <span><strong class="spec-label">Reorder Level:</strong> @prod.ReorderLevel.ToString("N0")</span>
+                        <span class="spec-sep">•</span>
+                        <span><strong class="spec-label">Storage Locations:</strong> @prod.Locations.Count Shelves across @prod.WarehouseCount Warehouse(s)</span>
+                    </div>
+                </div>
+
+                <div class="product-action-buttons">
+                    <button type="button" class="btn-action-outline" id="btnPrintLabelModal">
+                        <span class="material-symbols-outlined">print</span>
+                        Print Tag
+                    </button>
+                    <a asp-page="/Inventory/Transfers" class="btn-action-primary">
+                        <span class="material-symbols-outlined">swap_horiz</span>
+                        Initiate Transfer
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stock Metrics Grid -->
+            <div class="stock-metrics-grid">
+                <div class="metric-card metric-current">
+                    <div class="metric-header">
+                        <span class="material-symbols-outlined">inventory_2</span>
+                        <span class="metric-label">Total On-Hand</span>
+                    </div>
+                    <div class="metric-val">@prod.TotalCurrentQty.ToString("N0")</div>
+                    <div class="metric-sub">Across all shelves</div>
+                </div>
+
+                <div class="metric-card metric-available">
+                    <div class="metric-header">
+                        <span class="material-symbols-outlined">check_circle</span>
+                        <span class="metric-label">Available to Pick/Issue</span>
+                    </div>
+                    <div class="metric-val">@prod.TotalAvailableQty.ToString("N0")</div>
+                    <div class="metric-sub">Net usable stock</div>
+                </div>
+
+                <div class="metric-card metric-reserved">
+                    <div class="metric-header">
+                        <span class="material-symbols-outlined">lock_clock</span>
+                        <span class="metric-label">Reserved Qty</span>
+                    </div>
+                    <div class="metric-val">@prod.TotalReservedQty.ToString("N0")</div>
+                    <div class="metric-sub">Committed to Orders/BOM</div>
+                </div>
+
+                <div class="metric-card metric-qchold">
+                    <div class="metric-header">
+                        <span class="material-symbols-outlined">fact_check</span>
+                        <span class="metric-label">QC Hold</span>
+                    </div>
+                    <div class="metric-val">@prod.TotalQCHoldQty.ToString("N0")</div>
+                    <div class="metric-sub">Pending inspection</div>
+                </div>
+
+                <div class="metric-card metric-damaged">
+                    <div class="metric-header">
+                        <span class="material-symbols-outlined">broken_image</span>
+                        <span class="metric-label">Damaged</span>
+                    </div>
+                    <div class="metric-val">@prod.TotalDamagedQty.ToString("N0")</div>
+                    <div class="metric-sub">Quarantined / non-usable</div>
+                </div>
+
+                <div class="metric-card metric-valuation">
+                    <div class="metric-header">
+                        <span class="material-symbols-outlined">payments</span>
+                        <span class="metric-label">Inventory Valuation</span>
+                    </div>
+                    <div class="metric-val">NPR @prod.TotalValuation.ToString("N0")</div>
+                    <div class="metric-sub">At standard cost</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Workspace: Dual Visual View (2D Map & Rack Tier Diagram) + Shelf Wayfinding -->
+        <div class="locator-main-layout">
+            <!-- Left Column: Visual Map Section -->
+            <div class="locator-visual-column">
+                <div class="panel-card visual-panel">
+                    <div class="panel-header-row">
+                        <div class="panel-title-group">
+                            <span class="material-symbols-outlined">domain</span>
+                            <div>
+                                <h3>Dual Warehouse Visualization</h3>
+                                <p>Interactive 2D Floor Plan & Rack Elevation</p>
+                            </div>
+                        </div>
+
+                        <div class="visual-controls">
+                            <!-- View Tab Switcher -->
+                            <div class="view-tabs" role="tablist">
+                                <button type="button" class="tab-btn active" id="tabFloorPlanBtn" data-target="floorPlanView">
+                                    <span class="material-symbols-outlined">grid_view</span>
+                                    2D Floor Map
+                                </button>
+                                <button type="button" class="tab-btn" id="tabRackElevationBtn" data-target="rackElevationView">
+                                    <span class="material-symbols-outlined">view_column</span>
+                                    Rack Tier Diagram
+                                </button>
+                            </div>
+
+                            <!-- Warehouse / Floor Filter -->
+                            <div class="warehouse-filter-wrap">
+                                <select id="mapWarehouseSelect" class="form-select-sm">
+                                    <option value="all">All Warehouses</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="map-legend">
+                        <div class="legend-item">
+                            <span class="legend-swatch occupied-swatch"></span>
+                            <span>Contains @prod.SKU</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-swatch active-swatch"></span>
+                            <span>Selected Shelf</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-swatch general-swatch"></span>
+                            <span>General Storage</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-swatch qchold-swatch"></span>
+                            <span>QC Hold Shelf</span>
+                        </div>
+                    </div>
+
+                    <!-- View 1: 2D Floor Grid Container -->
+                    <div id="floorPlanView" class="visual-view active-view">
+                        <div class="warehouse-grid-canvas-wrap custom-scrollbar" id="warehouseGridContainer">
+                            <!-- 2D Floor Layout rendered via JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- View 2: Rack Tier Elevation Graphic -->
+                    <div id="rackElevationView" class="visual-view" style="display: none;">
+                        <div class="rack-elevation-container" id="rackElevationContainer">
+                            <!-- Vertical Rack Graphic rendered via JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Selected Shelf Quick Status Banner -->
+                    <div class="selected-shelf-banner" id="selectedShelfBanner">
+                        <div class="shelf-banner-lead">
+                            <span class="material-symbols-outlined">location_on</span>
+                            <div>
+                                <span class="lead-label">Selected Location:</span>
+                                <h4 id="selectedShelfCode">Select a shelf to inspect</h4>
+                                <span id="selectedShelfBreadcrumb" class="banner-breadcrumb">Warehouse &gt; Floor &gt; Room &gt; Rack &gt; Shelf</span>
+                            </div>
+                        </div>
+                        <div class="shelf-banner-stats" id="selectedShelfStats">
+                            <div class="shelf-stat">
+                                <span class="stat-label">Qty of @prod.SKU:</span>
+                                <strong id="statProdQty" class="stat-val">-</strong>
+                            </div>
+                            <div class="shelf-stat">
+                                <span class="stat-label">Shelf Utilization:</span>
+                                <strong id="statUtilization" class="stat-val">-</strong>
+                            </div>
+                            <div class="shelf-stat">
+                                <span class="stat-label">Remaining Space:</span>
+                                <strong id="statCapacity" class="stat-val">-</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Exact Shelf Addresses & Wayfinding Cards -->
+            <div class="locator-details-column">
+                <div class="panel-card">
+                    <div class="panel-header-row">
+                        <div class="panel-title-group">
+                            <span class="material-symbols-outlined">alt_route</span>
+                            <div>
+                                <h3>Storage Shelf Addresses (@prod.Locations.Count)</h3>
+                                <p>Exact physical wayfinding and stock levels</p>
+                            </div>
+                        </div>
+                        <a asp-page="/Warehouses/Visualization" class="link-inspect-all" title="Inspect full warehouse visualization">
+                            <span class="material-symbols-outlined">open_in_new</span>
+                            Full Visualization
+                        </a>
+                    </div>
+
+                    @if (!prod.Locations.Any())
+                    {
+                        <div class="empty-locations-box">
+                            <span class="material-symbols-outlined">inventory</span>
+                            <h4>No Active Stock on Shelves</h4>
+                            <p>This product currently has 0 stock assigned to any active shelf in the warehouse.</p>
+                            <a asp-page="/WarehouseOperations/Receiving" class="btn-sm-action">
+                                <span class="material-symbols-outlined">download_done</span>
+                                Inward Goods / Receive Stock
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="shelves-list-container custom-scrollbar">
+                            @foreach (var loc in prod.Locations)
+                            {
+                                <div class="shelf-address-card" 
+                                     id="card-shelf-@loc.ShelfID" 
+                                     data-shelf-id="@loc.ShelfID"
+                                     data-shelf-code="@loc.ShelfCode"
+                                     data-warehouse-id="@loc.WarehouseID"
+                                     data-floor-id="@loc.FloorID"
+                                     data-rack-id="@loc.RackID"
+                                     data-tier="@loc.TierLevel"
+                                     onclick="selectShelfLocation(@loc.ShelfID)">
+                                    
+                                    <div class="card-top-row">
+                                        <div class="shelf-code-lead">
+                                            <span class="material-symbols-outlined loc-pin">pin_drop</span>
+                                            <div>
+                                                <h4 class="shelf-code-title">@loc.ShelfCode</h4>
+                                                <span class="shelf-name-sub">@loc.ShelfName</span>
+                                            </div>
+                                        </div>
+                                        <div class="badges-row">
+                                            <span class="badge-shelf-type @(loc.ShelfType == "QC Hold" ? "type-qchold" : "type-general")">
+                                                @loc.ShelfType
+                                            </span>
+                                            <span class="badge-shelf-status">
+                                                @loc.ProductStockStatus
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step-by-Step Wayfinding Breadcrumb -->
+                                    <div class="wayfinding-steps">
+                                        <div class="step-chip"><span class="step-num">1</span> @loc.WarehouseName</div>
+                                        <span class="step-arrow">→</span>
+                                        <div class="step-chip"><span class="step-num">2</span> @loc.FloorName</div>
+                                        <span class="step-arrow">→</span>
+                                        <div class="step-chip"><span class="step-num">3</span> @loc.RoomName</div>
+                                        <span class="step-arrow">→</span>
+                                        <div class="step-chip"><span class="step-num">4</span> @loc.RackName</div>
+                                        <span class="step-arrow">→</span>
+                                        <div class="step-chip highlight-step"><span class="step-num">5</span> Tier @loc.TierLevel</div>
+                                    </div>
+
+                                    <!-- Product Stock at this Shelf -->
+                                    <div class="shelf-qty-breakdown">
+                                        <div class="qty-pill onhand">
+                                            <span class="pill-label">Stored Here:</span>
+                                            <strong>@loc.ProductCurrentQty.ToString("N0")</strong>
+                                        </div>
+                                        <div class="qty-pill available">
+                                            <span class="pill-label">Available:</span>
+                                            <strong>@loc.ProductAvailableQty.ToString("N0")</strong>
+                                        </div>
+                                        @if (loc.ProductReservedQty > 0)
+                                        {
+                                            <div class="qty-pill reserved">
+                                                <span class="pill-label">Reserved:</span>
+                                                <strong>@loc.ProductReservedQty.ToString("N0")</strong>
+                                            </div>
+                                        }
+                                        @if (loc.ProductQCHoldQty > 0)
+                                        {
+                                            <div class="qty-pill qchold">
+                                                <span class="pill-label">QC Hold:</span>
+                                                <strong>@loc.ProductQCHoldQty.ToString("N0")</strong>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- Shelf Capacity Bar -->
+                                    <div class="shelf-capacity-row">
+                                        <div class="cap-label-row">
+                                            <span>Shelf Utilization (All Products)</span>
+                                            <strong>@loc.ShelfUtilizationPercentage% (@loc.ShelfCurrentTotalQty / @loc.ShelfMaxQty max)</strong>
+                                        </div>
+                                        <div class="cap-progress-track">
+                                            <div class="cap-progress-fill @(loc.ShelfUtilizationPercentage >= 90 ? "cap-full" : loc.ShelfUtilizationPercentage >= 75 ? "cap-warning" : "cap-normal")" 
+                                                 style="width: @Math.Min(100, loc.ShelfUtilizationPercentage)%"></div>
+                                        </div>
+                                        <div class="cap-footer">
+                                            <span>Free space: @loc.ShelfAvailableCapacity.ToString("N0") units</span>
+                                            @if (loc.LastUpdated.HasValue)
+                                            {
+                                                <span>Updated: @loc.LastUpdated.Value.ToString("MMM dd, yyyy HH:mm")</span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- Quick Action Buttons for this Shelf -->
+                                    <div class="shelf-actions-footer">
+                                        <button type="button" class="btn-card-action" onclick="event.stopPropagation(); focusShelfOnMap(@loc.ShelfID)">
+                                            <span class="material-symbols-outlined">center_focus_strong</span>
+                                            Locate on Map
+                                        </button>
+                                        <a asp-page="/Inventory/Transfers" 
+                                           asp-route-sourceShelfId="@loc.ShelfID" 
+                                           asp-route-productId="@prod.ProductID" 
+                                           class="btn-card-action"
+                                           onclick="event.stopPropagation();">
+                                            <span class="material-symbols-outlined">swap_horiz</span>
+                                            Transfer
+                                        </a>
+                                        <a asp-page="/Inventory/Adjustments" 
+                                           asp-route-shelfId="@loc.ShelfID" 
+                                           asp-route-productId="@prod.ProductID" 
+                                           class="btn-card-action"
+                                           onclick="event.stopPropagation();">
+                                            <span class="material-symbols-outlined">edit_square</span>
+                                            Adjust
+                                        </a>
+                                        <button type="button" class="btn-card-action" onclick="event.stopPropagation(); printShelfTag('@loc.ShelfCode', '@loc.ShelfName', '@loc.HierarchyPath', '@prod.SKU', '@prod.ProductName', '@loc.ProductCurrentQty')">
+                                            <span class="material-symbols-outlined">label</span>
+                                            Tag
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Stock Movement History for this Product -->
+        <section class="panel-card history-panel">
+            <div class="panel-header-row">
+                <div class="panel-title-group">
+                    <span class="material-symbols-outlined">history</span>
+                    <div>
+                        <h3>Recent Stock Movements for @prod.SKU</h3>
+                        <p>Last 5 inbound, outbound, transfer, or adjustment activities</p>
+                    </div>
+                </div>
+                <a asp-page="/Inventory/Movements" asp-route-sku="@prod.SKU" class="link-inspect-all">
+                    <span class="material-symbols-outlined">open_in_new</span>
+                    View All Movements
+                </a>
+            </div>
+
+            @if (!prod.RecentMovements.Any())
+            {
+                <div class="empty-history-text">
+                    <p>No recent movements logged for this SKU.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="locator-history-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Type</th>
+                                <th>Warehouse</th>
+                                <th>Shelf</th>
+                                <th>Quantity</th>
+                                <th>Before / After</th>
+                                <th>Reference</th>
+                                <th>Staff</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var m in prod.RecentMovements)
+                            {
+                                var moveClass = m.MovementType.Contains("In") ? "type-in" : m.MovementType.Contains("Out") || m.MovementType == "Dispatch" ? "type-out" : "type-trans";
+                                <tr>
+                                    <td>
+                                        <div class="date-cell">
+                                            <strong>@m.MovementDate.ToString("yyyy-MM-dd")</strong>
+                                            <span>@m.MovementDate.ToString("HH:mm:ss")</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="movement-pill @moveClass">@m.MovementType</span>
+                                    </td>
+                                    <td>@m.WarehouseName</td>
+                                    <td>
+                                        <span class="shelf-tag">@m.ShelfCode</span>
+                                    </td>
+                                    <td>
+                                        <strong class="@(m.Quantity >= 0 ? "qty-pos" : "qty-neg")">
+                                            @(m.Quantity >= 0 ? "+" + m.Quantity.ToString("N0") : m.Quantity.ToString("N0"))
+                                        </strong>
+                                    </td>
+                                    <td>@m.BeforeQty.ToString("N0") → @m.AfterQty.ToString("N0")</td>
+                                    <td>
+                                        <span class="ref-pill">@(string.IsNullOrEmpty(m.ReferenceNo) ? "-" : $"{m.ReferenceType}: {m.ReferenceNo}")</span>
+                                    </td>
+                                    <td>@(string.IsNullOrEmpty(m.PerformedBy) ? "System" : m.PerformedBy)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    }
+</div>
+
+<!-- Printable Location / Shelf Barcode Label Modal -->
+<div class="modal fade" id="printLabelModal" tabindex="-1" aria-labelledby="printLabelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-header-titles">
+                    <h5 class="modal-title" id="printLabelModalLabel">
+                        <span class="material-symbols-outlined">print</span>
+                        Print Warehouse Tag &amp; Wayfinding Sheet
+                    </h5>
+                    <p class="modal-subtitle">Choose between a multi-shelf routing sheet or an individual shelf/bin tag.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Print Mode Options Bar -->
+                <div class="print-mode-bar">
+                    <div class="print-mode-group">
+                        <label class="form-label-sm">Print Format:</label>
+                        <select id="printFormatSelect" class="form-select print-format-select" onchange="togglePrintFormat(this.value)">
+                            <option value="multi-sheet" selected>Multi-Shelf Wayfinding &amp; Pick Sheet (All Shelves)</option>
+                            <option value="single-shelf">Individual Shelf / Bin Tag</option>
+                            <option value="master-sku">Master Product SKU Label</option>
+                        </select>
+                    </div>
+
+                    <div class="print-mode-group" id="shelfSelectGroup" style="display: none;">
+                        <label class="form-label-sm">Target Shelf:</label>
+                        <select id="printShelfSelect" class="form-select print-shelf-select" onchange="onTargetShelfChanged(this.value)">
+                            <!-- Populated dynamically via JS -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Printable Area -->
+                <div class="printable-wrapper" id="printableTagArea">
+                    <!-- Format 1: Multi-Shelf Wayfinding Route Sheet -->
+                    <div id="multiSheetView" class="printable-document multi-sheet-doc">
+                        <div class="doc-header">
+                            <div>
+                                <h3 class="doc-company">FACTORY IMS • WAREHOUSE WAYFINDING &amp; PICK SHEET</h3>
+                                <p class="doc-purpose">Product Distribution across all active warehouse storage shelves</p>
+                            </div>
+                            <div class="doc-timestamp">
+                                <span>Generated:</span>
+                                <strong>@DateTime.Now.ToString("yyyy-MM-dd HH:mm")</strong>
+                            </div>
+                        </div>
+
+                        <div class="doc-product-card">
+                            <div class="doc-barcode-block">
+                                <div class="tag-barcode-simulation">||| | |||| | ||||| ||| |||| | |||| |||</div>
+                                <span class="tag-sku-code" id="multiSheetSKU">@(Model.ProductDetail?.SKU ?? "SKU")</span>
+                            </div>
+                            <div class="doc-product-info">
+                                <h4 class="doc-prod-name" id="multiSheetProdName">@(Model.ProductDetail?.ProductName ?? "Product Name")</h4>
+                                <div class="doc-prod-meta">
+                                    <span><strong>Category:</strong> @(Model.ProductDetail?.CategoryName ?? "-")</span>
+                                    <span>•</span>
+                                    <span><strong>Type:</strong> @(Model.ProductDetail?.ProductType ?? "-")</span>
+                                    <span>•</span>
+                                    <span><strong>Unit:</strong> @(string.IsNullOrEmpty(Model.ProductDetail?.UnitName) ? "Pcs" : Model.ProductDetail?.UnitName)</span>
+                                </div>
+                            </div>
+                            <div class="doc-total-stock">
+                                <span class="total-stock-label">TOTAL STOCK</span>
+                                <strong class="total-stock-val">@(Model.ProductDetail?.TotalCurrentQty.ToString("N0") ?? "0")</strong>
+                                <span class="total-stock-sub">@(Model.ProductDetail?.TotalAvailableQty.ToString("N0") ?? "0") Available</span>
+                            </div>
+                        </div>
+
+                        <!-- Multi-Location Directory Table -->
+                        <div class="doc-locations-section">
+                            <h5 class="section-title">
+                                <span class="material-symbols-outlined" style="font-size:1rem;">location_on</span>
+                                Shelf Storage Addresses (@(Model.ProductDetail?.Locations.Count ?? 0) Locations)
+                            </h5>
+                            <table class="doc-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">Seq</th>
+                                        <th>Shelf Code</th>
+                                        <th>Full Physical Route (Wayfinding)</th>
+                                        <th>Type</th>
+                                        <th style="text-align: right;">Stored</th>
+                                        <th style="text-align: right;">Available</th>
+                                        <th style="width: 140px; text-align: center;">Picker Verification</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="multiSheetTableBody">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Manual Sign-off Box -->
+                        <div class="doc-footer-signoff">
+                            <div class="signoff-box">
+                                <span class="sign-label">Picked By (Staff Name):</span>
+                                <div class="sign-line"></div>
+                            </div>
+                            <div class="signoff-box">
+                                <span class="sign-label">Date &amp; Time:</span>
+                                <div class="sign-line"></div>
+                            </div>
+                            <div class="signoff-box">
+                                <span class="sign-label">QC / Supervisor Sign:</span>
+                                <div class="sign-line"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Format 2: Single Shelf Bin Tag -->
+                    <div id="singleTagView" class="printable-document single-tag-doc" style="display: none;">
+                        <div class="tag-header">
+                            <span class="tag-company">FACTORY IMS • STORAGE BIN TAG</span>
+                            <span class="tag-date" id="printTagDate">@DateTime.Now.ToString("yyyy-MM-dd")</span>
+                        </div>
+
+                        <div class="tag-barcode-block">
+                            <div class="tag-barcode-simulation" id="printBarcodeSim">
+                                ||| | |||| | ||||| ||| |||| | |||| |||
+                            </div>
+                            <div class="tag-sku-code" id="printTagSKU">@(Model.ProductDetail?.SKU ?? "SKU-CODE")</div>
+                        </div>
+
+                        <div class="tag-prod-title" id="printTagProdName">
+                            @(Model.ProductDetail?.ProductName ?? "Product Name")
+                        </div>
+
+                        <div class="tag-location-grid">
+                            <div class="loc-box">
+                                <span class="box-lbl">SHELF CODE</span>
+                                <strong class="box-val" id="printTagShelfCode">WH-01-A1-S1</strong>
+                            </div>
+                            <div class="loc-box">
+                                <span class="box-lbl">TIER / LEVEL</span>
+                                <strong class="box-val" id="printTagTier">Tier 1</strong>
+                            </div>
+                            <div class="loc-box">
+                                <span class="box-lbl">STOCK HERE</span>
+                                <strong class="box-val" id="printTagQty">0 Units</strong>
+                            </div>
+                        </div>
+
+                        <div class="tag-wayfinding-address">
+                            <span class="addr-label">PHYSICAL WAYFINDING ROUTE:</span>
+                            <p class="addr-text" id="printTagAddress">Warehouse &gt; Floor &gt; Room &gt; Rack &gt; Shelf</p>
+                        </div>
+                    </div>
+
+                    <!-- Format 3: Master Carton SKU Label -->
+                    <div id="masterSkuView" class="printable-document master-sku-doc" style="display: none;">
+                        <div class="tag-header">
+                            <span class="tag-company">FACTORY IMS • MASTER SKU LABEL</span>
+                            <span class="tag-date">@DateTime.Now.ToString("yyyy-MM-dd")</span>
+                        </div>
+
+                        <div class="tag-barcode-block" style="margin: 1.5rem 0;">
+                            <div class="tag-barcode-simulation" style="font-size: 2.5rem;">
+                                ||| | |||| | ||||| ||| |||| | |||| |||
+                            </div>
+                            <div class="tag-sku-code" style="font-size: 1.5rem;" id="masterTagSKU">@(Model.ProductDetail?.SKU ?? "SKU-CODE")</div>
+                        </div>
+
+                        <div class="tag-prod-title" style="font-size: 1.35rem;" id="masterTagProdName">
+                            @(Model.ProductDetail?.ProductName ?? "Product Name")
+                        </div>
+
+                        <div class="tag-location-grid" style="grid-template-columns: repeat(4, 1fr);">
+                            <div class="loc-box">
+                                <span class="box-lbl">CATEGORY</span>
+                                <strong class="box-val" style="font-size:0.85rem;">@(Model.ProductDetail?.CategoryName ?? "-")</strong>
+                            </div>
+                            <div class="loc-box">
+                                <span class="box-lbl">TYPE</span>
+                                <strong class="box-val" style="font-size:0.85rem;">@(Model.ProductDetail?.ProductType ?? "-")</strong>
+                            </div>
+                            <div class="loc-box">
+                                <span class="box-lbl">TOTAL STOCK</span>
+                                <strong class="box-val">@(Model.ProductDetail?.TotalCurrentQty.ToString("N0") ?? "0")</strong>
+                            </div>
+                            <div class="loc-box">
+                                <span class="box-lbl">LOCATIONS</span>
+                                <strong class="box-val">@(Model.ProductDetail?.Locations.Count ?? 0) Shelves</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    <span class="material-symbols-outlined">print</span>
+                    Print Document
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Pass JSON data to client-side JS
+        window.warehouseLayoutData = @Html.Raw(Model.WarehouseLayoutJson);
+        window.occupiedShelfIds = @Html.Raw(Model.OccupiedShelfIdsJson);
+        window.productLocations = @Html.Raw(Model.LocationsJson);
+        window.currentProductSku = "@(Model.ProductDetail?.SKU ?? "")";
+        window.currentProductName = "@(Model.ProductDetail?.ProductName ?? "")";
+    </script>
+    <script src="~/js/product-locator.js" asp-append-version="true"></script>
+}

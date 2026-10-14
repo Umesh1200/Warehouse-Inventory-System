@@ -1,0 +1,11 @@
+@page
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="container text-center" style="margin-top: 5rem;">
+    <span class="material-symbols-outlined" style="font-size: 64px; color: var(--danger);">block</span>
+    <h2 style="margin-top: 1rem; font-weight: 700;">Access Denied</h2>
+    <p style="color: var(--muted); margin-bottom: 2rem;">You do not have permission to access this page.</p>
+    <a asp-page="/Index" class="btn btn-primary">Go to Home</a>
+</div>

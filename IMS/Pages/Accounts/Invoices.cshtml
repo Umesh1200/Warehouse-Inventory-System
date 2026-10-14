@@ -1,0 +1,398 @@
+@page
+@model IMS.Pages.Accounts.InvoicesModel
+@{
+    ViewData["Title"] = "Supplier Invoices & Payments";
+    var totalOutstanding = Model.Invoices.Sum(i => i.Balance);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/invoices.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+}
+
+<div class="invoices-page">
+    <header class="page-header">
+        <div>
+            <p class="eyebrow">ACCOUNTS PAYABLE & AUDIT</p>
+            <h2>Supplier Invoices & Three-Way Matching</h2>
+            <p>Verify supplier invoices against purchase orders, warehouse receipts, and QC acceptance before issuing payment.</p>
+        </div>
+        <button class="primary-button" data-bs-toggle="modal" data-bs-target="#invoiceModal">
+            <span class="material-symbols-outlined">add</span>
+            Record Invoice
+        </button>
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success d-flex align-items-center gap-2" role="alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+        </div>
+    }
+
+    @* Summary Cards *@
+    <section class="metric-grid" aria-label="Invoice summary">
+        <div class="metric-card">
+            <div class="metric-label">
+                <span class="material-symbols-outlined text-primary" style="font-size: 18px;">receipt_long</span>
+                Total Invoices
+            </div>
+            <div class="metric-value">@Model.Invoices.Count</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">
+                <span class="material-symbols-outlined text-warning" style="font-size: 18px;">pending_actions</span>
+                Awaiting Review
+            </div>
+            <div class="metric-value text-warning">@Model.Invoices.Count(i => i.Status == "Pending Review" || i.Status == "Pending")</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">
+                <span class="material-symbols-outlined text-success" style="font-size: 18px;">verified</span>
+                Three-Way Matched
+            </div>
+            <div class="metric-value text-success">@Model.Invoices.Count(i => i.MatchStatus == "Matched")</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">
+                <span class="material-symbols-outlined text-danger" style="font-size: 18px;">account_balance_wallet</span>
+                Total Outstanding
+            </div>
+            <div class="metric-value" style="color: #dc2626;">Rs. @totalOutstanding.ToString("N2")</div>
+        </div>
+    </section>
+
+    @* Filter Bar *@
+    <section class="invoices-filter-panel" aria-label="Invoice filters">
+        <div class="filter-group">
+            <label for="invoiceSearch">Search</label>
+            <div class="filter-search-box">
+                <span class="material-symbols-outlined">search</span>
+                <input id="invoiceSearch" type="search" placeholder="Search invoice #, supplier, PO #, notes..." autocomplete="off" />
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <label for="invoiceStatusFilter">Invoice Status</label>
+            <select id="invoiceStatusFilter">
+                @foreach (var status in Model.Statuses)
+                {
+                    <option value="@status">@status</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="invoiceMatchFilter">Three-Way Match</label>
+            <select id="invoiceMatchFilter">
+                @foreach (var match in Model.MatchStatuses)
+                {
+                    <option value="@match">@match</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label for="invoiceSupplierFilter">Supplier</label>
+            <select id="invoiceSupplierFilter">
+                @foreach (var sup in Model.Suppliers)
+                {
+                    <option value="@sup">@sup</option>
+                }
+            </select>
+        </div>
+
+        <div class="filter-group">
+            <label>&nbsp;</label>
+            <button type="button" class="ghost-button" id="invoiceResetBtn" title="Clear all filters">
+                <span class="material-symbols-outlined" style="font-size: 16px;">filter_alt_off</span>
+                Reset
+            </button>
+        </div>
+    </section>
+
+    @* Invoice Register Table *@
+    <section class="panel">
+        <div class="panel-heading">
+            <div>
+                <strong>Invoice Register</strong>
+                <span class="ms-2">Three-Way Matching: Purchase Order ↔ Warehouse Receipts/QC ↔ Supplier Invoice</span>
+            </div>
+            <span id="invoiceCountLabel">Showing @Model.Invoices.Count of @Model.Invoices.Count invoices</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="invoices-table">
+                <thead>
+                    <tr>
+                        <th>Invoice / Supplier</th>
+                        <th>PO Reference</th>
+                        <th class="text-end">Invoice Total</th>
+                        <th class="text-end">PO Value</th>
+                        <th class="text-end">QC Accepted</th>
+                        <th class="text-center">Three-Way Match</th>
+                        <th class="text-end">Payment / Balance</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Invoices.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="empty-state">
+                                <span class="material-symbols-outlined" style="font-size: 36px; display: block; margin-bottom: 8px;">receipt_long</span>
+                                No supplier invoices recorded yet. Click "Record Invoice" above to add one.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var invoice in Model.Invoices)
+                    {
+                        <tr class="invoice-row" 
+                            data-search="@($"{invoice.InvoiceNumber} {invoice.SupplierName} {invoice.PONumber} {invoice.Notes}")"
+                            data-status="@invoice.Status"
+                            data-match="@invoice.MatchStatus"
+                            data-supplier="@invoice.SupplierName">
+                            <td>
+                                <strong>@invoice.InvoiceNumber</strong>
+                                <div class="small fw-semibold text-muted">@invoice.SupplierName</div>
+                                <div class="small text-muted font-mono">Date: @invoice.InvoiceDate.ToString("dd MMM yyyy")</div>
+                            </td>
+                            <td>
+                                <a asp-page="/Purchasing/ProcurementWorkflow" asp-route-poid="@invoice.POID" class="fw-bold text-decoration-none">
+                                    @invoice.PONumber
+                                </a>
+                            </td>
+                            <td class="text-end font-mono fw-bold">
+                                Rs. @invoice.TotalAmount.ToString("N2")
+                            </td>
+                            <td class="text-end font-mono text-muted">
+                                Rs. @invoice.POAmount.ToString("N2")
+                            </td>
+                            <td class="text-end font-mono" style="color: #16a34a;">
+                                Rs. @invoice.AcceptedValue.ToString("N2")
+                            </td>
+                            <td class="text-center">
+                                <span class="match-badge @invoice.MatchStatus.ToLower().Replace(" ", "-").Replace(" ", "")">
+                                    @if (invoice.MatchStatus == "Matched")
+                                    {
+                                        <span class="material-symbols-outlined" style="font-size: 13px;">check_circle</span>
+                                    }
+                                    else if (invoice.MatchStatus == "Variance")
+                                    {
+                                        <span class="material-symbols-outlined" style="font-size: 13px;">warning</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="material-symbols-outlined" style="font-size: 13px;">hourglass_top</span>
+                                    }
+                                    @invoice.MatchStatus
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="font-mono fw-bold" style="color: #15803d;">Paid: Rs. @invoice.PaidAmount.ToString("N2")</div>
+                                <div class="small font-mono text-muted">
+                                    Balance: <strong class="@(invoice.Balance > 0 ? "text-danger" : "text-success")">Rs. @invoice.Balance.ToString("N2")</strong>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                <span class="status-chip status-@invoice.Status.ToLower().Replace(" ", "")">
+                                    @invoice.Status
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="row-actions justify-content-center">
+                                    @if (invoice.Status == "Pending Review" || invoice.Status == "Pending" || invoice.Status == "On Hold")
+                                    {
+                                        <form method="post" asp-page-handler="Status">
+                                            <input type="hidden" name="ActionInvoiceID" value="@invoice.InvoiceID" />
+                                            <input type="hidden" name="ActionStatus" value="Approved" />
+                                            <button title="Approve Invoice" class="icon-action approve" type="submit">
+                                                <span class="material-symbols-outlined" style="font-size: 18px;">check</span>
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (invoice.Status == "Pending Review" || invoice.Status == "Pending" || invoice.Status == "Approved")
+                                    {
+                                        <form method="post" asp-page-handler="Status">
+                                            <input type="hidden" name="ActionInvoiceID" value="@invoice.InvoiceID" />
+                                            <input type="hidden" name="ActionStatus" value="On Hold" />
+                                            <button title="Put On Hold" class="icon-action hold" type="submit">
+                                                <span class="material-symbols-outlined" style="font-size: 18px;">pause</span>
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (invoice.Status == "Approved" || invoice.Status == "Partially Paid")
+                                    {
+                                        <button type="button" title="Record Payment" class="icon-action pay-button" 
+                                                data-bs-toggle="modal" data-bs-target="#paymentModal" 
+                                                data-id="@invoice.InvoiceID" 
+                                                data-number="@invoice.InvoiceNumber" 
+                                                data-balance="@invoice.Balance">
+                                            <span class="material-symbols-outlined" style="font-size: 18px;">payments</span>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    <tr id="invoiceEmptyRow" style="display: none;">
+                        <td colspan="9" class="empty-state">
+                            <span class="material-symbols-outlined" style="font-size: 32px;">search_off</span>
+                            <p>No invoices match your filter criteria.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+@* RECORD INVOICE MODAL *@
+<div class="modal fade" id="invoiceModal" tabindex="-1" aria-labelledby="invoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <span class="eyebrow">Accounts Payable</span>
+                    <h5 class="modal-title" id="invoiceModalLabel">Record Supplier Invoice</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body form-body">
+                    <label>
+                        Purchase Order *
+                        <select asp-for="NewInvoice.POID" required>
+                            <option value="">Select confirmed Purchase Order</option>
+                            @foreach (var po in Model.PurchaseOrders.Where(p => p.POStatus != "Draft" && p.POStatus != "Cancelled"))
+                            {
+                                <option value="@po.POID">@po.PONumber — @po.SupplierName — PO Value: Rs. @po.TotalAmount.ToString("N2")</option>
+                            }
+                        </select>
+                    </label>
+
+                    <div class="field-row">
+                        <label>
+                            Invoice Number *
+                            <input asp-for="NewInvoice.InvoiceNumber" placeholder="e.g. INV-2026-0042" required />
+                        </label>
+                        <label>
+                            Invoice Date *
+                            <input asp-for="NewInvoice.InvoiceDate" type="date" required />
+                        </label>
+                    </div>
+
+                    <div class="field-row">
+                        <label>
+                            Due Date
+                            <input asp-for="NewInvoice.DueDate" type="date" />
+                        </label>
+                        <label>
+                            Subtotal (NPR) *
+                            <input asp-for="NewInvoice.Subtotal" type="number" min="0" step="0.01" required />
+                        </label>
+                    </div>
+
+                    <div class="field-row">
+                        <label>
+                            Tax / VAT Amount (NPR)
+                            <input asp-for="NewInvoice.TaxAmount" type="number" min="0" step="0.01" value="0.00" />
+                        </label>
+                        <label>
+                            Total Invoice Amount (NPR) *
+                            <input asp-for="NewInvoice.TotalAmount" type="number" min="0.01" step="0.01" required />
+                        </label>
+                    </div>
+
+                    <label>
+                        Remarks & Payment Terms
+                        <textarea asp-for="NewInvoice.Notes" placeholder="Payment terms, bank coordinates, credit notes, or reference notes..."></textarea>
+                    </label>
+
+                    <div class="form-hint">
+                        <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">info</span>
+                        You can upload the supplier's signed invoice document, challan, or packing list PDF from the Supplier Coordination module.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="ghost-button" data-bs-dismiss="modal">Cancel</button>
+                    <button class="primary-button" type="submit">Save Invoice</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@* RECORD PAYMENT MODAL *@
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <span class="eyebrow">Disbursement</span>
+                    <h5 class="modal-title" id="paymentModalLabel">Record Payment</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Payment">
+                <div class="modal-body form-body">
+                    <div id="payment-context" class="form-hint mb-3"></div>
+                    <input type="hidden" id="payment-invoice-id" asp-for="NewPayment.InvoiceID" />
+
+                    <div class="field-row">
+                        <label>
+                            Payment Date *
+                            <input asp-for="NewPayment.PaymentDate" type="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        </label>
+                        <label>
+                            Payment Amount (NPR) *
+                            <input id="payment-amount" asp-for="NewPayment.Amount" type="number" min="0.01" step="0.01" required />
+                        </label>
+                    </div>
+
+                    <label>
+                        Payment Method *
+                        <select asp-for="NewPayment.PaymentMethod">
+                            <option>Bank Transfer</option>
+                            <option>Cheque</option>
+                            <option>Cash</option>
+                            <option>Card</option>
+                            <option>Other</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        Reference / Cheque / Transaction #
+                        <input asp-for="NewPayment.ReferenceNumber" placeholder="e.g. TXN-998234 or Cheque # 00129" />
+                    </label>
+
+                    <label>
+                        Payment Notes
+                        <textarea asp-for="NewPayment.Notes" placeholder="Payment remarks, approver reference..."></textarea>
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="ghost-button" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="primary-button" style="background-color: #16a34a; border-color: #15803d;">
+                        <span class="material-symbols-outlined">payments</span>
+                        Record Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/invoices.js" asp-append-version="true"></script>
+}

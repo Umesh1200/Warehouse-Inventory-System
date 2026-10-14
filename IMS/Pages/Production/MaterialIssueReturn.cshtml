@@ -1,0 +1,314 @@
+@page
+@model IMS.Pages.Production.MaterialIssueReturnModel
+@{
+    ViewData["Title"] = "Material Issue & Return";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/material-issue-return.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+}
+
+<div class="mir-container">
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">check_circle</span> @Model.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <header class="page-header">
+        <div>
+            <nav class="crumbs">
+                <a asp-page="/Production/Index">Manufacturing</a>
+                <span>/</span>
+                <a asp-page="/Production/Planning">Planning</a>
+                <span>/</span>
+                <span>Issue & Return</span>
+            </nav>
+            <h1>Material Issue & Return</h1>
+            <p>Issue raw materials from warehouse shelves to production, then return unused quantities back into stock.</p>
+            <div class="context-row">
+                <span>
+                    <span class="material-symbols-outlined">event_note</span>
+                    Plan @Model.CurrentPlan.PlanNumber
+                </span>
+                <span>
+                    <span class="material-symbols-outlined">location_on</span>
+                    @Model.CurrentPlan.Location
+                </span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <a asp-page="/Production/Planning" class="btn-mir btn-outline">
+                <span class="material-symbols-outlined">event_note</span>
+                Plans
+            </a>
+            <button class="btn-mir btn-primary" data-bs-toggle="modal" data-bs-target="#requestModal" disabled="@(!Model.ActivePlansList.Any())">
+                <span class="material-symbols-outlined">add</span>
+                Issue Request
+            </button>
+            <a asp-page="/Production/FinishedGoodsReceipt" asp-route-PlanID="@Model.PlanID" class="btn-mir btn-outline">
+                <span class="material-symbols-outlined">move_to_inbox</span>
+                Receive Output
+            </a>
+        </div>
+    </header>
+
+    <form method="get" class="plan-filter">
+        <label for="planId">Production Plan</label>
+        <select id="planId" name="PlanID" class="form-select" onchange="this.form.submit()">
+            <option value="" selected="@(Model.PlanID == null)">All active plans</option>
+            @foreach (var plan in Model.ActivePlansList)
+            {
+                <option value="@plan.ID" selected="@(Model.PlanID == plan.ID)">@plan.Number</option>
+            }
+        </select>
+    </form>
+
+    <section class="mir-stats-grid" aria-label="Material issue summary">
+        @foreach (var stat in Model.SummaryCards)
+        {
+            <article class="stat-card">
+                <span class="stat-label">@stat.Title</span>
+                <strong>@stat.Value</strong>
+                @if (stat.Title == "Total Fulfillment")
+                {
+                    <div class="stat-bar-bg">
+                        <div class="stat-bar-fill" style="width: @stat.Value;"></div>
+                    </div>
+                }
+                else
+                {
+                    <small>@stat.Subtext</small>
+                }
+            </article>
+        }
+    </section>
+
+    <section class="mir-main-grid">
+        <article class="panel picklist-col">
+            <div class="panel-header">
+                <div>
+                    <h2>Material Picklist</h2>
+                    <p>@Model.IssueItems.Count issue requests for the selected scope</p>
+                </div>
+                <button class="btn-mir btn-primary compact" data-bs-toggle="modal" data-bs-target="#requestModal" disabled="@(!Model.ActivePlansList.Any())">
+                    <span class="material-symbols-outlined">add</span>
+                    Request
+                </button>
+            </div>
+            <div class="table-wrap">
+                <table class="ims-table">
+                    <thead>
+                        <tr>
+                            <th>Material</th>
+                            <th>Source Shelf</th>
+                            <th class="text-right">Requested</th>
+                            <th class="text-right">Issued</th>
+                            <th>Status</th>
+                            <th class="text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.IssueItems.Any())
+                        {
+                            @foreach (var item in Model.IssueItems)
+                            {
+                                <tr class="@(item.IsActive ? "row-active" : "")">
+                                    <td>
+                                        <div class="material-cell">
+                                            <div class="material-icon">
+                                                <span class="material-symbols-outlined">@item.Icon</span>
+                                            </div>
+                                            <div>
+                                                <strong>@item.Name</strong>
+                                                <span>@item.SKU</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="loc-badge">@item.Location</span></td>
+                                    <td class="text-right font-mono">@item.ReqQty.ToString("N2")</td>
+                                    <td class="text-right font-mono">@item.IssuedQty.ToString("N2")</td>
+                                    <td><span class="status-tag tag-@item.StatusColor">@item.Status</span></td>
+                                    <td class="text-right">
+                                        <div class="row-actions">
+                                            @if (item.Status == "Pending" || item.Status == "Partially Issued")
+                                            {
+                                                <form method="post" asp-page-handler="IssueMaterial" asp-route-PlanID="@Model.PlanID" onsubmit="return confirm('Issue material? This will reduce raw material stock and create a stock movement record.');">
+                                                    <input type="hidden" name="PlanID" value="@Model.PlanID" />
+                                                    <input type="hidden" name="ConfirmIssue.IssueID" value="@item.IssueID" />
+                                                    <button type="submit" class="action-link primary">
+                                                        <span class="material-symbols-outlined">output</span>
+                                                        Issue
+                                                    </button>
+                                                </form>
+                                            }
+                                            @if (item.IssuedQty > item.ReturnedQty)
+                                            {
+                                                <button class="action-link return-btn" type="button" data-bs-toggle="modal" data-bs-target="#returnModal" data-id="@item.IssueID" data-sku="@item.SKU" data-name="@item.Name" data-max="@(item.IssuedQty - item.ReturnedQty)" data-shelf="@item.ShelfID">
+                                                    <span class="material-symbols-outlined">assignment_return</span>
+                                                    Return
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state">
+                                        <span class="material-symbols-outlined">output</span>
+                                        <strong>No material requests yet</strong>
+                                        <p>Create an issue request for an approved or in-production plan.</p>
+                                        <button class="btn-mir btn-primary" data-bs-toggle="modal" data-bs-target="#requestModal" disabled="@(!Model.ActivePlansList.Any())">
+                                            <span class="material-symbols-outlined">add</span>
+                                            Issue Request
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+        <aside class="panel widget-col">
+            <div class="panel-header">
+                <div>
+                    <h2>On Production Floor</h2>
+                    <p>Issued quantity not yet returned</p>
+                </div>
+            </div>
+            <div class="floor-list">
+                @if (Model.IssuedList.Any())
+                {
+                    @foreach (var material in Model.IssuedList)
+                    {
+                        <div class="floor-item">
+                            <div>
+                                <strong>@material.Name</strong>
+                                <span>@material.SKU</span>
+                            </div>
+                            <div class="floor-action">
+                                <span class="font-mono">@((material.IssuedQty - material.ReturnedQty).ToString("N2"))</span>
+                                <button class="action-link return-btn" type="button" data-bs-toggle="modal" data-bs-target="#returnModal" data-id="@material.IssueID" data-sku="@material.SKU" data-name="@material.Name" data-max="@(material.IssuedQty - material.ReturnedQty)" data-shelf="@material.DefaultShelfID">
+                                    Return
+                                </button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state compact-empty">
+                        <span class="material-symbols-outlined">inventory_2</span>
+                        <strong>No issued floor stock</strong>
+                        <p>Issued materials will appear here until returned.</p>
+                    </div>
+                }
+            </div>
+        </aside>
+    </section>
+</div>
+
+<div class="modal fade" id="requestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New Material Issue Request</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="CreateIssue" asp-route-PlanID="@Model.PlanID">
+                <input type="hidden" name="PlanID" value="@Model.PlanID" />
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Production Plan *</label>
+                            <select asp-for="NewIssueRequest.PlanID" class="form-select" required>
+                                <option value="">Select active plan</option>
+                                @foreach(var p in Model.ActivePlansList) { <option value="@p.ID" selected="@(Model.PlanID == p.ID)">@p.Number</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Raw Material *</label>
+                            <select asp-for="NewIssueRequest.ProductID" class="form-select" required>
+                                <option value="">Select material</option>
+                                @foreach(var m in Model.RawMaterialsList) { <option value="@m.ID">[@m.SKU] @m.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Source Shelf *</label>
+                            <select asp-for="NewIssueRequest.ShelfID" class="form-select" required>
+                                <option value="">Select material first</option>
+                                @foreach(var s in Model.ActiveShelvesList) { <option value="@s.ID">@s.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Quantity to Request *</label>
+                            <input type="number" step="0.01" min="0.01" asp-for="NewIssueRequest.RequestedQty" class="form-control" required />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="returnModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Return Material to Warehouse</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-page-handler="ReturnMaterial" asp-route-PlanID="@Model.PlanID">
+                <input type="hidden" name="PlanID" value="@Model.PlanID" />
+                <input type="hidden" id="return-id" asp-for="NewMaterialReturn.IssueID" />
+                <div class="modal-body">
+                    <div class="return-summary">
+                        <strong id="return-disp-name"></strong>
+                        <span id="return-disp-sku"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Return to Shelf *</label>
+                        <select id="return-shelf" asp-for="NewMaterialReturn.ShelfID" class="form-select" required>
+                            @foreach(var s in Model.ActiveShelvesList) { <option value="@s.ID">@s.Name</option> }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantity to Return *</label>
+                        <input type="number" step="0.01" min="0.01" id="return-qty" asp-for="NewMaterialReturn.ReturnedQty" class="form-control" required />
+                        <small class="text-muted">Maximum returnable: <span id="return-max"></span></small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Confirm Return</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/material-issue-return.js" asp-append-version="true"></script>
+}

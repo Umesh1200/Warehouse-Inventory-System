@@ -1,0 +1,296 @@
+@page
+@model IMS.Pages.Reports.IndexModel
+@{
+    ViewData["Title"] = "Reports & Analytics";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/reports.css" asp-append-version="true" />
+}
+
+<div class="reports-container">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <span class="material-symbols-outlined">error</span> @Model.ErrorMessage
+        </div>
+    }
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">Reports & Analytics</h2>
+            <p class="text-muted mb-0" style="font-size: 13px;">Generate live inventory snapshots, procurement reports, and dispatch insights</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <button type="button" class="btn-ims btn-outline" id="scheduledReportsBtn" data-bs-toggle="modal" data-bs-target="#scheduledReportsModal">
+                <span class="material-symbols-outlined">schedule</span>
+                Scheduled Reports
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="reports-stats-grid">
+        @foreach (var card in Model.SummaryCards)
+        {
+            <div class="stat-card">
+                <div class="stat-icon @card.ColorClass">
+                    <span class="material-symbols-outlined">@card.Icon</span>
+                </div>
+                <div>
+                    <div class="stat-label">@card.Title</div>
+                    <div class="stat-value">@card.Value</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-panel">
+        <div class="filters-grid">
+            <div class="filter-group">
+                <label>Search Reports</label>
+                <div style="position: relative;">
+                    <span class="material-symbols-outlined" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-muted);">search</span>
+                    <input type="text" id="reportSearch" class="filter-input" placeholder="Report name or keywords..." style="padding-left: 2.5rem;" />
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Category</label>
+                <select class="filter-input" id="reportCategoryFilter">
+                    @foreach (var cat in Model.Categories)
+                    {
+                        <option>@cat</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select class="filter-input" id="reportStatusFilter">
+                    <option>All Statuses</option>
+                    <option>Ready</option>
+                    <option>Generating...</option>
+                    <option>Failed</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Table -->
+    <div class="reports-table-panel">
+        <div style="overflow-x: auto;">
+            <table class="ims-table" id="reportsMainTable">
+                <thead>
+                    <tr>
+                        <th>Report Details</th>
+                        <th>Category</th>
+                        <th>Formats</th>
+                        <th>Last Generated</th>
+                        <th>Status</th>
+                        <th class="text-center" style="width: 140px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in Model.Reports)
+                    {
+                        <tr class="report-row" 
+                            data-report-key="@report.Key" 
+                            data-name="@report.Name" 
+                            data-category="@report.Category"
+                            data-status="@report.Status"
+                            data-search="@($"{report.Name} {report.Category} {report.Description}")">
+                            <td>
+                                <div class="report-name">@report.Name</div>
+                                <div class="report-desc">@report.Description</div>
+                            </td>
+                            <td>
+                                <span class="cat-badge">@report.Category</span>
+                            </td>
+                            <td>
+                                @foreach (var fmt in report.Format.Split(','))
+                                {
+                                    <span class="format-pill">@fmt.Trim()</span>
+                                }
+                            </td>
+                            <td style="font-size: 12px; color: var(--text-muted);">@report.LastGenerated</td>
+                            <td>
+                                <span class="status-badge status-ready">@report.Status</span>
+                            </td>
+                            <td class="text-center">
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: center;">
+                                    <button type="button" class="btn-ims btn-primary js-run-report" data-report-key="@report.Key" data-report-name="@report.Name" style="width: 105px;" title="Execute and view live report">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">play_circle</span>
+                                        Run
+                                    </button>
+                                    <div style="display: flex; gap: 0.25rem;">
+                                        <button type="button" class="action-icon-button js-export-pdf" data-report-key="@report.Key" data-report-name="@report.Name" title="Print to PDF" aria-label="Print PDF for @report.Name">
+                                            <span class="material-symbols-outlined">picture_as_pdf</span>
+                                        </button>
+                                        <button type="button" class="action-icon-button js-export-excel" data-report-key="@report.Key" data-report-name="@report.Name" title="Export Excel / CSV" aria-label="Export Excel for @report.Name">
+                                            <span class="material-symbols-outlined">table_view</span>
+                                        </button>
+                                        <button type="button" class="action-icon-button js-view-history" data-report-key="@report.Key" data-report-name="@report.Name" title="View Generation History" aria-label="View history for @report.Name">
+                                            <span class="material-symbols-outlined">history</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    <tr id="reportEmptyRow" style="display: none;">
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <span class="material-symbols-outlined" style="font-size: 32px; opacity: 0.5;">search_off</span>
+                            <div class="mt-2" style="font-weight: 500;">No reports match the selected filters.</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 1. Interactive Live Report Viewer Modal -->
+<div class="modal fade" id="reportViewerModal" tabindex="-1" aria-labelledby="reportViewerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 95vw;">
+        <div class="modal-content ims-modal" style="border-radius: 0.75rem; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.25);">
+            <div class="modal-header report-modal-header">
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <h5 class="modal-title" id="reportViewerTitle">Report Viewer</h5>
+                        <span class="cat-badge" id="reportViewerCategory" style="background: rgba(255,255,255,0.2); color: white;">Inventory</span>
+                    </div>
+                    <p class="modal-subtitle" id="reportViewerDescription">Live snapshot data from database</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="viewer-toolbar">
+                <div class="viewer-metrics" id="viewerMetricsContainer">
+                    <!-- Populated dynamically via JS -->
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div style="position: relative; width: 220px;">
+                        <span class="material-symbols-outlined" style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 16px; color: var(--text-muted);">search</span>
+                        <input type="text" id="viewerSearchInput" class="form-control form-control-sm" placeholder="Filter rows..." style="padding-left: 1.8rem; font-size: 12px;" />
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" id="viewerRefreshBtn" title="Refresh Live Data">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">refresh</span> Refresh
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" id="viewerPrintBtn" title="Print or save as PDF">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">print</span> Print / PDF
+                    </button>
+                    <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1" id="viewerExportCsvBtn" title="Download CSV Spreadsheet">
+                        <span class="material-symbols-outlined" style="font-size: 16px;">download</span> Export CSV
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-body p-0">
+                <div class="viewer-table-container">
+                    <table class="viewer-table" id="viewerTable">
+                        <thead id="viewerTableHead">
+                            <!-- Injected dynamically -->
+                        </thead>
+                        <tbody id="viewerTableBody">
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                                    Loading live report data from SQL database...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="background: #f8fafc; padding: 0.75rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 12px; color: var(--text-muted);" id="viewerFooterInfo">
+                    Generated: <span id="viewerGeneratedTimestamp">-</span> | Records: <strong id="viewerRecordCount" class="font-mono">0</strong>
+                </div>
+                <button type="button" class="btn btn-cancel-modal" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Generation History Modal -->
+<div class="modal fade" id="reportHistoryModal" tabindex="-1" aria-labelledby="reportHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content ims-modal" style="border-radius: 0.75rem; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+            <div class="modal-header report-modal-header">
+                <div>
+                    <h5 class="modal-title" id="historyModalTitle">Report History</h5>
+                    <p class="modal-subtitle">Recent automated runs and manual executions</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div class="timeline-container" id="historyTimelineContainer">
+                    <div class="schedule-item-card">
+                        <div class="schedule-info">
+                            <h6>Live Execution (Now)</h6>
+                            <div class="schedule-meta">
+                                <span><i class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">account_circle</i> You</span>
+                                <span><i class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">check_circle</i> Success</span>
+                            </div>
+                        </div>
+                        <span class="status-badge status-ready">Completed</span>
+                    </div>
+                    <div class="schedule-item-card">
+                        <div class="schedule-info">
+                            <h6>Scheduled Run (Today 08:00 AM)</h6>
+                            <div class="schedule-meta">
+                                <span><i class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">schedule</i> System Cron</span>
+                                <span><i class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">mail</i> Sent (2 recipients)</span>
+                            </div>
+                        </div>
+                        <span class="status-badge status-ready">Delivered</span>
+                    </div>
+                    <div class="schedule-item-card">
+                        <div class="schedule-info">
+                            <h6>Scheduled Run (Yesterday 08:00 AM)</h6>
+                            <div class="schedule-meta">
+                                <span><i class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">schedule</i> System Cron</span>
+                                <span><i class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">mail</i> Sent (2 recipients)</span>
+                            </div>
+                        </div>
+                        <span class="status-badge status-ready">Delivered</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="background: #f8fafc; padding: 0.75rem 1.5rem; border-top: 1px solid var(--border-color);">
+                <button type="button" class="btn btn-cancel-modal" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Scheduled Reports Modal -->
+<div class="modal fade" id="scheduledReportsModal" tabindex="-1" aria-labelledby="scheduledReportsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content ims-modal" style="border-radius: 0.75rem; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+            <div class="modal-header report-modal-header">
+                <div>
+                    <h5 class="modal-title">Scheduled Reports Management</h5>
+                    <p class="modal-subtitle">Automated email report distribution & frequencies</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div id="scheduledReportsList">
+                    <!-- Populated dynamically via AJAX -->
+                    <div class="text-center py-4 text-muted">
+                        <div class="spinner-border spinner-border-sm me-2"></div> Loading schedules...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="background: #f8fafc; padding: 0.75rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between;">
+                <small class="text-muted"><span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">info</span> Automated cron triggers run based on server clock</small>
+                <button type="button" class="btn btn-cancel-modal" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/reports.js" asp-append-version="true"></script>
+}

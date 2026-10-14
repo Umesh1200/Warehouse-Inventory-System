@@ -1,0 +1,322 @@
+@page
+@model IMS.Pages.Inventory.OverviewModel
+@{
+    ViewData["Title"] = "Inventory Overview";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/inventory-overview.css" asp-append-version="true" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+}
+
+<div class="inventory-container">
+    <header class="inventory-header">
+        <div>
+            <h1>Inventory Overview</h1>
+            <p>Stock health, value concentration, unavailable quantities, and reorder risks across the selected scope.</p>
+        </div>
+        <div class="inventory-actions">
+            <a asp-page-handler="ExportCsv"
+               asp-route-warehouse="@Model.Warehouse"
+               asp-route-category="@Model.Category"
+               asp-route-status="@Model.Status"
+               class="btn-inventory btn-outline-primary">
+                <span class="material-symbols-outlined">download</span>
+                Export
+            </a>
+            <a asp-page="/Inventory/Products" class="btn-inventory btn-primary-ims">
+                <span class="material-symbols-outlined">add</span>
+                New Item
+            </a>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <section class="summary-grid" aria-label="Inventory summary">
+        <article class="summary-card value">
+            <span class="material-symbols-outlined">payments</span>
+            <div>
+                <p>Total Stock Value</p>
+                <strong>NPR @Model.Summary.TotalStockValue.ToString("N0")</strong>
+            </div>
+        </article>
+        <article class="summary-card danger">
+            <span class="material-symbols-outlined">warning</span>
+            <div>
+                <p>Low / Out of Stock</p>
+                <strong>@Model.Summary.LowStockCount SKUs</strong>
+            </div>
+        </article>
+        <article class="summary-card warning">
+            <span class="material-symbols-outlined">fact_check</span>
+            <div>
+                <p>QC Hold Qty</p>
+                <strong>@Model.Summary.TotalQCHold.ToString("N0")</strong>
+            </div>
+        </article>
+        <article class="summary-card danger">
+            <span class="material-symbols-outlined">report_problem</span>
+            <div>
+                <p>Damaged Qty</p>
+                <strong>@Model.Summary.TotalDamaged.ToString("N0")</strong>
+            </div>
+        </article>
+    </section>
+
+    <section class="insight-grid" aria-label="Inventory insights">
+        <article class="insight-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Stock Health</h2>
+                    <p>How many SKUs need attention.</p>
+                </div>
+            </div>
+            <div class="chart-box">
+                <canvas id="stockHealthChart"></canvas>
+            </div>
+        </article>
+
+        <article class="insight-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Quantity Allocation</h2>
+                    <p>Available versus blocked stock.</p>
+                </div>
+            </div>
+            <div class="chart-box doughnut-box">
+                <canvas id="quantityMixChart"></canvas>
+            </div>
+        </article>
+
+        <article class="insight-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Value by Category</h2>
+                    <p>Where inventory capital is concentrated.</p>
+                </div>
+            </div>
+            <div class="chart-box">
+                <canvas id="categoryValueChart"></canvas>
+            </div>
+        </article>
+
+        <article class="insight-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Reorder Risk</h2>
+                    <p>Largest gaps below reorder level.</p>
+                </div>
+            </div>
+            <div class="chart-box">
+                <canvas id="reorderRiskChart"></canvas>
+            </div>
+        </article>
+    </section>
+
+    <section class="filters-card">
+        <form method="get" class="filters-row">
+            <div class="result-count">
+                @if (Model.FilteredTotalCount == 0)
+                {
+                    <span>Showing 0 items</span>
+                }
+                else
+                {
+                    <span>Showing <strong>@Model.StartItem</strong> to <strong>@Model.EndItem</strong> of <strong>@Model.FilteredTotalCount</strong> items</span>
+                }
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Warehouse</label>
+                <select name="warehouse" class="filter-select" onchange="this.form.submit()">
+                    @foreach (var warehouse in Model.Warehouses)
+                    {
+                        <option value="@warehouse" selected="@(Model.Warehouse == warehouse || (Model.Warehouse == null && warehouse == "All Warehouses"))">@warehouse</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Category</label>
+                <select name="category" class="filter-select" onchange="this.form.submit()">
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category" selected="@(Model.Category == category || (Model.Category == null && category == "All Categories"))">@category</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <select name="status" class="filter-select" onchange="this.form.submit()">
+                    @foreach (var status in Model.Statuses)
+                    {
+                        <option value="@status" selected="@(Model.Status == status || (Model.Status == null && status == "All Statuses"))">@status</option>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn-inventory btn-filter">
+                <span class="material-symbols-outlined">filter_list</span>
+                Apply
+            </button>
+        </form>
+    </section>
+
+    <section class="inventory-table-container">
+        <div class="table-header">
+            <div>
+                <h2>Inventory Ledger</h2>
+                <p>Quantities by SKU after reservation, QC hold, and damage adjustments.</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="ims-table">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th class="text-right">Current</th>
+                        <th class="text-right">Reserved</th>
+                        <th class="text-right">QC Hold</th>
+                        <th class="text-right">Damaged</th>
+                        <th class="text-right available-head">Available</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.InventoryItems.Any())
+                    {
+                        <tr>
+                            <td colspan="10">
+                                <div class="empty-state">
+                                    <span class="material-symbols-outlined">inventory_2</span>
+                                    <strong>No inventory items found</strong>
+                                    <p>Try a different warehouse, category, or status filter.</p>
+                                    <a asp-page="/Inventory/Overview" class="btn-inventory btn-outline-primary">Reset Filters</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var item in Model.InventoryItems)
+                    {
+                        <tr>
+                            <td class="font-mono">@item.SKU</td>
+                            <td><strong>@item.ProductName</strong></td>
+                            <td>@item.Category</td>
+                            <td class="text-right font-mono">@item.CurrentQty.ToString("N0")</td>
+                            <td class="text-right font-mono muted">@item.ReservedQty.ToString("N0")</td>
+                            <td class="text-right font-mono @(item.QCHoldQty > 0 ? "warn-text" : "muted")">@item.QCHoldQty.ToString("N0")</td>
+                            <td class="text-right font-mono @(item.DamagedQty > 0 ? "danger-text" : "muted")">@item.DamagedQty.ToString("N0")</td>
+                            <td class="text-right font-mono available-col @(item.Status == "Out of Stock" ? "danger-text" : (item.Status == "Low Stock" ? "warn-text" : ""))">
+                                @item.AvailableQty.ToString("N0")
+                            </td>
+                            <td>
+                                <span class="badge-ims @(item.Status == "In Stock" ? "badge-success" : (item.Status == "Low Stock" ? "badge-warning" : "badge-danger"))">
+                                    @item.Status
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="row-actions">
+                                    <a asp-page="/Warehouses/ProductLocator" asp-route-sku="@item.SKU" class="action-icon-link" title="Locate in Warehouse" style="color: var(--primary);">
+                                        <span class="material-symbols-outlined">explore</span>
+                                    </a>
+                                    <a asp-page="/Inventory/Transfers" asp-route-productId="@item.ProductID" class="action-icon-link" title="Transfer">
+                                        <span class="material-symbols-outlined">swap_horiz</span>
+                                    </a>
+                                    <a asp-page="/Inventory/Adjustments" asp-route-productId="@item.ProductID" class="action-icon-link" title="Adjust">
+                                        <span class="material-symbols-outlined">edit_square</span>
+                                    </a>
+                                    <a asp-page="/Inventory/Products" asp-route-productId="@item.ProductID" class="action-icon-link" title="View product">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination-container">
+            <div>
+                @if (Model.FilteredTotalCount == 0)
+                {
+                    <span>Showing 0 to 0 of 0 items</span>
+                }
+                else
+                {
+                    <span>Showing <strong>@Model.StartItem</strong> to <strong>@Model.EndItem</strong> of <strong>@Model.FilteredTotalCount</strong> items</span>
+                }
+            </div>
+            @if (Model.TotalPages > 1)
+            {
+                <div class="pagination-actions">
+                    @if (Model.PageNumber > 1)
+                    {
+                        <a asp-page="/Inventory/Overview"
+                           asp-route-pageNumber="@(Model.PageNumber - 1)"
+                           asp-route-warehouse="@Model.Warehouse"
+                           asp-route-category="@Model.Category"
+                           asp-route-status="@Model.Status"
+                           class="page-nav-btn"><span class="material-symbols-outlined">chevron_left</span></a>
+                    }
+                    else
+                    {
+                        <button class="page-nav-btn" disabled><span class="material-symbols-outlined">chevron_left</span></button>
+                    }
+
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        if (i == 1 || i == Model.TotalPages || (i >= Model.PageNumber - 2 && i <= Model.PageNumber + 2))
+                        {
+                            <a asp-page="/Inventory/Overview"
+                               asp-route-pageNumber="@i"
+                               asp-route-warehouse="@Model.Warehouse"
+                               asp-route-category="@Model.Category"
+                               asp-route-status="@Model.Status"
+                               class="page-btn @(i == Model.PageNumber ? "page-btn-active" : "")">@i</a>
+                        }
+                        else if (i == Model.PageNumber - 3 || i == Model.PageNumber + 3)
+                        {
+                            <span class="pagination-ellipsis">...</span>
+                        }
+                    }
+
+                    @if (Model.PageNumber < Model.TotalPages)
+                    {
+                        <a asp-page="/Inventory/Overview"
+                           asp-route-pageNumber="@(Model.PageNumber + 1)"
+                           asp-route-warehouse="@Model.Warehouse"
+                           asp-route-category="@Model.Category"
+                           asp-route-status="@Model.Status"
+                           class="page-nav-btn"><span class="material-symbols-outlined">chevron_right</span></a>
+                    }
+                    else
+                    {
+                        <button class="page-nav-btn" disabled><span class="material-symbols-outlined">chevron_right</span></button>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.inventoryOverviewData = {
+            stockHealth: @Html.Raw(Model.StockHealthChartJson),
+            quantityMix: @Html.Raw(Model.QuantityMixChartJson),
+            categoryValue: @Html.Raw(Model.CategoryValueChartJson),
+            reorderRisk: @Html.Raw(Model.ReorderRiskChartJson)
+        };
+    </script>
+    <script src="~/js/inventory-overview.js" asp-append-version="true"></script>
+}

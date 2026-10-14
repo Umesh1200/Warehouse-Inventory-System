@@ -1,0 +1,671 @@
+@page
+@model IMS.Pages.Dashboard.AdminModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin-dashboard.css" asp-append-version="true" />
+}
+
+<div class="dashboard-page">
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger operation-alert" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+        </div>
+    }
+
+    <header class="page-header">
+        <div>
+            <div class="eyebrow">
+                <span class="material-symbols-outlined">monitoring</span>
+                InventoryPro Executive Command
+            </div>
+            <h1>Executive Operations Hub</h1>
+            <p>Live inventory capital, material velocity, procurement pipeline, and warehouse staff throughput.</p>
+        </div>
+        <form method="get" class="warehouse-filter">
+            <label for="warehouseId">Warehouse</label>
+            <select id="warehouseId" name="WarehouseID" class="form-select" onchange="this.form.submit()">
+                <option value="" selected="@(Model.WarehouseID == null)">All Warehouses</option>
+                @foreach (var warehouse in Model.Warehouses)
+                {
+                    <option value="@warehouse.WarehouseID" selected="@(Model.WarehouseID == warehouse.WarehouseID)">@warehouse.WarehouseName</option>
+                }
+            </select>
+        </form>
+    </header>
+
+    <!-- Top KPI Grid -->
+    <section class="kpi-grid" aria-label="Dashboard KPIs">
+        @foreach (var card in Model.KPICards)
+        {
+            <article class="kpi-card">
+                <div class="kpi-top">
+                    <span class="kpi-icon @card.ColorClass material-symbols-outlined">@card.Icon</span>
+                    @if (!string.IsNullOrEmpty(card.Trend))
+                    {
+                        <span class="kpi-trend @(card.TrendUp ? "up" : "down")">
+                            <span class="material-symbols-outlined">@(card.TrendUp ? "trending_up" : "trending_down")</span>
+                            @card.Trend
+                        </span>
+                    }
+                </div>
+                <p>@card.Title</p>
+                <strong>@card.Value</strong>
+                <span>@card.Subtext</span>
+            </article>
+        }
+    </section>
+
+    <!-- Navigation Tabs -->
+    <div class="dashboard-tabs-nav" role="tablist">
+        <button type="button" class="dash-tab-btn active" data-tab="tab-operations" role="tab">
+            <span class="material-symbols-outlined">warehouse</span>
+            Operations & Capacity
+        </button>
+        <button type="button" class="dash-tab-btn" data-tab="tab-products" role="tab">
+            <span class="material-symbols-outlined">category</span>
+            Top Materials & Velocity
+        </button>
+        <button type="button" class="dash-tab-btn" data-tab="tab-procurement" role="tab">
+            <span class="material-symbols-outlined">account_balance</span>
+            Procurement & Finance
+        </button>
+        <button type="button" class="dash-tab-btn" data-tab="tab-team" role="tab">
+            <span class="material-symbols-outlined">groups</span>
+            Team Activity & Floor Audit
+        </button>
+    </div>
+
+    <!-- TAB 1: OPERATIONS & CAPACITY -->
+    <div id="tab-operations" class="dash-tab-pane active">
+        <section class="chart-grid">
+            <article class="dashboard-panel span-2">
+                <div class="panel-header">
+                    <div>
+                        <h2>Shelf Capacity Pressure</h2>
+                        <p>Top 10 shelves closest to their configured quantity limit.</p>
+                    </div>
+                    <a asp-page="/Warehouses/Visualization" class="panel-link">Open shelf view</a>
+                </div>
+                <div class="chart-box utilization-chart">
+                    <canvas id="warehouseUtilizationChart"></canvas>
+                </div>
+            </article>
+
+            <article class="dashboard-panel">
+                <div class="panel-header flex-header">
+                    <div>
+                        <h2>Stock Value Breakdown</h2>
+                        <p id="stockValueSubtext">Inventory capital concentration by SKU.</p>
+                    </div>
+                    <div class="toggle-group" role="group" aria-label="Chart type toggle">
+                        <button type="button" class="toggle-btn active" id="btnBySKU" title="View breakdown by individual SKUs">By SKU</button>
+                        <button type="button" class="toggle-btn" id="btnByCategory" title="View breakdown by product category">By Category</button>
+                    </div>
+                </div>
+                <div class="chart-box doughnut-box">
+                    <canvas id="stockValueChart"></canvas>
+                </div>
+            </article>
+
+            <article class="dashboard-panel span-2">
+                <div class="panel-header">
+                    <div>
+                        <h2>Stock Movement Trend</h2>
+                        <p>Inbound versus outbound movement volume over the last seven days.</p>
+                    </div>
+                    <a asp-page="/Inventory/Movements" class="panel-link">View movements</a>
+                </div>
+                <div class="chart-box trend-chart">
+                    <canvas id="movementTrendChart"></canvas>
+                </div>
+            </article>
+
+            <article class="dashboard-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Daily Fulfillment</h2>
+                        <p>@Model.KPICards.FirstOrDefault(c => c.Title == "Daily Fulfillment")?.Value against target @Model.DailyShipmentTarget.</p>
+                    </div>
+                </div>
+                <div class="chart-box gauge-box">
+                    <canvas id="fulfillmentGaugeChart"></canvas>
+                </div>
+            </article>
+        </section>
+
+        <section class="operations-grid">
+            <article class="dashboard-panel">
+                <div class="panel-header flex-header">
+                    <div>
+                        <h2>Recent Stock Movements</h2>
+                        <p>Latest warehouse activity for audit and follow-up.</p>
+                    </div>
+                    <div class="header-actions" style="display: flex; align-items: center; gap: 8px;">
+                        <div class="toggle-group" style="margin-right: 8px;">
+                            <button type="button" class="toggle-btn active" data-movement-filter="all">All</button>
+                            <button type="button" class="toggle-btn" data-movement-filter="in">Inbound</button>
+                            <button type="button" class="toggle-btn" data-movement-filter="out">Outbound</button>
+                        </div>
+                        <a asp-page="/Inventory/Movements" class="panel-link">View all</a>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="ims-table" id="movementsTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>SKU</th>
+                                <th>Product</th>
+                                <th>Type</th>
+                                <th class="text-end">Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentMovements.Any())
+                            {
+                                @foreach (var move in Model.RecentMovements)
+                                {
+                                    <tr class="movement-row" data-type="@(move.IsIn ? "in" : "out")">
+                                        <td class="muted">@move.Date</td>
+                                        <td class="mono">@move.SKU</td>
+                                        <td>@move.Product</td>
+                                        <td>
+                                            <span class="movement-badge @(move.IsIn ? "in" : "out")">
+                                                <span class="material-symbols-outlined">@(move.IsIn ? "south_east" : "north_east")</span>
+                                                @move.Type
+                                            </span>
+                                        </td>
+                                        <td class="text-end mono">@move.Quantity</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="empty-state">
+                                            <span class="material-symbols-outlined">history</span>
+                                            <strong>No recent movements</strong>
+                                            <p>Stock activity will appear here when inventory moves.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <article class="dashboard-panel alerts-panel">
+                <div class="panel-header flex-header">
+                    <div>
+                        <h2>Action Required</h2>
+                        <p id="alertCountText">Loading alerts...</p>
+                    </div>
+                    <div class="header-badges">
+                        <span class="count-badge danger" id="alertCountBadge">0</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnViewAllAlerts" style="margin-left: 8px;">View All</button>
+                    </div>
+                </div>
+                
+                <!-- Quick Filter Bar -->
+                <div class="panel-filter-bar">
+                    <button type="button" class="filter-tab active" data-filter="all">All</button>
+                    <button type="button" class="filter-tab" data-filter="outofstock">Out of Stock</button>
+                    <button type="button" class="filter-tab" data-filter="needpo">Need PO</button>
+                </div>
+
+                <div class="alerts-list" id="alertsListContainer">
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">hourglass_empty</span>
+                        <strong>Loading alerts...</strong>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </div>
+
+    <!-- TAB 2: TOP MATERIALS & VELOCITY -->
+    <div id="tab-products" class="dash-tab-pane" style="display: none;">
+        <div class="dual-column-grid">
+            <!-- Left Column: Capital Concentration -->
+            <article class="dashboard-panel">
+                <div class="panel-header flex-header">
+                    <div>
+                        <h2>Top Capital Concentration (Highest Stock Value)</h2>
+                        <p>Materials and finished goods with highest locked capital.</p>
+                    </div>
+                    <a asp-page="/Inventory/Overview" class="panel-link">Inventory overview</a>
+                </div>
+
+                <div class="ranked-products-list">
+                    @if (Model.TopProductsByValue.Any())
+                    {
+                        var rank = 1;
+                        @foreach (var prod in Model.TopProductsByValue)
+                        {
+                            <div class="ranked-product-card">
+                                <span class="rank-number rank-@rank">#@rank</span>
+                                <div class="prod-thumb">
+                                    @if (!string.IsNullOrEmpty(prod.ImagePath))
+                                    {
+                                        <img src="@prod.ImagePath" alt="@prod.ProductName" />
+                                    }
+                                    else
+                                    {
+                                        <span class="material-symbols-outlined">inventory_2</span>
+                                    }
+                                </div>
+                                <div class="prod-details">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <strong class="prod-name">@prod.ProductName</strong>
+                                        <span class="badge bg-light text-dark font-mono" style="font-size: 11px;">@prod.SKU</span>
+                                        <span class="badge bg-secondary-subtle text-secondary" style="font-size: 10px;">@prod.CategoryName</span>
+                                    </div>
+                                    <div class="prod-submeta text-muted">
+                                        <span>Cost: <strong>Rs. @prod.UnitCost.ToString("N2")</strong></span> &bull; 
+                                        <span>On Hand: <strong class="text-primary font-mono">@prod.AvailableQty.ToString("N0")</strong> units</span>
+                                    </div>
+                                </div>
+                                <div class="prod-valuation text-end">
+                                    <div class="valuation-amount font-mono">Rs. @prod.TotalValue.ToString("N0")</div>
+                                    <span class="badge @(prod.StockStatus == "In Stock" ? "bg-success" : (prod.StockStatus == "Low Stock" ? "bg-warning" : "bg-danger"))" style="font-size: 10px;">
+                                        @prod.StockStatus
+                                    </span>
+                                </div>
+                            </div>
+                            rank++;
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <span class="material-symbols-outlined">inventory</span>
+                            <strong>No stock value data</strong>
+                        </div>
+                    }
+                </div>
+            </article>
+
+            <!-- Right Column: Top Selling / Fast Moving -->
+            <article class="dashboard-panel">
+                <div class="panel-header flex-header">
+                    <div>
+                        <h2>Top Selling & Fast-Moving Items</h2>
+                        <p>Highest volume products sold and dispatched.</p>
+                    </div>
+                    <a asp-page="/Sales/Orders" class="panel-link">Sales orders</a>
+                </div>
+
+                <div class="ranked-products-list">
+                    @if (Model.TopSellingProducts.Any())
+                    {
+                        var rank = 1;
+                        @foreach (var prod in Model.TopSellingProducts)
+                        {
+                            <div class="ranked-product-card">
+                                <span class="rank-number rank-@rank">#@rank</span>
+                                <div class="prod-thumb">
+                                    @if (!string.IsNullOrEmpty(prod.ImagePath))
+                                    {
+                                        <img src="@prod.ImagePath" alt="@prod.ProductName" />
+                                    }
+                                    else
+                                    {
+                                        <span class="material-symbols-outlined">shopping_cart</span>
+                                    }
+                                </div>
+                                <div class="prod-details">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <strong class="prod-name">@prod.ProductName</strong>
+                                        <span class="badge bg-light text-dark font-mono" style="font-size: 11px;">@prod.SKU</span>
+                                        <span class="badge bg-secondary-subtle text-secondary" style="font-size: 10px;">@prod.CategoryName</span>
+                                    </div>
+                                    <div class="prod-submeta text-muted">
+                                        <span>Units Sold: <strong class="text-success font-mono">@prod.UnitsSold.ToString("N0")</strong></span> &bull; 
+                                        <span>Stock Available: <strong class="font-mono">@prod.AvailableQty.ToString("N0")</strong></span>
+                                    </div>
+                                </div>
+                                <div class="prod-valuation text-end">
+                                    <div class="valuation-amount text-success font-mono">Rs. @prod.TotalSalesAmount.ToString("N0")</div>
+                                    <span class="badge @(prod.StockStatus == "In Stock" ? "bg-success" : "bg-danger")" style="font-size: 10px;">
+                                        @prod.StockStatus
+                                    </span>
+                                </div>
+                            </div>
+                            rank++;
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <span class="material-symbols-outlined">trending_up</span>
+                            <strong>No sales records yet</strong>
+                            <p>Completed sales orders will automatically rank top selling items here.</p>
+                        </div>
+                    }
+                </div>
+            </article>
+        </div>
+    </div>
+
+    <!-- TAB 3: PROCUREMENT & FINANCE -->
+    <div id="tab-procurement" class="dash-tab-pane" style="display: none;">
+        <!-- Finance Metric Summary Cards -->
+        <section class="kpi-grid mb-3">
+            <article class="kpi-card">
+                <div class="kpi-top">
+                    <span class="kpi-icon primary material-symbols-outlined">account_balance_wallet</span>
+                </div>
+                <p>Total Inventory Capital</p>
+                <strong class="font-mono">Rs. @Model.FinanceSummary.TotalInventoryCapital.ToString("N0")</strong>
+                <span>Asset value on shelves</span>
+            </article>
+            <article class="kpi-card">
+                <div class="kpi-top">
+                    <span class="kpi-icon warning material-symbols-outlined">shopping_bag</span>
+                </div>
+                <p>Monthly Procurement Spend</p>
+                <strong class="font-mono">Rs. @Model.FinanceSummary.MonthlyPOSpend.ToString("N0")</strong>
+                <span>POs placed this calendar month</span>
+            </article>
+            <article class="kpi-card">
+                <div class="kpi-top">
+                    <span class="kpi-icon success material-symbols-outlined">point_of_sale</span>
+                </div>
+                <p>Monthly Sales Revenue</p>
+                <strong class="font-mono">Rs. @Model.FinanceSummary.MonthlySalesRevenue.ToString("N0")</strong>
+                <span>Sales orders this month</span>
+            </article>
+            <article class="kpi-card">
+                <div class="kpi-top">
+                    <span class="kpi-icon info material-symbols-outlined">receipt_long</span>
+                </div>
+                <p>Pending Inbound Commitments</p>
+                <strong class="font-mono">Rs. @Model.FinanceSummary.PendingPOCommitments.ToString("N0")</strong>
+                <span>@Model.FinanceSummary.ActiveSuppliersCount Active Supplier(s)</span>
+            </article>
+        </section>
+
+        <div class="dual-column-grid">
+            <!-- Top Suppliers -->
+            <article class="dashboard-panel">
+                <div class="panel-header flex-header">
+                    <div>
+                        <h2>Top Suppliers & Quality Rating</h2>
+                        <p>Procurement volume and quality acceptance percentage.</p>
+                    </div>
+                    <a asp-page="/Purchasing/PurchaseOrders" class="panel-link">Purchase orders</a>
+                </div>
+                <div class="table-wrap">
+                    <table class="ims-table">
+                        <thead>
+                            <tr>
+                                <th>Supplier</th>
+                                <th>Total POs</th>
+                                <th>Total Spend</th>
+                                <th>QC Pass Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.TopSuppliers.Any())
+                            {
+                                @foreach (var sup in Model.TopSuppliers)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">@sup.SupplierName</div>
+                                            <small class="text-muted">@sup.ContactPerson</small>
+                                        </td>
+                                        <td class="font-mono">@sup.TotalOrders</td>
+                                        <td class="font-mono fw-bold">Rs. @sup.TotalSpend.ToString("N0")</td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="progress flex-grow-1" style="height: 6px;">
+                                                    <div class="progress-bar @(sup.QCApprovalRate >= 95 ? "bg-success" : (sup.QCApprovalRate >= 80 ? "bg-warning" : "bg-danger"))" style="width: @sup.QCApprovalRate%;"></div>
+                                                </div>
+                                                <span class="font-mono text-muted" style="font-size: 11px;">@sup.QCApprovalRate%</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">No supplier procurement data found.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <!-- Inbound Pipeline -->
+            <article class="dashboard-panel">
+                <div class="panel-header flex-header">
+                    <div>
+                        <h2>Inbound Delivery Pipeline</h2>
+                        <p>Upcoming purchase order deliveries and receiving status.</p>
+                    </div>
+                    <a asp-page="/WarehouseOperations/Receiving" class="panel-link">Receiving dock</a>
+                </div>
+                <div class="table-wrap">
+                    <table class="ims-table">
+                        <thead>
+                            <tr>
+                                <th>PO Number</th>
+                                <th>Supplier</th>
+                                <th>Expected Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.InboundPipeline.Any())
+                            {
+                                @foreach (var po in Model.InboundPipeline)
+                                {
+                                    <tr>
+                                        <td class="font-mono fw-bold text-primary">@po.PONumber</td>
+                                        <td>@po.SupplierName</td>
+                                        <td class="font-mono">@(po.ExpectedDate?.ToString("MMM dd, yyyy") ?? po.OrderDate.ToString("MMM dd, yyyy"))</td>
+                                        <td class="font-mono">Rs. @po.TotalAmount.ToString("N0")</td>
+                                        <td>
+                                            <span class="badge @(po.Status == "Confirmed" ? "bg-primary" : (po.Status == "InTransit" ? "bg-info" : "bg-warning"))">
+                                                @po.Status
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">No active pending PO deliveries in pipeline.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+        </div>
+    </div>
+
+    <!-- TAB 4: TEAM ACTIVITIES & FLOOR AUDIT -->
+    <div id="tab-team" class="dash-tab-pane" style="display: none;">
+        <div class="dual-column-grid">
+            <!-- Left: Top Active Warehouse Staff -->
+            <article class="dashboard-panel">
+                <div class="panel-header">
+                    <div>
+                        <h2>Warehouse Staff Leaderboard (Today)</h2>
+                        <p>Active floor staff ranked by movements and units handled today.</p>
+                    </div>
+                </div>
+
+                <div class="staff-leaderboard-list">
+                    @if (Model.StaffPerformance.Any())
+                    {
+                        var rank = 1;
+                        @foreach (var staff in Model.StaffPerformance)
+                        {
+                            <div class="staff-leader-card">
+                                <span class="rank-badge">#@rank</span>
+                                <div class="staff-avatar-circle" style="background-color: @staff.AvatarColor;">
+                                    @staff.Initials
+                                </div>
+                                <div class="staff-info-col">
+                                    <div class="staff-name">@staff.FullName</div>
+                                    <div class="staff-role-sub text-muted">@staff.RoleName &bull; Active: @staff.LastActiveTime</div>
+                                </div>
+                                <div class="staff-stats-col text-end">
+                                    <div class="staff-count font-mono fw-bold text-primary">@staff.TasksCompletedToday Tasks</div>
+                                    <div class="staff-units text-muted font-mono" style="font-size: 11px;">@staff.UnitsMovedToday.ToString("N0") units moved</div>
+                                </div>
+                            </div>
+                            rank++;
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <span class="material-symbols-outlined">badge</span>
+                            <strong>No movements logged today yet</strong>
+                            <p>When workers perform receiving, putaway, transfers, or picks, their performance will reflect here live.</p>
+                        </div>
+                    }
+                </div>
+            </article>
+
+            <!-- Right: Live Activity Stream -->
+            <article class="dashboard-panel">
+                <div class="panel-header flex-header">
+                    <div>
+                        <h2>Live Shift Activity Stream</h2>
+                        <p>Real-time audit log of movements on the warehouse floor.</p>
+                    </div>
+                    <a asp-page="/Inventory/Movements" class="panel-link">Full audit log</a>
+                </div>
+
+                <div class="activity-timeline-wrap">
+                    @if (Model.RecentMovements.Any())
+                    {
+                        <div class="activity-timeline">
+                            @foreach (var move in Model.RecentMovements.Take(12))
+                            {
+                                <div class="activity-item">
+                                    <div class="activity-dot @(move.IsIn ? "in" : "out")"></div>
+                                    <div class="activity-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="activity-title">
+                                                <strong>@move.Product</strong>
+                                                <span class="badge @(move.IsIn ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") font-mono" style="font-size: 10px;">@move.Type</span>
+                                            </span>
+                                            <span class="activity-time text-muted font-mono" style="font-size: 11px;">@move.Date</span>
+                                        </div>
+                                        <div class="activity-subtext text-muted" style="font-size: 12px;">
+                                            SKU: <span class="font-mono">@move.SKU</span> &bull; Quantity: <strong class="font-mono">@move.Quantity</strong> units
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <span class="material-symbols-outlined">schedule</span>
+                            <strong>No activity logged</strong>
+                        </div>
+                    }
+                </div>
+            </article>
+        </div>
+    </div>
+
+    <!-- All Alerts Triage Modal -->
+    <div id="triageModal" class="ims-modal" style="display: none;">
+        <div class="ims-modal-content">
+            <div class="ims-modal-header">
+                <div>
+                    <h2>Critical Low-Stock Alerts Triage</h2>
+                    <p>Sort, filter, and review all active alerts across all categories.</p>
+                </div>
+                <button type="button" class="close-modal-btn" id="btnCloseTriageModal">&times;</button>
+            </div>
+            <div class="ims-modal-body">
+                <!-- Filters & Search inside modal -->
+                <div class="triage-filters">
+                    <div class="search-input-wrap">
+                        <span class="material-symbols-outlined">search</span>
+                        <input type="text" id="triageSearch" placeholder="Search by SKU or Product Name..." />
+                    </div>
+                    <div class="select-filter-wrap">
+                        <select id="triageSeverityFilter">
+                            <option value="">All Severities</option>
+                            <option value="Error">Out of Stock (Critical)</option>
+                            <option value="Warning">Need PO (Warning)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="triage-table-wrap">
+                    <table class="ims-table select-table">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Warehouse</th>
+                                <th>Shelf</th>
+                                <th class="text-end">Available Qty</th>
+                                <th class="text-end">Reorder Level</th>
+                                <th>Status</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="triageTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="triage-pagination">
+                    <button type="button" class="btn btn-sm btn-light" id="btnTriagePrev" disabled>Previous</button>
+                    <span id="triagePageInfo" class="triage-page-info">Page 1 of 1</span>
+                    <button type="button" class="btn btn-sm btn-light" id="btnTriageNext" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="dashboard-footer">
+        <span>Last updated: @DateTime.Now.ToString("MMM dd, yyyy HH:mm")</span>
+        <a href="@Request.Path@Request.QueryString">
+            <span class="material-symbols-outlined">refresh</span>
+            Refresh data
+        </a>
+    </footer>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.adminDashboardData = {
+            utilization: @Html.Raw(Model.UtilizationChartJson),
+            stockValue: @Html.Raw(Model.StockValueChartJson),
+            stockValueByCategory: @Html.Raw(Model.StockValueByCategoryChartJson),
+            movementTrend: @Html.Raw(Model.MovementTrendChartJson),
+            fulfillmentGauge: @Html.Raw(Model.FulfillmentGaugeJson),
+            lowStockAlerts: @Html.Raw(Model.LowStockAlertsJson)
+        };
+    </script>
+    <script src="~/js/admin-dashboard.js" asp-append-version="true"></script>
+}

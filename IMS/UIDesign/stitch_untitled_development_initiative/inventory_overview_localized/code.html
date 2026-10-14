@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inventory Overview - InventoryPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#dbd9dc",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#f2f0f3",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "tertiary": "#141819",
+                        "primary-container": "#1a2b4b",
+                        "on-secondary-fixed": "#001a42",
+                        "on-surface": "#1b1b1e",
+                        "surface-bright": "#fbf8fc",
+                        "surface-variant": "#e4e2e5",
+                        "error-container": "#ffdad6",
+                        "status-error": "#EF4444",
+                        "outline": "#75777f",
+                        "status-warning": "#F59E0B",
+                        "surface-container-highest": "#e4e2e5",
+                        "tertiary-fixed": "#e0e3e5",
+                        "on-background": "#1b1b1e",
+                        "on-tertiary-container": "#909395",
+                        "primary-fixed": "#d8e2ff",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "data-fill": "#DBEAFE",
+                        "on-tertiary-fixed": "#191c1e",
+                        "background": "#fbf8fc",
+                        "surface-tint": "#4e5e81",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "on-primary-container": "#8293b8",
+                        "secondary-fixed": "#d8e2ff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "secondary-container": "#2170e4",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#b6c6ef",
+                        "inverse-surface": "#303033",
+                        "surface-border": "#E2E8F0",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#0058be",
+                        "on-surface-variant": "#44474e",
+                        "tertiary-container": "#292c2e",
+                        "on-secondary-fixed-variant": "#004395",
+                        "outline-variant": "#c5c6cf",
+                        "status-success": "#10B981",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "primary": "#031635",
+                        "on-primary-fixed": "#081b3a",
+                        "on-tertiary": "#ffffff",
+                        "status-info": "#6366F1",
+                        "surface": "#fbf8fc",
+                        "surface-container-low": "#f5f3f6",
+                        "surface-container-high": "#e9e7eb",
+                        "on-secondary-container": "#fefcff",
+                        "sidebar-bg": "#0F172A",
+                        "surface-container": "#efedf0",
+                        "on-primary-fixed-variant": "#364768",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "1.5rem",
+                        "table-cell-padding": "0.75rem 1rem",
+                        "stack-md": "1rem",
+                        "container-padding": "2rem",
+                        "sidebar-width": "260px",
+                        "stack-sm": "0.5rem"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "table-header": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "table-header": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-mono": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        .data-table-container { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); }
+        .table-row-hover:hover { background-color: #F8FAFC; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="bg-sidebar-bg dark:bg-sidebar-bg fixed left-0 top-0 h-full w-[260px] flex flex-col py-4 z-20 border-r border-outline-variant">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 bg-secondary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary">inventory_2</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md text-on-primary font-black tracking-tight">InventoryPro</h1>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-3 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body-sm text-body-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-body-sm text-body-sm font-medium">Items</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">shopping_cart</span>
+<span class="font-body-sm text-body-sm font-medium">Purchase</span>
+</a>
+<div class="mt-2 mb-1 px-5">
+<span class="text-xs font-semibold text-on-primary-container opacity-50 uppercase tracking-wider">Inventory</span>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 bg-secondary-container text-on-secondary-container rounded-lg mx-2 transition-colors duration-150 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">warehouse</span>
+<span class="font-body-sm text-body-sm font-medium">Inventory Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 pl-9 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 scale-95 active:scale-90" href="#">
+<span class="font-body-sm text-body-sm">Warehouse Visualization</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 pl-9 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 scale-95 active:scale-90" href="#">
+<span class="font-body-sm text-body-sm">Stock Adjustments</span>
+</a>
+<div class="mt-4 mb-1 px-5">
+<span class="text-xs font-semibold text-on-primary-container opacity-50 uppercase tracking-wider">Operations</span>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-body-sm text-body-sm font-medium">Sales</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="font-body-sm text-body-sm font-medium">Reports</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-body-sm text-body-sm font-medium flex-1">Alerts</span>
+<span class="bg-status-warning text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">6</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-primary-container hover:text-on-primary-container rounded-lg mx-2 transition-colors duration-150 scale-95 active:scale-90" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body-sm text-body-sm font-medium">Settings</span>
+</a>
+</div>
+<div class="px-5 mt-auto pt-4 border-t border-surface-tint/20">
+<button class="w-full flex items-center justify-between bg-primary-container hover:bg-surface-tint text-on-primary-container px-3 py-2 rounded border border-surface-tint/30 transition-colors">
+<div class="flex flex-col text-left">
+<span class="text-[10px] uppercase opacity-70">Current Location</span>
+<span class="text-xs font-semibold text-white">Kathmandu Central DC</span>
+</div>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="ml-[260px] flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-surface-bright dark:bg-surface-dim border-b border-surface-border fixed top-0 right-0 w-[calc(100%-260px)] h-16 flex justify-between items-center px-gutter z-10">
+<div class="flex items-center gap-4">
+<div class="flex items-center text-sm text-on-surface-variant gap-2">
+<a class="hover:text-primary transition-colors" href="#">Inventory</a>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span class="text-primary font-medium">Inventory Overview</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:opacity-70 p-2 relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-status-error rounded-full border border-white"></span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-surface-border">
+<div class="flex flex-col items-end">
+<span class="text-sm font-medium text-primary">Admin User</span>
+<span class="text-xs text-on-surface-variant">Administrator</span>
+</div>
+<div class="w-8 h-8 bg-surface-variant rounded-full flex items-center justify-center text-primary border border-surface-border">
+<span class="material-symbols-outlined">person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 mt-16 p-6 overflow-x-hidden">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-6">
+<div>
+<h2 class="text-headline-lg font-headline-lg text-primary mb-1">Inventory Overview</h2>
+<p class="text-body-md font-body-md text-on-surface-variant">Manage and track your current stock levels across all locations.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 bg-white border border-primary text-primary px-4 py-2 rounded hover:bg-surface-container-low transition-colors text-sm font-medium">
+<span class="material-symbols-outlined text-sm">download</span>
+                        Export
+                    </button>
+<button class="flex items-center gap-2 bg-[#3B82F6] hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors text-sm font-medium shadow-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+                        New Item
+                    </button>
+</div>
+</div>
+<!-- Filters Section -->
+<div class="bg-white border border-surface-border rounded-lg p-4 mb-6 data-table-container">
+<div class="flex flex-wrap gap-4 items-end">
+<div class="flex-1 min-w-[250px]">Showing <span class="font-medium text-primary">1</span> to <span class="font-medium text-primary">10</span> of <span class="font-medium text-primary">245</span> items in Nepal</div>
+<div class="w-[200px]">
+<label class="block text-xs font-semibold text-on-surface-variant mb-1 uppercase tracking-wider">Warehouse</label>
+<select class="w-full px-3 py-2 border border-surface-border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-surface-bright appearance-none"><option>All Warehouses</option><option selected="">Kathmandu Central DC</option><option>Pokhara Hub</option><option>Lalitpur Warehouse</option><option>Biratnagar Depot</option></select>
+</div>
+<div class="w-[180px]">
+<label class="block text-xs font-semibold text-on-surface-variant mb-1 uppercase tracking-wider">Category</label>
+<select class="w-full px-3 py-2 border border-surface-border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-surface-bright appearance-none"><option>All Categories</option><option>Beverages</option><option>Snacks</option><option>Cleaning Supplies</option><option>Local Produce</option></select>
+</div>
+<div class="w-[180px]">
+<label class="block text-xs font-semibold text-on-surface-variant mb-1 uppercase tracking-wider">Status</label>
+<select class="w-full px-3 py-2 border border-surface-border rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm bg-surface-bright appearance-none">
+<option>All Statuses</option>
+<option>In Stock</option>
+<option>Low Stock</option>
+<option>Out of Stock</option>
+</select>
+</div>
+<div class="flex gap-2">
+<button class="bg-surface-container hover:bg-surface-variant text-primary px-4 py-2 rounded border border-surface-border transition-colors text-sm font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+                            More Filters
+                        </button>
+</div>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-white border border-surface-border rounded-lg overflow-hidden data-table-container flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse whitespace-nowrap">
+<thead>
+<tr class="bg-[#F1F5F9] border-b border-surface-border">
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase w-10">
+<input class="rounded border-surface-border text-blue-600 focus:ring-blue-500" type="checkbox"/>
+</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase">SKU</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase">Product Name</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase">Category</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase text-right">Current Qty</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase text-right">Reserved</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase text-right">QC Hold</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase text-right">Damaged</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase text-right bg-blue-50/30">Available (Units)</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase">Status</th>
+<th class="p-table-cell-padding font-table-header text-table-header text-on-surface-variant uppercase text-center">Actions</th>
+</tr>
+</thead>
+<tbody class="text-sm">
+<!-- Row 1 -->
+<tr class="border-b border-surface-border table-row-hover transition-colors">
+<td class="p-table-cell-padding">
+<input class="rounded border-surface-border text-blue-600 focus:ring-blue-500" type="checkbox"/>
+</td>
+<td class="p-table-cell-padding font-label-mono text-label-mono text-primary font-medium">SKU-1001</td>
+<td class="p-table-cell-padding font-medium text-primary">Water Bottle [1L each]</td>
+<td class="p-table-cell-padding text-on-surface-variant">Beverages</td>
+<td class="p-table-cell-padding text-right font-label-mono">1,500</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant">100</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant">0</td>
+<td class="p-table-cell-padding text-right text-status-error">5</td>
+<td class="p-table-cell-padding text-right font-bold text-primary bg-blue-50/30">1,395</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800">
+                                        In Stock
+                                    </span>
+</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center justify-center gap-2">
+<button class="text-[#64748B] hover:text-primary transition-colors" title="Transfer">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+</button>
+<button class="text-[#64748B] hover:text-primary transition-colors" title="Adjust Stock">
+<span class="material-symbols-outlined text-[18px]">edit_square</span>
+</button>
+<button class="text-[#64748B] hover:text-primary transition-colors" title="View Details">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b border-surface-border table-row-hover transition-colors">
+<td class="p-table-cell-padding">
+<input class="rounded border-surface-border text-blue-600 focus:ring-blue-500" type="checkbox"/>
+</td>
+<td class="p-table-cell-padding font-label-mono text-label-mono text-primary font-medium">SKU-1042</td>
+<td class="p-table-cell-padding font-medium text-primary">Tissue Box [100 Pulls]</td>
+<td class="p-table-cell-padding text-on-surface-variant">Paper Goods</td>
+<td class="p-table-cell-padding text-right font-label-mono">45</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant">30</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant">0</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant">0</td>
+<td class="p-table-cell-padding text-right font-bold text-status-warning bg-blue-50/30">15</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-100 text-yellow-800 border border-yellow-200">
+                                        Low Stock
+                                    </span>
+</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center justify-center gap-2">
+<button class="text-[#64748B] hover:text-primary transition-colors" title="Transfer">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+</button>
+<button class="text-[#64748B] hover:text-primary transition-colors" title="Adjust Stock">
+<span class="material-symbols-outlined text-[18px]">edit_square</span>
+</button>
+<button class="text-[#64748B] hover:text-primary transition-colors" title="View Details">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="border-b border-surface-border table-row-hover transition-colors">
+<td class="p-table-cell-padding">
+<input class="rounded border-surface-border text-blue-600 focus:ring-blue-500" type="checkbox"/>
+</td>
+<td class="p-table-cell-padding font-label-mono text-label-mono text-primary font-medium">SKU-2055</td>
+<td class="p-table-cell-padding font-medium text-primary">Premium Coffee 250g</td>
+<td class="p-table-cell-padding text-on-surface-variant">Beverages</td>
+<td class="p-table-cell-padding text-right font-label-mono">8</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant">8</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant">0</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant">0</td>
+<td class="p-table-cell-padding text-right font-bold text-status-error bg-blue-50/30">0</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">
+                                        Out of Stock
+                                    </span>
+</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center justify-center gap-2">
+<button class="text-[#64748B] hover:text-primary transition-colors" title="Transfer">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+</button>
+<button class="text-[#64748B] hover:text-primary transition-colors" title="Adjust Stock">
+<span class="material-symbols-outlined text-[18px]">edit_square</span>
+</button>
+<button class="text-[#64748B] hover:text-primary transition-colors" title="View Details">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="border-b border-surface-border table-row-hover transition-colors">
+<td class="p-table-cell-padding">
+<input class="rounded border-surface-border text-blue-600 focus:ring-blue-500" type="checkbox"/>
+</td>
+<td class="p-table-cell-padding font-label-mono text-label-mono text-primary font-medium">SKU-3190</td>
+<td class="p-table-cell-padding font-medium text-primary">Hand Wash 500ml</td>
+<td class="p-table-cell-padding text-on-surface-variant">Cleaning</td>
+<td class="p-table-cell-padding text-right font-label-mono">350</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant">0</td>
+<td class="p-table-cell-padding text-right text-status-warning">50</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant">2</td>
+<td class="p-table-cell-padding text-right font-bold text-primary bg-blue-50/30">298</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800">
+                                        In Stock
+                                    </span>
+</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center justify-center gap-2">
+<button class="text-[#64748B] hover:text-primary transition-colors" title="Transfer">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+</button>
+<button class="text-[#64748B] hover:text-primary transition-colors" title="Adjust Stock">
+<span class="material-symbols-outlined text-[18px]">edit_square</span>
+</button>
+<button class="text-[#64748B] hover:text-primary transition-colors" title="View Details">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="bg-surface-bright border-t border-surface-border p-4 flex items-center justify-between text-sm">
+<div class="text-on-surface-variant">Showing <span class="font-medium text-primary">1</span> to <span class="font-medium text-primary">10</span> of <span class="font-medium text-primary">245</span> items in Nepal</div>
+<div class="flex items-center gap-2">
+<button class="p-1 border border-surface-border rounded hover:bg-surface-container text-on-surface-variant disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="px-3 py-1 bg-blue-50 text-blue-600 font-medium border border-blue-200 rounded">1</button>
+<button class="px-3 py-1 hover:bg-surface-container text-on-surface-variant border border-transparent rounded">2</button>
+<button class="px-3 py-1 hover:bg-surface-container text-on-surface-variant border border-transparent rounded">3</button>
+<span class="px-2 text-on-surface-variant">...</span>
+<button class="px-3 py-1 hover:bg-surface-container text-on-surface-variant border border-transparent rounded">25</button>
+<button class="p-1 border border-surface-border rounded hover:bg-surface-container text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

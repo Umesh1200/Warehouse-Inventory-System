@@ -1,0 +1,335 @@
+@page
+@model IMS.Pages.WarehouseOperations.DispatchTrackingModel
+@{
+    ViewData["Title"] = "Dispatch & Tracking";
+    var selectedOrder = Model.PendingDispatches.FirstOrDefault(p => p.IsSelected);
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/dispatch-tracking.css" asp-append-version="true" />
+}
+
+<div class="dispatch-page">
+    <header class="page-header">
+        <div>
+            <div class="eyebrow">
+                <span class="material-symbols-outlined">local_shipping</span>
+                Warehouse Operations
+            </div>
+            <h1>Dispatch & Tracking</h1>
+            <p>Create dispatch records, confirm stock-out movement, and track delivery outcomes.</p>
+        </div>
+        <a class="header-link" asp-page="/WarehouseOperations/PickingPacking">
+            <span class="material-symbols-outlined">inventory_2</span>
+            Picking & packing
+        </a>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">check_circle</span>
+            <span>@Model.SuccessMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show operation-alert" role="alert">
+            <span class="material-symbols-outlined">error</span>
+            <span>@Model.ErrorMessage</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <section class="summary-grid" aria-label="Dispatch summary">
+        @foreach (var stat in Model.SummaryCards)
+        {
+            <article class="summary-card">
+                <span class="summary-icon summary-@stat.ColorClass material-symbols-outlined">@stat.Icon</span>
+                <div>
+                    <p>@stat.Title</p>
+                    <strong>@stat.Value</strong>
+                </div>
+            </article>
+        }
+    </section>
+
+    <section class="dispatch-grid">
+        <aside class="queue-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Ready Queue</h2>
+                    <p>@Model.PendingDispatches.Count packed order(s) waiting for dispatch handling</p>
+                </div>
+            </div>
+
+            <div class="queue-tools">
+                <label class="search-wrap" for="dispatchSearch">
+                    <span class="material-symbols-outlined">search</span>
+                    <input id="dispatchSearch" type="search" placeholder="Search order or customer" autocomplete="off" />
+                </label>
+                <select id="priorityFilter" class="form-select" aria-label="Filter by priority">
+                    <option value="">All priorities</option>
+                    <option value="High">High</option>
+                    <option value="Standard">Standard</option>
+                </select>
+            </div>
+
+            <div class="queue-list">
+                @if (Model.PendingDispatches.Any())
+                {
+                    @foreach (var order in Model.PendingDispatches)
+                    {
+                        <a asp-page="./DispatchTracking"
+                           asp-route-soid="@order.SOID"
+                           class="queue-item @(order.IsSelected ? "selected" : "")"
+                           data-priority="@order.Priority"
+                           data-search="@($"{order.OrderID} {order.Destination} {order.TrackingNumber}")">
+                            <div class="queue-topline">
+                                <span class="mono">@order.OrderID</span>
+                                <span class="status-badge status-@(order.Priority == "High" ? "danger" : "muted")">@order.Priority</span>
+                            </div>
+                            <div class="queue-customer">@order.Destination</div>
+                            <div class="queue-meta">
+                                <span>@order.ItemText</span>
+                                @if (order.DispatchID.HasValue)
+                                {
+                                    <span class="status-badge status-warning">Record ready</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-info">Needs record</span>
+                                }
+                            </div>
+                        </a>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">outbox</span>
+                        <strong>No orders ready</strong>
+                        <p>Packed orders will appear here when they are ready for outbound dispatch.</p>
+                    </div>
+                }
+            </div>
+        </aside>
+
+        <main class="detail-panel">
+            @if (selectedOrder != null)
+            {
+                <div class="detail-header">
+                    <div>
+                        <div class="order-title-row">
+                            <h2>@selectedOrder.OrderID</h2>
+                            <span class="status-badge status-@(selectedOrder.DispatchID.HasValue ? "warning" : "info")">
+                                @(selectedOrder.DispatchID.HasValue ? "Ready To Dispatch" : "Packed")
+                            </span>
+                        </div>
+                        <p>@selectedOrder.Destination</p>
+                    </div>
+                    <div class="detail-meta">
+                        <span>@selectedOrder.PackageCount item(s)</span>
+                        <span>@selectedOrder.TotalUnits.ToString("0.##") unit(s)</span>
+                    </div>
+                </div>
+
+                <div class="workflow-strip" aria-label="Dispatch workflow">
+                    <div class="workflow-step complete">
+                        <span class="material-symbols-outlined">inventory_2</span>
+                        Packed
+                    </div>
+                    <div class="workflow-step @(selectedOrder.DispatchID.HasValue ? "complete" : "active")">
+                        <span class="material-symbols-outlined">receipt_long</span>
+                        Record
+                    </div>
+                    <div class="workflow-step @(selectedOrder.DispatchID.HasValue ? "active" : "")">
+                        <span class="material-symbols-outlined">local_shipping</span>
+                        Confirm
+                    </div>
+                    <div class="workflow-step">
+                        <span class="material-symbols-outlined">task_alt</span>
+                        Delivered
+                    </div>
+                </div>
+
+                @if (selectedOrder.DispatchID.HasValue)
+                {
+                    <section class="dispatch-card">
+                        <div class="card-heading">
+                            <span class="material-symbols-outlined">approval_delegation</span>
+                            <div>
+                                <h3>Confirm Dispatch</h3>
+                                <p>Confirming dispatch will consume reservation, reduce stock, and create movement records.</p>
+                            </div>
+                        </div>
+                        <dl class="dispatch-facts">
+                            <div>
+                                <dt>Courier</dt>
+                                <dd>@selectedOrder.Courier</dd>
+                            </div>
+                            <div>
+                                <dt>Vehicle</dt>
+                                <dd class="mono">@selectedOrder.VehicleNumber</dd>
+                            </div>
+                            <div>
+                                <dt>Tracking</dt>
+                                <dd class="mono">@selectedOrder.TrackingNumber</dd>
+                            </div>
+                        </dl>
+                        <form method="post" asp-page-handler="ConfirmDispatch" class="action-row" data-confirm-message="Confirm dispatch? This will reduce stock, consume reservation, and create stock movement records.">
+                            <input type="hidden" name="ConfirmDispatchID" value="@selectedOrder.DispatchID" />
+                            <button type="submit" class="btn btn-primary">
+                                <span class="material-symbols-outlined">local_shipping</span>
+                                Confirm Dispatch
+                            </button>
+                        </form>
+                    </section>
+                }
+                else
+                {
+                    <section class="dispatch-card">
+                        <div class="card-heading">
+                            <span class="material-symbols-outlined">edit_document</span>
+                            <div>
+                                <h3>Create Dispatch Record</h3>
+                                <p>Record carrier, vehicle, and waybill before confirming stock movement.</p>
+                            </div>
+                        </div>
+                        <form method="post" asp-page-handler="CreateDispatch" class="dispatch-form">
+                            <input type="hidden" name="NewDispatch.SOID" value="@selectedOrder.SOID" />
+                            <input type="hidden" name="NewDispatch.PackID" value="@selectedOrder.PackID" />
+                            <div class="form-grid">
+                                <label class="form-field">
+                                    <span>Carrier / Courier</span>
+                                    <select name="NewDispatch.CourierName" class="form-select" required>
+                                        <option value="">Select carrier partner</option>
+                                        @foreach (var carrier in Model.Carriers)
+                                        {
+                                            <option value="@carrier">@carrier</option>
+                                        }
+                                    </select>
+                                </label>
+                                <label class="form-field">
+                                    <span>Vehicle Registration / ID</span>
+                                    <input type="text" name="NewDispatch.VehicleNumber" class="form-control mono text-uppercase" placeholder="TRK-992-AB" required />
+                                </label>
+                                <label class="form-field">
+                                    <span>Tracking Waybill ID</span>
+                                    <input type="text" name="NewDispatch.TrackingNumber" class="form-control mono" placeholder="Enter tracking ID" required />
+                                </label>
+                            </div>
+                            <div class="action-row">
+                                <span class="form-note">
+                                    <span class="material-symbols-outlined">info</span>
+                                    The record will stay ready until dispatch is confirmed.
+                                </span>
+                                <button type="submit" class="btn btn-primary">
+                                    <span class="material-symbols-outlined">save</span>
+                                    Save Dispatch Record
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                }
+            }
+            else
+            {
+                <div class="empty-state detail-empty">
+                    <span class="material-symbols-outlined">route</span>
+                    <strong>No dispatch selected</strong>
+                    <p>Select a packed order from the queue to create or confirm its dispatch record.</p>
+                </div>
+            }
+        </main>
+
+        <aside class="activity-panel">
+            <div class="panel-header">
+                <div>
+                    <h2>Dispatch Activity</h2>
+                    <p>Latest outbound records and delivery outcomes</p>
+                </div>
+            </div>
+
+            <div class="activity-tools">
+                <label class="search-wrap" for="activitySearch">
+                    <span class="material-symbols-outlined">search</span>
+                    <input id="activitySearch" type="search" placeholder="Search tracking or order" autocomplete="off" />
+                </label>
+                <select id="activityStatusFilter" class="form-select" aria-label="Filter dispatch activity status">
+                    <option value="">All statuses</option>
+                    <option value="Ready To Dispatch">Ready To Dispatch</option>
+                    <option value="Dispatched">Dispatched</option>
+                    <option value="InTransit">InTransit</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Failed">Failed</option>
+                </select>
+            </div>
+
+            <div class="activity-list">
+                @if (Model.RecentDispatches.Any())
+                {
+                    @foreach (var log in Model.RecentDispatches)
+                    {
+                        <article class="activity-item"
+                                 data-status="@log.Status"
+                                 data-search="@($"{log.OrderID} {log.TrackingNumber} {log.Courier} {log.VehicleNumber}")">
+                            <div class="activity-topline">
+                                <span class="mono">@log.OrderID</span>
+                                <span class="status-badge status-@log.ColorClass">@log.Status</span>
+                            </div>
+                            <div class="activity-detail">
+                                <span><span class="material-symbols-outlined">local_shipping</span>@log.Courier</span>
+                                <span><span class="material-symbols-outlined">pin</span>@log.VehicleNumber</span>
+                                <span><span class="material-symbols-outlined">schedule</span>@log.DispatchTime</span>
+                            </div>
+                            <div class="activity-footer">
+                                <span class="mono">@log.TrackingNumber</span>
+                                <div class="mini-actions">
+                                    @if (log.Status == "Ready To Dispatch")
+                                    {
+                                        <form method="post" asp-page-handler="ConfirmDispatch" data-confirm-message="Confirm dispatch? This will reduce stock, consume reservation, and create stock movement records.">
+                                            <input type="hidden" name="ConfirmDispatchID" value="@log.DispatchID" />
+                                            <button type="submit" class="btn btn-sm btn-primary" title="Confirm dispatch">
+                                                <span class="material-symbols-outlined">local_shipping</span>
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (log.Status == "Dispatched" || log.Status == "InTransit")
+                                    {
+                                        <form method="post" asp-page-handler="MarkDelivered">
+                                            <input type="hidden" name="DeliveredDispatchID" value="@log.DispatchID" />
+                                            <button type="submit" class="btn btn-sm btn-success" title="Mark delivered">
+                                                <span class="material-symbols-outlined">task_alt</span>
+                                            </button>
+                                        </form>
+                                        <form method="post" asp-page-handler="MarkFailed">
+                                            <input type="hidden" name="FailedDispatchID" value="@log.DispatchID" />
+                                            <button type="submit" class="btn btn-sm btn-danger" title="Mark failed">
+                                                <span class="material-symbols-outlined">error</span>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </article>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <span class="material-symbols-outlined">history</span>
+                        <strong>No dispatch records</strong>
+                        <p>Saved dispatch records will appear here for confirmation and delivery updates.</p>
+                    </div>
+                }
+            </div>
+        </aside>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/js/dispatch-tracking.js" asp-append-version="true"></script>
+}
