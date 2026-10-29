@@ -1,6 +1,6 @@
 # IMS Screenshot Checklist for Final Report
 
-Use this checklist to ensure all key modules and functionalities are documented for the final presentation or handover report.
+Use this checklist to ensure all key modules and functionalities are documented.
 
 ## 1. Authentication & Security
 - [ ] **Login Page**: Show the professional login interface with validation.
